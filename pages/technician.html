@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#10233f">
+  <title>Lịch của tôi · Helpdesk</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../assets/css/ticket-resolve.css"><link rel="stylesheet" href="../assets/css/technician.css">
+  <script src="../assets/js/technician-data.js" defer></script><script src="../assets/js/technician.js" defer></script>
+</head>
+<body class="tech-body" data-page="schedule">
+  <header class="tech-header"><div class="tech-header-inner"><a class="tech-brand" href="technician.html"><span class="brand-symbol">h</span><span>help<span>desk</span></span></a><nav class="desktop-nav" aria-label="Không gian kỹ thuật viên"><a href="#schedule" data-view="schedule">Lịch của tôi</a><a href="#reports" data-view="reports">Báo cáo nghiệm thu</a></nav><div class="tech-user"><span>Tuấn Lê<small>Kỹ thuật viên</small></span><span class="avatar">TL</span></div></div></header>
+  <main class="tech-main">
+    <div class="tech-title"><div><p class="eyebrow">KHÔNG GIAN KỸ THUẬT VIÊN</p><h1>Chào buổi sáng, Tuấn Lê <span class="greeting-dot">●</span></h1><p>Theo dõi lịch được giao và cập nhật kết quả công việc của bạn.</p></div><span class="demo-tag">Giao diện thử · Dữ liệu minh họa</span></div>
+    <div id="storage-message" class="notice" role="status" hidden></div>
+    <section class="tech-stats" aria-label="Thống kê tuần đang xem"><div><span>Được phân công</span><strong id="stat-assigned">—</strong><small>Nhiệm vụ chưa bắt đầu</small></div><div><span>Đang xử lý</span><strong id="stat-progress" class="blue-number">—</strong><small>Cần cập nhật kết quả</small></div><div><span>Đã nghiệm thu</span><strong id="stat-resolved" class="green-number">—</strong><small>Có xác nhận bàn giao</small></div></section>
+    <section id="schedule-view">
+      <div class="schedule-layout">
+        <div class="min-w-0">
+          <section class="tech-panel calendar-strip"><div class="panel-title"><div><p class="eyebrow">LỊCH LÀM VIỆC</p><h2 id="week-label">Tuần 02 – 08/11/2026</h2></div><div class="week-actions"><button id="previous-week" type="button" aria-label="Tuần trước">‹</button><button id="demo-today" type="button">Ngày mẫu</button><button id="next-week" type="button" aria-label="Tuần sau">›</button></div></div><div id="week-days" class="week-days" aria-label="Chọn ngày xem lịch"></div><p class="calendar-caption">Chấm dưới ngày thể hiện có nhiệm vụ được phân công.</p></section>
+          <div class="day-heading"><h2 id="day-label">Thứ Hai, 02 tháng 11</h2><span id="day-count" class="muted"></span></div>
+          <div class="task-filters"><label class="search-label"><span aria-hidden="true">⌕</span><input id="task-search" type="search" placeholder="Tìm mã phiếu, công việc, phòng…" aria-label="Tìm nhiệm vụ"></label><select id="task-status" aria-label="Lọc trạng thái"><option value="all">Tất cả trạng thái</option><option value="assigned">Được phân công</option><option value="in_progress">Đang xử lý</option><option value="resolved">Đã nghiệm thu</option></select></div>
+          <div id="task-list" class="task-list" aria-live="polite"></div>
+        </div>
+        <aside class="schedule-aside"><section class="focus-card"><span class="eyebrow">CÔNG VIỆC ĐANG XỬ LÝ</span><div id="current-task"></div></section><section class="tech-panel handover-guide"><span class="guide-icon">✓</span><h2>Trước khi bàn giao</h2><p>Hoàn tất báo cáo ngay tại hiện trường để lưu đủ thông tin.</p><ol><li>Kiểm tra thiết bị hoạt động ổn định.</li><li>Chụp ít nhất 1 ảnh sau xử lý.</li><li>Ghi vật tư và nguyên nhân sự cố.</li><li>Lấy chữ ký người tiếp nhận.</li></ol></section><p class="aside-note">Lịch minh họa bắt đầu từ 02/11/2026. Báo cáo thử chỉ được lưu trên trình duyệt này.</p></aside>
+      </div>
+    </section>
+    <section id="reports-view" hidden><div class="panel-title mb-5"><div><p class="eyebrow">HỒ SƠ CÔNG VIỆC</p><h2>Báo cáo đã nghiệm thu</h2><p class="muted mt-2">Xem lại phương án xử lý, vật tư và xác nhận bàn giao.</p></div></div><div id="report-list" class="report-list"></div></section>
+  </main>
+  <nav class="tech-mobile-nav" aria-label="Điều hướng kỹ thuật viên"><a href="#schedule" data-view="schedule"><span aria-hidden="true">▦</span>Lịch của tôi</a><a href="#reports" data-view="reports"><span aria-hidden="true">☷</span>Báo cáo nghiệm thu</a></nav>
+</body>
+</html>

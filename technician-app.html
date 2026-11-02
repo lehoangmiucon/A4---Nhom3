@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#10233f">
+<title>Không gian kỹ thuật viên · Helpdesk</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="assets/css/ticket-resolve.css">
+<link rel="stylesheet" href="assets/css/technician.css">
+<link rel="stylesheet" href="assets/css/technician-app.css">
+<script src="assets/js/technician-data.js" defer></script>
+<script src="assets/js/technician-routes.js" defer></script>
+<script src="assets/js/technician.js" defer></script>
+<script src="assets/js/ticket-resolve.js" defer></script>
+<script src="assets/js/technician-app.js" defer></script>
+</head>
+<body class="tech-body" data-app="technician">
+<header class="tech-header"><div class="tech-header-inner"><a class="tech-brand" href="#schedule"><span class="brand-symbol">h</span><span>help<span>desk</span></span></a><nav class="desktop-nav" aria-label="Không gian kỹ thuật viên"><a href="#schedule" data-app-nav="schedule">Lịch của tôi</a><a href="#reports" data-app-nav="reports">Báo cáo nghiệm thu</a></nav><div class="tech-user"><span>Tuấn Lê<small>Kỹ thuật viên</small></span><span class="avatar" aria-label="Tuấn Lê">TL</span></div></div></header>
+<div class="app-context"><span class="demo-tag">Bản thử giao diện · Dữ liệu lưu trên trình duyệt</span><div class="app-context-actions"><a id="draft-shortcut" href="#resolve?id=SC-2026-084" hidden>Tiếp tục bản nháp →</a><button id="app-help-open" type="button">Cách dùng ⓘ</button></div></div>
+<nav id="app-breadcrumb" class="app-breadcrumb" aria-label="Vị trí hiện tại" hidden><a href="#schedule">Lịch của tôi</a><span aria-hidden="true">/</span><a data-route-task href="#task?id=SC-2026-084">Nhiệm vụ</a><span aria-hidden="true">/</span><strong id="breadcrumb-current"></strong></nav>
+<p id="app-announcement" class="app-announcement" role="status"></p>
+<div id="app-view"></div>
+<noscript><div class="app-noscript">Vui lòng bật JavaScript trong trình duyệt để xem lịch và thử form nghiệm thu.</div></noscript>
+<nav id="app-mobile-nav" class="tech-mobile-nav" aria-label="Điều hướng kỹ thuật viên"><a href="#schedule" data-app-nav="schedule"><span aria-hidden="true">▦</span>Lịch của tôi</a><a href="#reports" data-app-nav="reports"><span aria-hidden="true">☷</span>Báo cáo nghiệm thu</a></nav>
+<dialog id="app-help" class="preview-dialog"><div class="p-6 sm:p-8"><p class="eyebrow">MỘT QUY TRÌNH · MỘT KHÔNG GIAN</p><h2 class="mt-3 text-2xl font-bold">Từ nhận việc đến bàn giao</h2><ol class="app-help-list"><li><span>01</span><div><strong>Xem lịch & chọn nhiệm vụ</strong><p>Chọn ngày trong tuần, tìm phòng hoặc mã phiếu.</p></div></li><li><span>02</span><div><strong>Kiểm tra thông tin tại hiện trường</strong><p>Xem mô tả, lịch được giao và bắt đầu xử lý.</p></div></li><li><span>03</span><div><strong>Lập báo cáo & lấy chữ ký</strong><p>Ghi kết quả, thêm vật tư, ảnh sau sửa và chữ ký người tiếp nhận.</p></div></li><li><span>04</span><div><strong>Xác nhận & xem lại báo cáo</strong><p>Kiểm tra bản xem trước, hoàn tất và quay lại lịch. Báo cáo có trong mục Báo cáo nghiệm thu.</p></div></li></ol><p class="text-xs leading-6 text-slate-500 mb-5">Bản nháp được giữ khi chuyển mục trong trang. Báo cáo hoàn tất chỉ lưu trong trình duyệt này; chưa gửi dữ liệu lên hệ thống.</p><div class="grid gap-3"><a id="app-help-start" href="#task?id=SC-2026-084" class="primary-button">Mở nhiệm vụ mẫu →</a><button id="app-help-close" type="button" class="secondary-button">Đóng hướng dẫn</button></div></div></dialog>
+<template id="template-schedule"><main class="tech-main">
+    <div class="tech-title"><div><p class="eyebrow">KHÔNG GIAN KỸ THUẬT VIÊN</p><h1>Chào buổi sáng, Tuấn Lê <span class="greeting-dot">●</span></h1><p>Theo dõi lịch được giao và cập nhật kết quả công việc của bạn.</p></div></div>
+    <div id="storage-message" class="notice" role="status" hidden></div>
+    <section class="tech-stats" aria-label="Thống kê tuần đang xem"><div><span>Được phân công</span><strong id="stat-assigned">—</strong><small>Nhiệm vụ chưa bắt đầu</small></div><div><span>Đang xử lý</span><strong id="stat-progress" class="blue-number">—</strong><small>Cần cập nhật kết quả</small></div><div><span>Đã nghiệm thu</span><strong id="stat-resolved" class="green-number">—</strong><small>Có xác nhận bàn giao</small></div></section>
+    <section id="schedule-view">
+      <div class="schedule-layout">
+        <div class="min-w-0">
+          <section class="tech-panel calendar-strip"><div class="panel-title"><div><p class="eyebrow">LỊCH LÀM VIỆC</p><h2 id="week-label">Tuần 02 – 08/11/2026</h2></div><div class="week-actions"><button id="previous-week" type="button" aria-label="Tuần trước">‹</button><button id="demo-today" type="button">Ngày mẫu</button><button id="next-week" type="button" aria-label="Tuần sau">›</button></div></div><div id="week-days" class="week-days" aria-label="Chọn ngày xem lịch"></div><p class="calendar-caption">Chấm dưới ngày thể hiện có nhiệm vụ được phân công.</p></section>
+          <div class="day-heading"><h2 id="day-label">Thứ Hai, 02 tháng 11</h2><span id="day-count" class="muted"></span></div>
+          <div class="task-filters"><label class="search-label"><span aria-hidden="true">⌕</span><input id="task-search" type="search" placeholder="Tìm mã phiếu, công việc, phòng…" aria-label="Tìm nhiệm vụ"></label><select id="task-status" aria-label="Lọc trạng thái"><option value="all">Tất cả trạng thái</option><option value="assigned">Được phân công</option><option value="in_progress">Đang xử lý</option><option value="resolved">Đã nghiệm thu</option></select></div>
+          <div id="task-list" class="task-list" aria-live="polite"></div>
+        </div>
+        <aside class="schedule-aside"><section class="focus-card"><span class="eyebrow">CÔNG VIỆC ĐANG XỬ LÝ</span><div id="current-task"></div></section><section class="tech-panel handover-guide"><span class="guide-icon">✓</span><h2>Trước khi bàn giao</h2><p>Hoàn tất báo cáo ngay tại hiện trường để lưu đủ thông tin.</p><ol><li>Kiểm tra thiết bị hoạt động ổn định.</li><li>Chụp ít nhất 1 ảnh sau xử lý.</li><li>Ghi vật tư và nguyên nhân sự cố.</li><li>Lấy chữ ký người tiếp nhận.</li></ol></section><p class="aside-note">Lịch minh họa bắt đầu từ 02/11/2026. Báo cáo thử chỉ được lưu trên trình duyệt này.</p></aside>
+      </div>
+    </section>
+    <section id="reports-view" hidden><div class="panel-title mb-5"><div><p class="eyebrow">HỒ SƠ CÔNG VIỆC</p><h2>Báo cáo đã nghiệm thu</h2><p class="muted mt-2">Xem lại phương án xử lý, vật tư và xác nhận bàn giao.</p></div></div><div id="report-list" class="report-list"></div></section>
+  </main></template>
+<template id="template-detail"><main class="tech-main detail-main">
+    <a class="back-link" href="technician.html">← Lịch của tôi</a>
+    <div id="storage-message" class="notice" role="status" hidden></div>
+    <div id="task-content" hidden>
+      <div class="tech-title"><div><div class="ticket-title-meta"><span class="eyebrow" id="detail-code"></span><span id="detail-status" class="task-status"></span></div><h1 id="detail-title"></h1><p id="detail-location"></p></div></div>
+      <div class="detail-tabs" aria-label="Nội dung nhiệm vụ"><a href="#task" id="task-tab">Chi tiết nhiệm vụ</a><a href="#report" id="report-tab">Báo cáo nghiệm thu</a></div>
+      <section id="task-pane" class="task-detail-layout">
+        <div class="space-y-5"><section class="tech-panel"><p class="eyebrow">YÊU CẦU HỖ TRỢ</p><h2 class="mt-3">Mô tả sự cố</h2><p id="detail-description" class="detail-description"></p><dl class="facts-grid"><div><dt>Mã thiết bị</dt><dd id="detail-device"></dd></div><div><dt>Mức độ ưu tiên</dt><dd id="detail-priority"></dd></div><div><dt>Người báo sự cố</dt><dd id="detail-reporter"></dd></div><div><dt>Vai trò</dt><dd id="detail-role"></dd></div></dl></section><section class="tech-panel"><p class="eyebrow">THÔNG TIN TỪ ĐIỀU PHỐI</p><h2 class="mt-3">Lưu ý tại hiện trường</h2><p id="detail-instruction" class="detail-description"></p><div class="info-callout">Sau khi khắc phục, hãy lập báo cáo và lấy chữ ký của người tiếp nhận trước khi kết thúc nhiệm vụ.</div></section></div>
+        <aside class="space-y-5"><section class="tech-panel"><p class="eyebrow">LỊCH ĐƯỢC PHÂN CÔNG</p><h2 id="detail-time" class="mt-3"></h2><p id="detail-date" class="muted mt-2"></p><div class="assigned-person"><span class="avatar">TL</span><div><strong>Tuấn Lê</strong><small>Kỹ thuật viên phụ trách</small></div></div></section><section class="tech-panel"><p class="eyebrow">TIẾN ĐỘ NHIỆM VỤ</p><ol id="task-timeline" class="task-timeline"></ol></section></aside>
+      </section>
+      <section id="report-pane" hidden><div id="report-content"></div></section>
+    </div>
+    <div id="missing-task" class="empty-state" hidden><h1>Không tìm thấy nhiệm vụ</h1><p>Phiếu này không có trong dữ liệu giao diện thử.</p><a href="technician.html" class="primary-button">Về lịch của tôi</a></div>
+    <p id="action-error" class="action-error" role="alert"></p>
+  </main><footer class="task-bottom"><div><p id="action-hint"></p><div id="task-actions"></div></div></footer><dialog id="image-dialog" class="image-dialog"><button id="close-image" type="button" class="secondary-button">Đóng ảnh ×</button><img id="large-image" alt="Ảnh minh chứng nghiệm thu"></dialog></template>
+<template id="template-resolve"><main class="mx-auto max-w-6xl px-4 pb-36 pt-6 sm:px-6 sm:pt-9">
+    <a id="back-to-task" href="technician-task.html?id=SC-2026-084" class="text-sm font-medium text-slate-500 hover:text-sky-700">← Chi tiết nhiệm vụ</a>
+    <div class="mb-7 mt-6 flex flex-wrap items-start justify-between gap-4">
+      <div><p class="eyebrow">HOÀN THÀNH CÔNG VIỆC</p><h1 class="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Báo cáo xử lý & nghiệm thu</h1><p class="mt-3 text-sm leading-6 text-slate-500">Ghi lại kết quả khắc phục và xác nhận bàn giao tại hiện trường.</p></div>
+      
+    </div>
+    <div class="grid items-start gap-6 lg:grid-cols-[280px_1fr]">
+      <aside class="space-y-4 lg:sticky lg:top-6">
+        <section class="ticket-card rounded-2xl p-6 text-white">
+          <div class="flex items-center justify-between"><span id="resolve-code" class="text-xs font-semibold tracking-wider text-sky-200">SC-2026-084</span><span class="rounded-full bg-white/10 px-2.5 py-1 text-xs text-sky-100">Đang xử lý</span></div>
+          <h2 id="resolve-title" class="mt-5 text-xl font-semibold leading-7">Máy lạnh không hoạt động</h2>
+          <p id="resolve-location" class="mt-2 text-sm text-slate-300">Khu giảng đường A · Phòng A.203</p>
+          <div class="mt-6 space-y-3 border-t border-white/15 pt-5 text-sm"><div class="flex justify-between gap-3"><span class="text-slate-400">Thiết bị</span><span id="resolve-device">AC-203-02</span></div><div class="flex justify-between gap-3"><span class="text-slate-400">Kỹ thuật viên</span><span>Tuấn Lê</span></div><div class="flex justify-between gap-3"><span class="text-slate-400">Người báo</span><span id="resolve-reporter">Lan Nguyễn</span></div></div>
+        </section>
+        <nav class="hidden rounded-2xl border border-slate-200 bg-white p-5 lg:block" aria-label="Các phần báo cáo"><p class="eyebrow mb-4">NỘI DUNG BÁO CÁO</p><a class="step-link" href="#work"><span>01</span>Kết quả xử lý</a><a class="step-link" href="#evidence"><span>02</span>Ảnh minh chứng</a><a class="step-link" href="#handover"><span>03</span>Xác nhận bàn giao</a></nav>
+        <p class="px-1 text-xs leading-5 text-slate-500">Thông tin phiếu đang là dữ liệu minh họa. Báo cáo thử chỉ lưu trên trình duyệt, chưa gửi lên hệ thống. Các mục có dấu <span class="text-red-600">*</span> là bắt buộc.</p>
+      </aside>
+      <form id="resolve-form" class="min-w-0 space-y-5" novalidate inert>
+        <input type="hidden" name="ticket_id" value="SC-2026-084"><input type="hidden" name="status" value="RESOLVED">
+        <section id="work" class="form-section">
+          <div class="section-heading"><span class="section-number">01</span><div><h2>Kết quả xử lý</h2><p>Mô tả nguyên nhân và công việc đã thực hiện.</p></div></div>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <label class="field">Nhóm sự cố <b>*</b><select name="category_id" required><option value="">Chọn nhóm sự cố</option><option value="av">Thiết bị trình chiếu / Âm thanh</option><option value="network">Mạng / Hạ tầng kết nối</option><option value="electrical">Điện / Chiếu sáng</option><option value="mechanical">Cơ khí / Bàn ghế</option><option value="water">Cấp thoát nước</option></select></label>
+            <label class="field">Nguyên nhân <b>*</b><select name="root_cause" required><option value="">Chọn nguyên nhân</option><option>Lỗi phần cứng / linh kiện</option><option>Cáp kết nối hỏng / lỏng</option><option>Cài đặt / cấu hình sai</option><option>Hao mòn tự nhiên</option><option>Khác</option></select></label>
+          </div>
+          <label class="field mt-5">Phương án xử lý <b>*</b><textarea name="resolution_note" rows="4" minlength="10" maxlength="500" required placeholder="Ví dụ: Đã kiểm tra nguồn điện, thay cầu chì và chạy thử thiết bị. Máy hoạt động ổn định sau 15 phút."></textarea></label>
+          <div class="mt-2 flex justify-between text-xs text-slate-500"><span>Tối thiểu 10 ký tự</span><span id="note-count">0 / 500</span></div>
+          <div class="mt-7 border-t border-slate-100 pt-5"><div class="flex flex-wrap items-center justify-between gap-2"><h3 class="text-sm font-semibold">Linh kiện / vật tư sử dụng</h3><span class="text-xs text-slate-400">Không bắt buộc</span></div><p id="materials-empty" class="py-4 text-sm text-slate-500">Chưa thêm vật tư. Bỏ qua nếu không phát sinh thay thế.</p><div id="materials" class="space-y-3 py-2"></div><button id="add-material" class="secondary-button mt-2" type="button">＋ Thêm linh kiện / vật tư</button></div>
+        </section>
+        <section id="evidence" class="form-section">
+          <div class="section-heading"><span class="section-number">02</span><div><h2>Ảnh minh chứng</h2><p>Ảnh rõ nét giúp đối chiếu tình trạng trước và sau sửa chữa.</p></div></div>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div><h3 class="mb-3 text-sm font-semibold">Trước xử lý <span class="font-normal text-slate-400">· Tối đa 3 ảnh</span></h3><label class="upload-box" for="before-images"><span class="upload-icon" aria-hidden="true">＋</span><strong>Thêm ảnh hiện trạng</strong><span>JPEG, PNG · Tối đa 5 MB / ảnh</span><input id="before-images" type="file" accept="image/jpeg,image/png" multiple class="sr-only"></label><div id="before-preview" class="preview-grid"></div></div>
+            <div><h3 class="mb-3 text-sm font-semibold">Sau xử lý <b class="text-red-600">*</b> <span class="font-normal text-slate-400">· Ít nhất 1 ảnh</span></h3><label class="upload-box upload-after" for="after-images"><span class="upload-icon" aria-hidden="true">＋</span><strong>Thêm ảnh nghiệm thu</strong><span>JPEG, PNG · Tối đa 5 MB / ảnh</span><input id="after-images" type="file" accept="image/jpeg,image/png" multiple class="sr-only"></label><label class="camera-button" for="camera">◎ Chụp ảnh trực tiếp<input id="camera" type="file" accept="image/jpeg,image/png" capture="environment" class="sr-only"></label><div id="after-preview" class="preview-grid"></div></div>
+          </div><p id="upload-error" class="mt-3 text-sm text-red-700" role="alert"></p>
+        </section>
+        <section id="handover" class="form-section">
+          <div class="section-heading"><span class="section-number">03</span><div><h2>Xác nhận bàn giao</h2><p>Người tiếp nhận kiểm tra kết quả và ký xác nhận tại chỗ.</p></div></div>
+          <div class="grid gap-5 sm:grid-cols-2"><label class="field">Họ tên người xác nhận <b>*</b><input name="verifier_name" autocomplete="name" required maxlength="150" placeholder="Nhập họ và tên"></label><label class="field">Vai trò <b>*</b><select name="verifier_role" required><option value="">Chọn vai trò</option><option>Giảng viên đứng lớp</option><option>Cán bộ quản lý phòng / khoa</option><option>Sinh viên đại diện</option><option>Giám thị tòa nhà</option></select></label></div>
+          <div class="mb-3 mt-6 flex items-center justify-between"><h3 class="text-sm font-semibold">Chữ ký xác nhận <b class="text-red-600">*</b></h3><button id="clear-signature" type="button" class="text-sm font-medium text-sky-700">Xóa chữ ký</button></div>
+          <div class="signature-wrap"><canvas id="signature" width="1000" height="400" aria-label="Vùng ký tên, vẽ bằng chuột hoặc chạm màn hình"></canvas><span id="signature-hint">Ký tên trong vùng này</span></div><p class="mt-2 text-xs leading-5 text-slate-500">Dùng ngón tay hoặc bút cảm ứng để ký. Chữ ký xác nhận đã kiểm tra và tiếp nhận thiết bị sau xử lý.</p>
+        </section>
+        <p id="form-error" class="rounded-lg text-sm text-red-700" role="alert" tabindex="-1"></p>
+        <div class="submit-bar"><div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 sm:px-6"><p class="text-xs leading-5 text-slate-500 sm:text-sm">Kiểm tra báo cáo trước khi bàn giao.<br><span class="text-slate-400">Bản xem trước · Chưa lưu dữ liệu</span></p><button id="submit-resolution" type="submit" class="primary-button">Hoàn tất ticket <span aria-hidden="true">→</span></button></div></div>
+      </form>
+    </div>
+  </main><dialog id="preview-dialog" class="preview-dialog"><div class="p-6 sm:p-8"><span class="eyebrow">XEM TRƯỚC NGHIỆM THU</span><h2 class="mt-3 text-2xl font-bold">Báo cáo đã sẵn sàng</h2><p class="mt-3 text-sm leading-6 text-slate-500">Kiểm tra thông tin và chữ ký trước khi hoàn tất. Nút xác nhận chỉ lưu bản thử trên trình duyệt, không gửi dữ liệu thật.</p><dl id="summary" class="my-6 space-y-4"></dl><p id="confirm-error" class="mb-4 text-sm text-red-700" role="alert"></p><div class="grid gap-3"><button id="confirm-demo" class="primary-button w-full" type="button">Xác nhận & hoàn tất bản thử</button><button id="close-preview" class="secondary-button w-full" type="button">Quay lại chỉnh sửa</button></div></div></dialog></template>
+</body>
+</html>
