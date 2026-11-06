@@ -23,8 +23,8 @@
     return cookie ? decodeURIComponent(cookie.slice('XSRF-TOKEN='.length)) : '';
   };
 
-  const messageFrom = (payload) => payload?.message
-    || Object.values(payload?.errors || {}).flat().join(' ')
+  const messageFrom = (payload) => Object.values(payload?.errors || {}).flat().join(' ')
+    || payload?.message
     || 'Không thể hoàn thành thao tác.';
 
   const showFeedback = (form, message, state = 'success') => {
@@ -39,6 +39,12 @@
     const email = new URLSearchParams(window.location.search).get('email');
     const emailInput = document.querySelector('input[name="email"]');
     if (email && emailInput && !emailInput.value) emailInput.value = email;
+    const recipient = document.querySelector('[data-otp-recipient]');
+    const updateRecipient = () => {
+      if (recipient) recipient.textContent = emailInput?.value.trim() || 'email @ut.edu.vn của bạn';
+    };
+    updateRecipient();
+    emailInput?.addEventListener('input', updateRecipient);
   });
 
   document.addEventListener('submit', async (event) => {
@@ -63,6 +69,7 @@
     const button = form.querySelector('button[type="submit"]');
     const originalLabel = button?.textContent;
     if (button) button.disabled = true;
+    if (button && form.dataset.apiEndpoint === '/register') button.textContent = 'Đang gửi OTP...';
     const feedback = form.querySelector('[data-api-feedback]');
     if (feedback) feedback.hidden = true;
 
@@ -91,7 +98,7 @@
       if (form.dataset.successRedirect) {
         const destination = new URL(form.dataset.successRedirect, document.baseURI);
         if (form.elements.email?.value && destination.pathname.endsWith('verify-otp')) {
-          destination.searchParams.set('email', form.elements.email.value);
+          destination.searchParams.set('email', payload.email || form.elements.email.value.trim().toLowerCase());
         }
         window.location.assign(destination.href);
         return;
@@ -117,14 +124,15 @@
     if (!action) return;
     event.preventDefault();
     const form = action.closest('form');
-    const email = form?.querySelector('[name="email"]')?.value;
-    if (!email) {
-      form?.querySelector('[name="email"]')?.reportValidity();
+    const emailInput = form?.querySelector('[name="email"]');
+    const email = emailInput?.value.trim().toLowerCase();
+    if (!emailInput?.reportValidity()) {
       return;
     }
 
     const originalLabel = action.textContent;
     action.disabled = true;
+    action.textContent = 'Đang gửi OTP...';
     try {
       const response = await fetch(endpointUrl(action.dataset.apiAction), {
         method: action.dataset.apiMethod || 'POST',

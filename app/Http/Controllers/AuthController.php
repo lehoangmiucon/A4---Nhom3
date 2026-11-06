@@ -13,29 +13,24 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class AuthController extends Controller
 {
     public function register(Request $request): JsonResponse
     {
+        $this->normalizeSchoolEmail($request);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:255', 'regex:/^[^@\s]+@ut\.edu\.vn$/', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+        ], ['email.regex' => 'Vui lòng dùng email trường có đuôi @ut.edu.vn.']);
 
-        $data['email'] = Str::lower($data['email']);
-        $user = User::create([...$data, 'role' => 'student']);
-        $code = (string) random_int(100000, 999999);
-        DB::table('email_otps')->insert([
-            'email' => Str::lower($data['email']),
-            'code_hash' => Hash::make($code),
-            'expires_at' => now()->addMinutes(10),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        Mail::raw("Mã xác thực Helpdesk của bạn là {$code}. Mã có hiệu lực trong 10 phút.", function ($message) use ($data) {
-            $message->to($data['email'])->subject('Mã xác thực tài khoản Helpdesk');
+        $user = DB::transaction(function () use ($data) {
+            $user = User::create([...$data, 'role' => 'student']);
+            $this->sendSchoolOtp($user->email);
+
+            return $user;
         });
 
         return response()->json(['message' => 'Đăng ký thành công. Vui lòng nhập mã OTP gửi tới email.', 'email' => $user->email], 201);
@@ -43,7 +38,11 @@ class AuthController extends Controller
 
     public function verifyOtp(Request $request): JsonResponse
     {
-        $data = $request->validate(['email' => ['required', 'email'], 'otp' => ['required', 'digits:6']]);
+        $this->normalizeSchoolEmail($request);
+        $data = $request->validate([
+            'email' => ['required', 'email', 'max:255', 'regex:/^[^@\s]+@ut\.edu\.vn$/'],
+            'otp' => ['required', 'digits:6'],
+        ], ['email.regex' => 'Vui lòng dùng email trường có đuôi @ut.edu.vn.']);
         $otp = DB::table('email_otps')->where('email', Str::lower($data['email']))
             ->whereNull('verified_at')->latest('id')->first();
 
@@ -59,23 +58,62 @@ class AuthController extends Controller
 
     public function resendOtp(Request $request): JsonResponse
     {
-        $data = $request->validate(['email' => ['required', 'email']]);
+        $this->normalizeSchoolEmail($request);
+        $data = $request->validate([
+            'email' => ['required', 'email', 'max:255', 'regex:/^[^@\s]+@ut\.edu\.vn$/'],
+        ], ['email.regex' => 'Vui lòng dùng email trường có đuôi @ut.edu.vn.']);
         $user = User::where('email', Str::lower($data['email']))->whereNull('email_verified_at')->first();
         if (!$user) return response()->json(['message' => 'Nếu tài khoản chưa xác thực, mã mới sẽ được gửi tới email.']);
 
+        DB::transaction(function () use ($user) {
+            // Serialize resends for the same account; only the newest code remains usable.
+            User::whereKey($user->id)->lockForUpdate()->first();
+            DB::table('email_otps')->where('email', $user->email)->whereNull('verified_at')->update(['verified_at' => now(), 'updated_at' => now()]);
+            $this->sendSchoolOtp($user->email);
+        });
+        return response()->json(['message' => 'Đã gửi mã OTP mới nếu email thuộc tài khoản chưa xác thực.']);
+    }
+
+    private function normalizeSchoolEmail(Request $request): void
+    {
+        if (is_string($request->input('email'))) {
+            $request->merge(['email' => Str::lower(trim($request->input('email')))]);
+        }
+    }
+
+    private function sendSchoolOtp(string $email): void
+    {
+        if (config('mail.default') === 'log'
+            || (config('mail.default') === 'array' && !app()->runningUnitTests())) {
+            throw ValidationException::withMessages([
+                'email' => 'Hệ thống chưa cấu hình gửi email thật. Quản trị viên cần cấu hình SMTP trong .env để gửi OTP tới hộp thư.',
+            ]);
+        }
+
         $code = (string) random_int(100000, 999999);
-        DB::table('email_otps')->where('email', $user->email)->whereNull('verified_at')->update(['verified_at' => now(), 'updated_at' => now()]);
         DB::table('email_otps')->insert([
-            'email' => $user->email,
+            'email' => $email,
             'code_hash' => Hash::make($code),
             'expires_at' => now()->addMinutes(10),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        Mail::raw("Mã xác thực Helpdesk của bạn là {$code}. Mã có hiệu lực trong 10 phút.", function ($message) use ($user) {
-            $message->to($user->email)->subject('Mã xác thực tài khoản Helpdesk');
-        });
-        return response()->json(['message' => 'Đã gửi mã OTP mới nếu email thuộc tài khoản chưa xác thực.']);
+
+        try {
+            $verificationUrl = url('/auth/verify-otp').'?'.http_build_query(['email' => $email]);
+            Mail::send(['html' => 'emails.verification-otp', 'text' => 'emails.verification-otp-text'], [
+                'code' => $code,
+                'email' => $email,
+                'verificationUrl' => $verificationUrl,
+            ], function ($message) use ($email) {
+                $message->to($email)->subject('Mã xác thực tài khoản Helpdesk');
+            });
+        } catch (TransportExceptionInterface $exception) {
+            report($exception);
+            throw ValidationException::withMessages([
+                'email' => 'Chưa gửi được OTP. Vui lòng thử lại hoặc liên hệ quản trị viên kiểm tra cấu hình email.',
+            ]);
+        }
     }
 
     public function login(Request $request): JsonResponse

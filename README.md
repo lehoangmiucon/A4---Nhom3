@@ -22,7 +22,9 @@ php artisan key:generate
 
 Repository chứa mã nguồn và migration; `.env`, `vendor`, cache, database cục bộ và ảnh do người dùng tải lên không được đưa lên Git. GitHub Pages chỉ phục vụ trang tĩnh, không chạy được backend Laravel/PHP của dự án.
 
-Khi `MAIL_MAILER=log`, mã OTP được ghi vào log Laravel để phát triển trên máy. Muốn gửi email thật, cấu hình SMTP trong `.env`.
+Khi `MAIL_MAILER=log`, hệ thống chưa gửi email thật; luồng OTP sẽ báo cần cấu hình SMTP trong `.env`.
+
+Đăng ký sinh viên sử dụng email `@ut.edu.vn`. Xem [hướng dẫn cấu hình OTP qua Google Workspace](docs/otp-email.md) để gửi thư thật và kiểm tra luồng xác thực.
 
 ## Luồng API hiện có
 

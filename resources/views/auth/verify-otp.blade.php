@@ -28,9 +28,9 @@
         <section class="auth-content">
             <div class="auth-card">
                 <h2>Kiểm tra email</h2>
-                <p>Nhập mã OTP 6 chữ số đã gửi đến <strong>email của bạn</strong>.</p>
+                <p>Nhập mã OTP 6 chữ số đã gửi đến <strong data-otp-recipient>email @ut.edu.vn của bạn</strong>.</p>
                 <form class="role-form" action="#" method="post" data-api-endpoint="/email/verify-otp" data-success-redirect="login">
-                    <div class="role-field"><label for="email">Email đăng ký</label><input id="email" name="email" type="email" autocomplete="email" placeholder="ten@truong.edu.vn" required></div>
+                    <div class="role-field"><label for="email">Email đăng ký</label><input id="email" name="email" type="email" autocomplete="email" placeholder="ten@ut.edu.vn" pattern="[^@\s]+@[uU][tT]\.[eE][dD][uU]\.[vV][nN]" title="Nhập email trường có đuôi @ut.edu.vn" maxlength="255" required></div>
                     <div class="role-field"><label for="otp">Mã xác thực OTP</label><input id="otp" name="otp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" aria-describedby="otp-help" required><span class="role-form-note" id="otp-help">Mã gồm 6 chữ số và có thời hạn sử dụng.</span></div><button class="role-button" type="submit">Xác thực tài khoản</button>
                     <div class="role-form-note">N&#7871;u ch&#432;a nh&#7853;n &#273;&#432;&#7907;c m&#227;, h&#227;y ki&#7875;m tra h&#7897;p th&#432; ho&#7863;c g&#7917;i l&#7841;i.</div><button class="role-button secondary" type="button" data-api-action="/email/resend-otp">Gửi lại mã OTP</button>
                     <p class="api-feedback" data-api-feedback role="status" aria-live="polite" hidden></p>
