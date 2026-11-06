@@ -81,7 +81,11 @@
                             <h3>Ảnh sinh viên gửi ban đầu <span>{{ $ticket->reportAttachments->count() }}</span></h3>
                             <div class="staff-ticket-attachment-grid">
                                 @foreach($ticket->reportAttachments as $attachment)
+                                    @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($attachment->path))
                                     <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh do sinh viên gửi: {{ $attachment->original_name }}" loading="lazy"></a>
+                                    @else
+                                    <p class="staff-ticket-empty" title="{{ $attachment->original_name }}">Không tìm thấy ảnh gốc. Vui lòng khôi phục hoặc tải lại ảnh minh chứng.</p>
+                                    @endif
                                 @endforeach
                             </div>
                         </div>
@@ -91,7 +95,11 @@
                             <h3>Ảnh nhân viên minh chứng sửa chữa <span>{{ $ticket->repairAttachments->count() }}</span></h3>
                             <div class="staff-ticket-attachment-grid">
                                 @foreach($ticket->repairAttachments as $attachment)
+                                    @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($attachment->path))
                                     <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh nhân viên sửa chữa: {{ $attachment->original_name }}" loading="lazy"></a>
+                                    @else
+                                    <p class="staff-ticket-empty" title="{{ $attachment->original_name }}">Không tìm thấy ảnh gốc. Vui lòng khôi phục hoặc tải lại ảnh minh chứng.</p>
+                                    @endif
                                 @endforeach
                             </div>
                         </div>
