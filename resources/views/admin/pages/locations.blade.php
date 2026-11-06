@@ -30,7 +30,7 @@
                             <div><span class="location-building-code">KHU NHÀ · {{ $buildingItem->code }}</span><h3>{{ $buildingItem->name }}</h3></div>
                         </div>
                         <p class="location-building-description">{{ $buildingItem->description ?: 'Chưa có mô tả cho khu nhà này.' }}</p>
-                        <div class="location-building-stats"><span><i class="fa-solid fa-door-open" aria-hidden="true"></i>{{ $buildingItem->rooms_count }} phòng</span><span><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>{{ $buildingItem->rooms->sum(fn ($room) => $room->tickets->whereNotIn('status', ['closed'])->count()) }} phiếu đang mở</span></div>
+                        <div class="location-building-stats"><span><i class="fa-solid fa-door-open" aria-hidden="true"></i>{{ $buildingItem->rooms_count }} phòng</span><span><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>{{ $buildingItem->rooms->sum('open_tickets_count') }} phiếu đang mở</span></div>
                         <div class="location-building-footer"><span>Danh sách phòng và mã QR</span><a class="location-detail-link" href="building-detail?code={{ urlencode($buildingItem->code) }}">Xem chi tiết <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div>
                     </article>
                     @empty

@@ -61,10 +61,6 @@ class UiController extends Controller
             $data['statusLabels']['assigned'] = 'Đang xử lý';
             $data['statusLabels']['reopened'] = 'Đang xử lý';
         }
-        if ($section === 'admin' && $request->user()) {
-            $recentNotifications = $request->user()->notifications()->latest()->limit(100)->get();
-            $data['notificationPreviewGroups'] = $this->groupNotifications($recentNotifications)->take(5);
-        }
         if ($section === 'admin' && $path === 'index') {
             $period = $request->query('period', 'month');
             $periodOptions = [
@@ -92,9 +88,9 @@ class UiController extends Controller
             $data['dashboardPeriodTitle'] = ['day' => 'hôm nay', 'month' => 'tháng này', 'year' => 'năm nay'][$period];
             $periodTickets = Ticket::whereBetween('created_at', [$periodStart, $periodEnd]);
             $data['dashboardCounts'] = (clone $periodTickets)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
-            $data['dashboardTotal'] = (clone $periodTickets)->count();
+            $data['dashboardTotal'] = $data['dashboardCounts']->sum();
             $data['dashboardTodayCount'] = $data['dashboardTotal'];
-            $data['dashboardUnassignedCount'] = (clone $periodTickets)->whereIn('status', ['new', 'reopened'])->count();
+            $data['dashboardUnassignedCount'] = ($data['dashboardCounts']['new'] ?? 0) + ($data['dashboardCounts']['reopened'] ?? 0);
             $data['dashboardResolvedCount'] = $data['dashboardCounts']['resolved'] ?? 0;
             $data['dashboardInProgressCount'] = $data['dashboardCounts']['in_progress'] ?? 0;
             $data['weeklyTicketCount'] = $data['dashboardTotal'];
@@ -104,13 +100,16 @@ class UiController extends Controller
                 ->withCount(['tickets as tickets_count' => fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd])])
                 ->whereHas('tickets', fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
                 ->orderByDesc('tickets_count')->take(5)->get();
-            $data['dashboardBuildings'] = Building::with(['rooms.tickets' => fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd])])
+            $data['dashboardBuildings'] = Building::with(['rooms' => fn($query) => $query
+                ->select('id', 'building_id')
+                ->withCount(['tickets as open_tickets_count' => fn($tickets) => $tickets
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])->where('status', '!=', 'closed')])])
                 ->withCount('rooms')->orderBy('code')->get();
         }
         if ($section === 'admin' && $path === 'pages/reports') {
             $data['reportCounts'] = Ticket::selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
-            $data['totalTickets'] = Ticket::count();
-            $data['resolvedTickets'] = Ticket::whereIn('status', ['resolved', 'closed'])->count();
+            $data['totalTickets'] = $data['reportCounts']->sum();
+            $data['resolvedTickets'] = ($data['reportCounts']['resolved'] ?? 0) + ($data['reportCounts']['closed'] ?? 0);
             $data['equipmentBreakdown'] = Category::query()->withCount('tickets')
                 ->whereHas('tickets')->orderByDesc('tickets_count')->take(5)->get();
             $resolved = Ticket::whereNotNull('resolved_at')->get(['created_at', 'resolved_at']);
@@ -118,6 +117,14 @@ class UiController extends Controller
             $data['averageResolutionHours'] = number_format(($averageMinutes ?? 0) / 60, 1, ',', '');
         }
         $this->addPageData($request, $section, $path, $data);
+
+        if ($section === 'admin' && $request->user()) {
+            // The notifications page already loaded the list; keep the same 100-item preview window.
+            $recentNotifications = $path === 'pages/notifications'
+                ? $data['notifications']->take(100)
+                : $request->user()->notifications()->latest()->limit(100)->get();
+            $data['notificationPreviewGroups'] = $this->groupNotifications($recentNotifications)->take(5);
+        }
 
         return response()->view($view, $data);
     }
@@ -152,7 +159,7 @@ class UiController extends Controller
             $data['incidentFocusLabel'] = $focus ? $focusLabels[$focus] : null;
             $data['incidentCounts'] = [
                 'all' => Ticket::count(),
-                'pending' => Ticket::whereIn('status', ['new', 'reopened'])->count(),
+                'pending' => $data['pendingTicketCount'],
                 'in_progress' => Ticket::where('status', 'in_progress')->count(),
                 'completed_month' => Ticket::whereIn('status', ['resolved', 'closed'])
                     ->whereMonth('resolved_at', now()->month)->whereYear('resolved_at', now()->year)->count(),
@@ -174,7 +181,10 @@ class UiController extends Controller
                 ->keyBy('id');
         }
         if ($section === 'admin' && $path === 'pages/locations') {
-            $data['buildings'] = Building::with('rooms.tickets')->withCount('rooms')->orderBy('code')->get();
+            $data['buildings'] = Building::with(['rooms' => fn($query) => $query
+                ->select('id', 'building_id')
+                ->withCount(['tickets as open_tickets_count' => fn($tickets) => $tickets->where('status', '!=', 'closed')])])
+                ->withCount('rooms')->orderBy('code')->get();
             $data['roomCount'] = Room::count();
         }
         if ($section === 'admin' && $path === 'pages/building-detail') {

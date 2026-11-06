@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+@import url('../../../shared/fonts/be-vietnam-pro.css?v=20261106-local1');
 
 :root{font-family:'Be Vietnam Pro',Arial,sans-serif;color:#19344f;background:#f4f8fc;font-synthesis:none;text-rendering:optimizeLegibility;--blue:#1686df;--navy:#15324e;--muted:#74879b;--line:#e2ebf3;--surface:#fff}
 *{box-sizing:border-box}

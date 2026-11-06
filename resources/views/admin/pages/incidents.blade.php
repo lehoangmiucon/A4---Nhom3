@@ -82,5 +82,5 @@ Phiếu sự cố · Helpdesk trường học
 @endsection
 
 @section('scripts')
-<script src="../assets/js/incidents.js?v=20261105-functional-filters1"></script>
+<script src="../assets/js/incidents.js?v=20261106-filter-cache2"></script>
 @endsection

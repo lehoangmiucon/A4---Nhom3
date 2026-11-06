@@ -2,6 +2,8 @@
 
 Backend Laravel phục vụ website HTML/CSS hiện có và API dùng chung cho ứng dụng Flutter sau này.
 
+Các tối ưu tải trang, số đo trước/sau và cách chạy kiểm tra hồi quy được ghi tại [docs/performance.md](docs/performance.md).
+
 ## Chạy với XAMPP
 
 Yêu cầu PHP 8.2 trở lên, Composer và MySQL. Sau khi clone repository, mở PowerShell tại thư mục dự án:

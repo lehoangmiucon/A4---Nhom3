@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Tài khoản nhân viên · Helpdesk</title>
-    <link rel="stylesheet" href="assets/css/staff.css?v=20261106-cleanup1">
+    <link rel="stylesheet" href="assets/css/staff.css?v=20261106-local-fonts1">
     <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261104-3">
 </head>
 <body class="staff-role-page role-page">

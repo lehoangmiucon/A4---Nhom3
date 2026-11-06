@@ -6,7 +6,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Thông báo kỹ thuật · Helpdesk</title>
-    <link rel="stylesheet" href="assets/css/staff.css?v=20261106-cleanup1">
+    <link rel="stylesheet" href="assets/css/staff.css?v=20261106-local-fonts1">
     <link rel="stylesheet" href="../admin/assets/css/notifications.css?v=20261104-grouped1">
     <link rel="stylesheet" href="assets/css/staff-notifications.css?v=20261104-redesign1">
     <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261104-3">

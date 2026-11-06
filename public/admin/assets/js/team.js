@@ -176,49 +176,62 @@
   const categoryFilter = document.querySelector('#team-category-filter');
   const filterReset = document.querySelector('#team-filter-reset');
   let filterRequest = 0;
+  let filterController = null;
+
+  function renderTeamRows(matchingIds) {
+    const visibleByRole = { admin: 0, staff: 0 };
+
+    document.querySelectorAll('[data-team-row]').forEach((row) => {
+      const detailUrl = row.querySelector('.team-detail-button')?.href;
+      const userId = row.dataset.userId || (detailUrl ? new URL(detailUrl).searchParams.get('user') : '');
+      const matches = !matchingIds || matchingIds.has(String(userId));
+      row.hidden = !matches;
+      if (matches) visibleByRole[row.dataset.teamRole] += 1;
+    });
+
+    document.querySelectorAll('.team-management,.team-technicians').forEach((section) => {
+      const tbody = section.querySelector('tbody');
+      const roleName = section.classList.contains('team-management') ? 'admin' : 'staff';
+      let emptyRow = tbody.querySelector('[data-team-filter-empty]');
+      if (!emptyRow) {
+        emptyRow = document.createElement('tr');
+        emptyRow.dataset.teamFilterEmpty = '';
+        emptyRow.innerHTML = '<td class="team-filter-empty" colspan="6">Không tìm thấy tài khoản phù hợp.</td>';
+        tbody.append(emptyRow);
+      }
+      emptyRow.hidden = visibleByRole[roleName] > 0 || (!matchingIds && (!roleFilter?.value || roleFilter.value === roleName));
+      const count = section.querySelector(`[data-team-count="${roleName}"]`);
+      if (count) count.textContent = `${visibleByRole[roleName]} tài khoản`;
+      section.hidden = Boolean(roleFilter?.value && roleFilter.value !== roleName);
+    });
+  }
 
   async function filterTeamRows() {
     const requestId = ++filterRequest;
+    filterController?.abort();
     const params = new URLSearchParams();
     if (teamSearch?.value.trim()) params.set('search', teamSearch.value.trim());
     if (roleFilter?.value) params.set('role', roleFilter.value);
     if (statusFilter?.value) params.set('status', statusFilter.value);
     if (categoryFilter?.value) params.set('category', categoryFilter.value);
+    // The server already rendered the complete list. Only active filters need the API.
+    if (!params.toString()) {
+      renderTeamRows(null);
+      return;
+    }
+    filterController = new AbortController();
     try {
       const response = await fetch(api(`/admin/team/filter?${params.toString()}`), {
         credentials: 'same-origin',
+        signal: filterController.signal,
         headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || 'Không thể lọc danh sách đội ngũ.');
       if (requestId !== filterRequest) return;
-      const matchingIds = new Set((result.data?.ids || []).map(String));
-      const visibleByRole = { admin: 0, staff: 0 };
-
-      document.querySelectorAll('[data-team-row]').forEach((row) => {
-        const detailUrl = row.querySelector('.team-detail-button')?.href;
-        const userId = row.dataset.userId || (detailUrl ? new URL(detailUrl).searchParams.get('user') : '');
-        const matches = matchingIds.has(String(userId));
-        row.hidden = !matches;
-        if (matches) visibleByRole[row.dataset.teamRole] += 1;
-      });
-
-      document.querySelectorAll('.team-management,.team-technicians').forEach((section) => {
-        const tbody = section.querySelector('tbody');
-        const roleName = section.classList.contains('team-management') ? 'admin' : 'staff';
-        let emptyRow = tbody.querySelector('[data-team-filter-empty]');
-        if (!emptyRow) {
-          emptyRow = document.createElement('tr');
-          emptyRow.dataset.teamFilterEmpty = '';
-          emptyRow.innerHTML = '<td class="team-filter-empty" colspan="6">Không tìm thấy tài khoản phù hợp.</td>';
-          tbody.append(emptyRow);
-        }
-        emptyRow.hidden = visibleByRole[roleName] > 0 || (!params.toString() && (!roleFilter?.value || roleFilter.value === roleName));
-        const count = section.querySelector(`[data-team-count="${roleName}"]`);
-        if (count) count.textContent = `${visibleByRole[roleName]} tài khoản`;
-        section.hidden = Boolean(roleFilter?.value && roleFilter.value !== roleName);
-      });
+      renderTeamRows(new Set((result.data?.ids || []).map(String)));
     } catch (error) {
+      if (error.name === 'AbortError') return;
       if (requestId === filterRequest) showFeedback(document.querySelector('#team-feedback'), error.message || 'Không thể kết nối máy chủ.');
     }
   }

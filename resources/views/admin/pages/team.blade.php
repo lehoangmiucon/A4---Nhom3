@@ -247,5 +247,5 @@
 @endsection
 
 @section('scripts')
-<script src="../assets/js/team.js?v=20261106-fast-actions1"></script>
+<script src="../assets/js/team.js?v=20261106-filter-cache2"></script>
 @endsection

@@ -215,7 +215,7 @@ Tổng quan · Helpdesk trường học
                                 @php
                                     $buildingAccents = ['#1686df', '#806ce0', '#159b83', '#d98b2b', '#d66a72', '#5273c7'];
                                     $openTicketCounts = $dashboardBuildings->mapWithKeys(fn ($building) => [
-                                        $building->id => $building->rooms->sum(fn ($room) => $room->tickets->where('status', '!=', 'closed')->count()),
+                                        $building->id => $building->rooms->sum('open_tickets_count'),
                                     ]);
                                     $maxOpenTickets = max(1, (int) $openTicketCounts->max());
                                 @endphp

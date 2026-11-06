@@ -6,7 +6,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Tài khoản của tôi · Helpdesk</title>
-    <link rel="stylesheet" href="assets/css/customer.css?v=20261103-responsive1">
+    <link rel="stylesheet" href="assets/css/customer.css?v=20261106-local-fonts1">
     <link rel="stylesheet" href="assets/css/account.css?v=20261103-responsive1">
     <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261105-staff-header2">
 </head>

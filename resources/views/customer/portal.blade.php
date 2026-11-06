@@ -7,9 +7,9 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="theme-color" content="#f3f7fb">
     <title>Gửi báo cáo sự cố · Helpdesk trường học</title>
-    <link rel="stylesheet" href="{{ url('/customer/assets/css/customer.css?v=20261104-dashboard2') }}">
+    <link rel="stylesheet" href="{{ url('/customer/assets/css/customer.css?v=20261106-local-fonts1') }}">
     <link rel="stylesheet" href="{{ url('/customer/assets/css/account.css?v=20261103-responsive1') }}">
-    <link rel="stylesheet" href="{{ url('/customer/assets/css/portal.css?v=20261106-cleanup1') }}">
+    <link rel="stylesheet" href="{{ url('/customer/assets/css/portal.css?v=20261106-local-fonts1') }}">
     <link rel="stylesheet" href="{{ url('/admin/assets/css/role-refresh.css?v=20261105-staff-header2') }}">
 </head>
 <body class="report-portal customer-role-page role-page">

@@ -4,10 +4,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script>window.HELPDESK_CONFIG={apiEnabled:true,appUrl:@json(url('/')),apiBase:"/api"};</script>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url('/shared/fontawesome/css/all.min.css?v=7.3.1') }}" crossorigin="anonymous">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Công việc kỹ thuật · Helpdesk</title>
-    <link rel="stylesheet" href="assets/css/staff.css?v=20261106-cleanup1">
+    <link rel="stylesheet" href="assets/css/staff.css?v=20261106-local-fonts1">
     <link rel="stylesheet" href="../admin/assets/css/ticket-status.css?v=20261104-status1">
     <link rel="stylesheet" href="assets/css/dashboard-refresh.css?v=20261106-period2">
     <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261104-3">

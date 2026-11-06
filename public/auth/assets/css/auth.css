@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+@import url('../../../shared/fonts/be-vietnam-pro.css?v=20261106-local1');
 :root{--ink:#18334e;--muted:#72859a;--blue:#1887d5;--blue-deep:#116fae;--navy:#102843;--line:#e4edf4;--wash:#f4f8fb;--green:#27835f;--amber:#a96c12;--purple:#6957bf;font-family:"Be Vietnam Pro",Arial,sans-serif;color:var(--ink);font-size:14px;font-synthesis:none;text-rendering:optimizeLegibility}
 *{box-sizing:border-box}
 body.role-page{min-height:100vh;margin:0;background:radial-gradient(ellipse at 11% 2%,#e7f4fc 0,transparent 34%),radial-gradient(ellipse at 94% 100%,#edf7f4 0,transparent 30%),var(--wash);color:#293f55;font-family:"Be Vietnam Pro",Arial,sans-serif;line-height:1.55}
