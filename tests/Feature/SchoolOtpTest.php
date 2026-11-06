@@ -129,7 +129,7 @@ class SchoolOtpTest extends TestCase
         $this->assertCount(1, Mail::mailer()->getSymfonyTransport()->messages());
     }
 
-    public function test_email_contains_html_plain_text_and_verification_link_without_code_in_url(): void
+    public function test_email_contains_autofill_link_and_no_fallback_paragraph(): void
     {
         $this->registerStudent()->assertCreated();
         $code = $this->latestCode();
@@ -139,7 +139,9 @@ class SchoolOtpTest extends TestCase
         $this->assertStringContainsString('10 phút', $html);
         $this->assertStringContainsString('Mở trang nhập OTP', $html);
         $this->assertStringContainsString('/auth/verify-otp?email=trong%40ut.edu.vn', $html);
-        $this->assertStringNotContainsString('otp='.$code, $html);
+        $this->assertStringContainsString('#otp='.$code, $html);
+        $this->assertStringContainsString('target="_blank"', $html);
+        $this->assertStringNotContainsString('Nếu nút không hoạt động', $html);
         $this->assertStringContainsString($code, $message->getTextBody());
         $this->assertStringContainsString('/auth/verify-otp?email=trong%40ut.edu.vn', $message->getTextBody());
         $this->assertStringNotContainsString('<script', $html);

@@ -39,6 +39,17 @@
     const email = new URLSearchParams(window.location.search).get('email');
     const emailInput = document.querySelector('input[name="email"]');
     if (email && emailInput && !emailInput.value) emailInput.value = email;
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    const otp = fragment.get('otp');
+    const otpInput = document.querySelector('input[name="otp"]');
+    if (otpInput && otp !== null) {
+      if (/^[0-9]{6}$/.test(otp)) otpInput.value = otp;
+      // Remove the code from the address bar after filling the form.
+      fragment.delete('otp');
+      const remaining = fragment.toString();
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + (remaining ? `#${remaining}` : ''));
+      if (otpInput.value) document.querySelector('button[type="submit"]')?.focus();
+    }
     const recipient = document.querySelector('[data-otp-recipient]');
     const updateRecipient = () => {
       if (recipient) recipient.textContent = emailInput?.value.trim() || 'email @ut.edu.vn của bạn';
@@ -51,6 +62,7 @@
     const form = event.target.closest('form[data-api-endpoint]');
     if (!form) return;
     event.preventDefault();
+    if (form.dataset.redirectPending === 'true') return;
     if (!form.reportValidity()) return;
     if (!apiEnabled) {
       showFeedback(form, 'API chưa được bật.', 'error');
@@ -100,6 +112,13 @@
         if (form.elements.email?.value && destination.pathname.endsWith('verify-otp')) {
           destination.searchParams.set('email', payload.email || form.elements.email.value.trim().toLowerCase());
         }
+        const delay = Number(form.dataset.successDelay || 0);
+        if (delay > 0) {
+          showFeedback(form, form.dataset.successMessage || payload.message || 'Đã lưu thành công.');
+          form.dataset.redirectPending = 'true';
+          form.querySelectorAll('button').forEach((control) => { control.disabled = true; });
+          await new Promise((resolve) => window.setTimeout(resolve, delay));
+        }
         window.location.assign(destination.href);
         return;
       }
@@ -113,7 +132,7 @@
       showFeedback(form, error.message || 'Không thể kết nối máy chủ.', 'error');
     } finally {
       if (button) {
-        button.disabled = false;
+        button.disabled = form.dataset.redirectPending === 'true';
         if (originalLabel) button.textContent = originalLabel;
       }
     }

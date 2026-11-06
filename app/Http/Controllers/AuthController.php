@@ -100,7 +100,7 @@ class AuthController extends Controller
         ]);
 
         try {
-            $verificationUrl = url('/auth/verify-otp').'?'.http_build_query(['email' => $email]);
+            $verificationUrl = url('/auth/verify-otp').'?'.http_build_query(['email' => $email]).'#'.http_build_query(['otp' => $code]);
             Mail::send(['html' => 'emails.verification-otp', 'text' => 'emails.verification-otp-text'], [
                 'code' => $code,
                 'email' => $email,
