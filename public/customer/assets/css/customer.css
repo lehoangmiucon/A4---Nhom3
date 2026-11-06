@@ -1,0 +1,314 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+:root{--ink:#18334e;--muted:#72859a;--blue:#1887d5;--blue-deep:#116fae;--navy:#102843;--line:#e4edf4;--wash:#f4f8fb;--green:#27835f;--amber:#a96c12;--purple:#6957bf;font-family:"Be Vietnam Pro",Arial,sans-serif;color:var(--ink);font-size:14px;font-synthesis:none;text-rendering:optimizeLegibility}
+*{box-sizing:border-box}
+body.role-page{min-height:100vh;margin:0;background:radial-gradient(ellipse at 11% 2%,#e7f4fc 0,transparent 34%),radial-gradient(ellipse at 94% 100%,#edf7f4 0,transparent 30%),var(--wash);color:#293f55;font-family:"Be Vietnam Pro",Arial,sans-serif;line-height:1.55}
+a{color:inherit}
+.role-shell{min-height:100vh}
+.role-topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:22px;padding:13px max(24px,calc((100% - 1160px)/2));border-bottom:1px solid #e5edf3;background:#ffffffed;backdrop-filter:blur(14px)}
+.role-brand{display:inline-flex;align-items:center;gap:11px;color:var(--ink);font-weight:800;text-decoration:none;font-size:19px;letter-spacing:-.5px}
+.role-brand-mark{position:relative;width:39px;height:39px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(145deg,#21a1e4,#126eb0);box-shadow:0 6px 14px #167bb83a;color:#fff;font-size:11px;letter-spacing:.3px}
+.role-brand-mark::after{position:absolute;right:-2px;bottom:-2px;width:10px;height:10px;border:2px solid #fff;border-radius:50%;background:#49c69a;content:""}
+.role-nav{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.role-nav a{padding:9px 13px;border-radius:9px;color:#667b90;text-decoration:none;font-size:12px;font-weight:600;transition:background .18s,color .18s,transform .18s}
+.role-nav a:hover,.role-nav a.current{background:#eaf5fc;color:#1278ba}
+.role-nav a:hover{transform:translateY(-1px)}
+.role-main{width:min(1160px,calc(100% - 48px));margin:35px auto 54px}
+.role-welcome{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:24px;margin:0 0 21px;padding:26px 30px;border:1px solid #deebf4;border-radius:17px;background:linear-gradient(112deg,#fff 0%,#f8fcff 67%,#edf8fb 100%);box-shadow:0 10px 30px #1739560a}
+.role-welcome::after{position:absolute;z-index:-1;right:8%;top:-86px;width:230px;height:230px;border:1px solid #d6eaf6;border-radius:50%;box-shadow:0 0 0 27px #e7f3fa80,0 0 0 55px #e7f3fa5c;content:""}
+.role-welcome>div,.role-welcome>.role-button{position:relative;z-index:1}
+.role-welcome h1{margin:5px 0 6px;color:var(--ink);font-size:clamp(25px,3.5vw,33px);line-height:1.26;letter-spacing:-.9px}
+.role-welcome p{max-width:650px;margin:0;color:var(--muted);font-size:13px;line-height:1.7}
+.role-kicker{color:#1682c4;font-size:10px;font-weight:800;letter-spacing:1.15px}
+.role-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:43px;padding:0 17px;border:1px solid #1682c4;border-radius:10px;background:linear-gradient(135deg,#208ed5,#1378bb);box-shadow:0 6px 15px #1683c52a;color:#fff;text-decoration:none;font:600 12px "Be Vietnam Pro",Arial,sans-serif;white-space:nowrap;cursor:pointer;transition:transform .18s,box-shadow .18s,background .18s}
+.role-button:hover{transform:translateY(-2px);box-shadow:0 9px 20px #1683c536;background:linear-gradient(135deg,#1684cc,#0e6fac)}
+.role-button.secondary{border-color:#dce7ef;background:#fff;box-shadow:0 3px 8px #233c5208;color:#45627d}
+.role-button.secondary:hover{border-color:#b9d8eb;background:#f8fcff;color:#176fa9}
+.role-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:17px}
+.role-stat,.role-card{border:1px solid #e1eaf1;border-radius:14px;background:#fff;box-shadow:0 6px 20px #193b5b09}
+.role-stat{position:relative;overflow:hidden;min-height:111px;padding:17px 18px}
+.role-stat::before{position:absolute;top:0;left:0;width:100%;height:3px;background:#268cc9;content:""}
+.role-stat:nth-child(2)::before{background:#806dd0}.role-stat:nth-child(3)::before{background:#37a987}.role-stat:nth-child(4)::before{background:#e3a443}
+.role-stat>span{display:block;color:#7b8da0;font-size:11px;font-weight:600}
+.role-stat>strong{display:block;margin-top:5px;color:var(--ink);font-size:27px;line-height:1.3;letter-spacing:-.5px}
+.role-stats .role-stat:has(a){min-height:153px;padding:21px 20px}
+.role-stats .role-stat:has(a)>span{font-size:11px;color:#71859a}
+.role-stats .role-stat:has(a)>strong{margin:8px 0 10px;font-size:17px;letter-spacing:-.2px}
+.role-stats .role-stat>a{display:inline-flex;align-items:center;gap:7px;color:#147dbb;font-size:11px;font-weight:700;text-decoration:none}
+.role-stats .role-stat>a::after{content:"↗";transition:transform .15s}
+.role-stats .role-stat>a:hover::after{transform:translate(2px,-2px)}
+.role-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.8fr);gap:16px;align-items:start}
+.role-card{padding:21px}
+.role-card h2{margin:0 0 15px;color:var(--ink);font-size:16px;letter-spacing:-.25px}
+.role-card p.card-lead{margin:14px 0 15px;color:var(--muted);font-size:12px;line-height:1.7}
+.role-table-wrap{overflow:auto}
+.role-table{width:100%;border-collapse:collapse;min-width:650px}
+.role-table th,.role-table td{padding:12px 10px;border-bottom:1px solid #edf1f5;text-align:left;font-size:12px}
+.role-table th{background:#f8fafc;color:#8191a3;font-size:9px;font-weight:800;letter-spacing:.65px}
+.role-table th:first-child{border-radius:7px 0 0 7px}.role-table th:last-child{border-radius:0 7px 7px 0}
+.role-table td{color:#4a6076}
+.role-table td strong{display:block;color:#244665;font-weight:700}
+.role-table tbody tr{transition:background .15s}
+.role-table tbody tr:hover{background:#f8fbfd}
+.role-table tr:last-child td{border-bottom:0}
+.role-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border:1px solid transparent;border-radius:99px;background:#edf6fd;color:#2678ae;font-size:10px;font-weight:700;white-space:nowrap}
+.role-badge::before{width:5px;height:5px;border-radius:50%;background:currentColor;content:""}
+.role-badge.wait{border-color:#f5e8cb;background:#fff8eb;color:var(--amber)}
+.role-badge.progress{border-color:#e5e0fb;background:#f5f2ff;color:var(--purple)}
+.role-badge.done{border-color:#d8eee3;background:#eff9f3;color:var(--green)}
+.role-list{display:grid;gap:0}
+.role-list-item{display:flex;align-items:center;gap:12px;padding:12px 7px;border-bottom:1px solid #edf1f5;text-decoration:none;transition:background .15s,border-radius .15s}
+.role-list-item:hover{border-radius:10px;background:#f7fbfe}
+.role-list-item:last-child{border:0;padding-bottom:0}
+.role-list-icon{width:37px;height:37px;display:grid;place-items:center;flex:none;border:1px solid #dcecf7;border-radius:11px;background:linear-gradient(145deg,#f2faff,#eaf5fc);color:#1682c4;font-size:11px;font-weight:800}
+.role-list-item strong,.role-list-item small{display:block}
+.role-list-item strong{color:#35536f;font-size:12px}
+.role-list-item small{margin-top:4px;color:var(--muted);font-size:10px;line-height:1.55}
+.role-list-item .role-badge{margin-left:auto}
+.role-footer{margin-top:28px;color:#8a9aaa;text-align:center;font-size:10px}
+.role-form{display:grid;gap:15px}
+.role-field{display:grid;gap:7px}
+.role-field label{color:#405870;font-size:11px;font-weight:700}
+.role-field input,.role-field select,.role-field textarea{width:100%;min-height:45px;padding:11px 13px;border:1px solid #dce5ed;border-radius:10px;background:#fff;color:#263d55;font:13px "Be Vietnam Pro",Arial,sans-serif;outline:none;transition:border .15s,box-shadow .15s}
+.role-field textarea{min-height:105px;resize:vertical}
+.role-field input:focus,.role-field select:focus,.role-field textarea:focus{border-color:#73b9e4;box-shadow:0 0 0 4px #1686df16}
+.role-form-note{color:#7c8b9d;font-size:10px;line-height:1.6}
+.role-empty{padding:28px;text-align:center;color:var(--muted)}
+.auth-page{min-height:100vh;display:grid;grid-template-columns:minmax(360px,.82fr) minmax(420px,1.18fr);background:#f8fbfd}
+.auth-aside{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(32px,5vw,66px) clamp(28px,7vw,94px);background:radial-gradient(ellipse at 88% 80%,#268dc064,transparent 36%),linear-gradient(150deg,#10243c,#174d72 65%,#116982);color:#fff}
+.auth-aside::before,.auth-aside::after{position:absolute;z-index:-1;border:1px solid #ffffff20;border-radius:50%;content:""}
+.auth-aside::before{right:-190px;bottom:-185px;width:500px;height:500px;box-shadow:0 0 0 34px #ffffff08,0 0 0 70px #ffffff06}
+.auth-aside::after{top:23%;right:12%;width:86px;height:86px;background:#ffffff08}
+.auth-aside .role-brand{color:#fff}
+.auth-aside .role-brand-mark{background:#ffffff21;box-shadow:none}
+.auth-aside h1{max-width:440px;margin:57px 0 15px;font-size:clamp(32px,4vw,49px);line-height:1.18;letter-spacing:-1.5px}
+.auth-aside p{max-width:420px;color:#d4e5f0;font-size:13px;line-height:1.85}
+.auth-aside-foot{color:#a9c1d5;font-size:10px;letter-spacing:.35px}
+.auth-content{display:grid;place-items:center;padding:40px 26px}
+.auth-card{width:min(430px,100%);padding:38px;border:1px solid #e7eef4;border-radius:18px;background:#fff;box-shadow:0 18px 55px #193b5b0d}
+.auth-card h2{margin:0 0 6px;color:var(--ink);font-size:26px;letter-spacing:-.7px}
+.auth-card>p{margin:0 0 24px;color:var(--muted);font-size:12px;line-height:1.65}
+.auth-card .role-button{width:100%;margin-top:5px}
+.auth-switch{margin-top:17px;color:var(--muted);text-align:center;font-size:11px;line-height:1.7}
+.auth-switch a,.auth-back{color:#147fc6;font-weight:700;text-decoration:none}
+.auth-switch a:hover,.auth-back:hover{text-decoration:underline}
+.auth-back{display:inline-block;margin-top:18px;font-size:11px}
+.auth-role-note{padding:12px 13px;border:1px solid #deedf7;border-radius:10px;background:#f4faff;color:#607b94;font-size:10px;line-height:1.65}
+.auth-error{padding:10px 12px;border:1px solid #f2d6d3;border-radius:9px;background:#fff7f6;color:#a84b43;font-size:12px}
+@media(max-width:900px){.auth-page{grid-template-columns:1fr}.auth-aside{min-height:310px;padding:27px 30px}.auth-aside h1{margin:37px 0 8px;font-size:34px}.auth-aside-foot{display:none}.auth-content{padding:30px 20px}.auth-card{width:min(500px,100%)}}
+@media(max-width:850px){.role-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.role-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.role-topbar{align-items:flex-start;flex-direction:column;gap:10px;padding:12px 17px}.role-nav{width:100%;gap:2px}.role-nav a{padding:8px 10px;font-size:11px}.role-main{width:calc(100% - 26px);margin:17px auto 34px}.role-welcome{align-items:flex-start;flex-direction:column;gap:16px;margin-bottom:14px;padding:20px 18px}.role-welcome h1{font-size:25px}.role-welcome p{font-size:12px}.role-welcome::after{right:-85px;top:-56px;width:170px;height:170px}.role-stats{gap:9px;margin-bottom:13px}.role-stat{min-height:98px;padding:13px}.role-stat>strong{font-size:23px}.role-stats .role-stat:has(a){min-height:136px;padding:16px 14px}.role-stats .role-stat:has(a)>strong{font-size:15px}.role-card{padding:15px}.role-table{min-width:600px}.role-table th,.role-table td{padding:10px 8px;font-size:11px}.role-footer{margin-top:21px}.auth-content{padding:20px 13px}.auth-card{padding:25px 20px}.auth-aside{min-height:240px;padding:22px}.auth-aside h1{font-size:29px}.auth-card h2{font-size:23px}}
+.role-account{display:flex;min-width:0;align-items:center;gap:10px;padding:5px 6px 5px 9px;border:1px solid #e2ebf2;border-radius:12px;background:#fff}
+.role-account-icon{display:grid;width:34px;height:34px;flex:none;place-items:center;border-radius:10px;background:#eaf5fc;color:#167fc5;font-size:11px;font-weight:800}
+.role-account-details{display:grid;min-width:0;gap:1px}
+.role-account-details strong{max-width:145px;overflow:hidden;color:#304b66;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+.role-account-details small{max-width:170px;overflow:hidden;color:#8493a2;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+.role-account form{margin:0}
+.role-logout{min-height:34px;padding:0 11px;border:1px solid #e2eaf1;border-radius:8px;background:#f8fafc;color:#5e7185;font:600 11px 'Be Vietnam Pro',Arial,sans-serif;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
+.role-logout:hover{border-color:#f2c7c2;background:#fff5f4;color:#c24d42}
+@media(max-width:900px){.role-topbar{gap:12px}.role-account-details small{display:none}.role-account-details strong{max-width:110px}}
+@media(max-width:600px){.role-topbar{align-items:stretch}.role-account{align-self:flex-end;max-width:100%}.role-account-details small{display:block}.role-account-details strong{max-width:180px}}
+.role-topbar .role-account{display:flex;align-items:center;gap:10px;padding:5px 7px 5px 10px;border:1px solid #e2ebf2;border-radius:12px;background:#fff}
+.role-topbar .role-account-details{display:flex;flex-direction:column;gap:1px;min-width:0;line-height:1.35}
+.role-topbar .role-account-details strong,.role-topbar .role-account-details small{display:block;margin:0}
+.role-topbar .role-account form{display:block;margin:0}
+.role-topbar .role-logout{display:inline-flex;min-height:34px;align-items:center;justify-content:center;padding:0 11px;border:1px solid #e2eaf1;border-radius:8px;background:#f8fafc;color:#5e7185;font:600 11px 'Be Vietnam Pro',Arial,sans-serif;cursor:pointer;white-space:nowrap}
+.role-topbar .role-logout:hover{border-color:#f2c7c2;background:#fff5f4;color:#c24d42}
+
+/* Student ticket detail: a clear summary, progress path, evidence and ownership. */
+.ticket-detail-main{margin-top:28px}
+.ticket-detail-heading{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:16px;padding:24px 27px;border:1px solid #dce9f2;border-radius:17px;background:linear-gradient(112deg,#fff 0%,#f7fbff 68%,#edf8fb 100%);box-shadow:0 10px 30px #1739560a}
+.ticket-detail-heading::after{position:absolute;z-index:-1;top:-93px;right:8%;width:225px;height:225px;border:1px solid #d7eaf5;border-radius:50%;box-shadow:0 0 0 27px #e7f3fa80,0 0 0 54px #e7f3fa55;content:""}
+.ticket-heading-copy{min-width:0}
+.ticket-number-line{display:flex;align-items:center;gap:8px;margin-top:8px;color:#7b8da0;font-size:11px}
+.ticket-number-line strong{color:#147dbc;font-size:12px;letter-spacing:.25px}
+.ticket-detail-heading h1{margin:5px 0 5px;color:#18334e;font-size:clamp(25px,3vw,32px);line-height:1.25;letter-spacing:-.8px;overflow-wrap:anywhere}
+.ticket-detail-heading p{margin:0;color:#72859a;font-size:12px;line-height:1.6}
+.ticket-heading-actions{display:grid;justify-items:end;gap:12px;flex:none}
+.ticket-heading-actions .role-badge{padding:7px 11px;font-size:11px}
+.ticket-progress-card,.ticket-information-card,.ticket-history-card,.ticket-assignment-card,.ticket-help-card{border-radius:15px;box-shadow:0 8px 24px #193b5b09}
+.ticket-progress-card{margin-bottom:16px;padding:20px 23px}
+.ticket-section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
+.ticket-section-heading h2{margin:3px 0 0;color:#18334e;font-size:17px}
+.ticket-updated,.ticket-history-count{color:#8292a2;font-size:11px}
+.ticket-progress-steps{position:relative;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:20px 0 3px;padding:0;list-style:none}
+.ticket-progress-steps::before{position:absolute;top:15px;right:8%;left:8%;height:2px;background:#e7edf3;content:""}
+.ticket-progress-steps li{position:relative;z-index:1;display:grid;justify-items:center;gap:8px;color:#8a99a8;text-align:center}
+.ticket-step-dot{display:grid;width:31px;height:31px;place-items:center;border:1px solid #dce6ee;border-radius:50%;background:#fff;color:#8292a2;font-size:11px;font-weight:700}
+.ticket-step-label{font-size:11px;font-weight:600}
+.ticket-progress-steps li.is-complete .ticket-step-dot{border-color:#bde5d3;background:#eaf8f1;color:#21815c}
+.ticket-progress-steps li.is-current{color:#147dbc}
+.ticket-progress-steps li.is-current .ticket-step-dot{border-color:#1686df;background:#1686df;box-shadow:0 0 0 4px #1686df1a;color:#fff}
+.ticket-reopened-note{margin:0 0 12px;padding:10px 12px;border:1px solid #f1dfbd;border-radius:9px;background:#fff9ed;color:#8f641b;font-size:12px}
+.ticket-detail-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.8fr);gap:16px;align-items:start}
+.ticket-detail-main-column,.ticket-detail-side-column{display:grid;gap:16px;min-width:0}
+.ticket-information-card,.ticket-history-card,.ticket-assignment-card,.ticket-help-card{padding:21px}
+.ticket-information-card .ticket-section-heading{margin-bottom:7px}
+.ticket-description{margin:0 0 18px;padding:15px 16px;border:1px solid #e7eef4;border-radius:11px;background:#f9fbfd;color:#405a73;font-size:14px;line-height:1.8;white-space:pre-line;overflow-wrap:anywhere}
+.ticket-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px;margin:0}
+.ticket-facts>div{min-width:0;padding:13px 2px;border-bottom:1px solid #edf1f5}
+.ticket-facts dt{margin-bottom:5px;color:#8292a2;font-size:11px}
+.ticket-facts dd{display:flex;align-items:center;gap:8px;margin:0;color:#35516d;font-size:12px;font-weight:650;overflow-wrap:anywhere}
+.ticket-facts dd>i{width:10px;height:10px;flex:none;border-radius:50%;background:var(--category-color);box-shadow:0 0 0 4px color-mix(in srgb,var(--category-color) 14%,white)}
+.ticket-priority{display:inline-flex;padding:4px 9px;border-radius:99px;background:#eff4f8;color:#566b7f;font-size:10px}
+.ticket-priority.priority-high{background:#fff4e2;color:#9b6716}.ticket-priority.priority-urgent{background:#fff0ef;color:#b64b42}.ticket-priority.priority-low{background:#eef8f3;color:#287b5d}
+.ticket-attachments{margin-top:18px}
+.ticket-attachments h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;color:#34516e;font-size:13px}
+.ticket-attachments h3 span{display:grid;min-width:22px;height:22px;place-items:center;padding:0 5px;border-radius:99px;background:#edf5fb;color:#42789e;font-size:10px}
+.ticket-attachment-grid{display:flex;flex-wrap:wrap;gap:10px}
+.ticket-attachment-grid a{display:block;width:94px;height:82px;overflow:hidden;border:1px solid #e1eaf1;border-radius:9px;background:#f7fafc}
+.ticket-attachment-grid img{width:100%;height:100%;object-fit:cover;transition:transform .2s}
+.ticket-attachment-grid a:hover img{transform:scale(1.05)}
+.ticket-history-card .ticket-section-heading{margin-bottom:8px}
+.ticket-timeline{display:grid;gap:0;margin:0;padding:3px 0 0;list-style:none}
+.ticket-timeline li{position:relative;display:grid;grid-template-columns:26px minmax(0,1fr);gap:11px;padding:7px 0 17px}
+.ticket-timeline li:not(:last-child)::before{position:absolute;top:30px;bottom:-2px;left:12px;width:1px;background:#dfeaf1;content:""}
+.ticket-timeline-marker{position:relative;z-index:1;display:grid;width:25px;height:25px;place-items:center;border:1px solid #cdebdc;border-radius:50%;background:#f0faf4;color:#25835e;font-size:11px;font-weight:700}
+.ticket-timeline-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ticket-timeline-title strong{color:#34516e;font-size:12px}
+.ticket-timeline-title time,.ticket-timeline li small{color:#8796a5;font-size:10px;white-space:nowrap}
+.ticket-timeline li p{margin:4px 0 2px;color:#687d91;font-size:11px;line-height:1.65;overflow-wrap:anywhere}
+.ticket-timeline-empty{color:#708397}
+.ticket-assignment-card .role-kicker,.ticket-help-card .role-kicker{display:block;margin-bottom:14px}
+.ticket-assignee{display:flex;align-items:center;gap:11px;padding:12px;border:1px solid #e5edf3;border-radius:11px;background:#f9fbfd}
+.ticket-assignee-avatar{display:grid;width:40px;height:40px;flex:none;place-items:center;border-radius:12px;background:#eaf5fc;color:#147dbc;font-size:10px;font-weight:800}
+.ticket-assignee strong,.ticket-assignee small{display:block}
+.ticket-assignee strong{color:#34516e;font-size:12px}
+.ticket-assignee small{margin-top:3px;color:#8292a2;font-size:10px}
+.ticket-schedule-info{display:grid;gap:4px;margin-top:12px;padding:12px 2px 1px;border-top:1px solid #edf1f5}
+.ticket-schedule-info span{color:#8292a2;font-size:10px}
+.ticket-schedule-info strong{color:#34516e;font-size:12px}
+.ticket-waiting-assignment{display:grid;justify-items:start;gap:7px;padding:15px;border:1px solid #f1e5cb;border-radius:11px;background:#fffaf0}
+.ticket-waiting-assignment>span{display:grid;width:31px;height:31px;place-items:center;border-radius:9px;background:#fff0d5;color:#a96c12;font-size:19px;font-weight:700}
+.ticket-waiting-assignment strong{color:#715624;font-size:12px}
+.ticket-waiting-assignment small{color:#887957;font-size:10px;line-height:1.6}
+.ticket-help-card{display:grid;justify-items:start}
+.ticket-help-icon{display:grid;width:36px;height:36px;place-items:center;border-radius:11px;background:#edf6fc;color:#1682c4;font-size:18px;font-weight:700}
+.ticket-help-card h2{margin:12px 0 3px}
+.ticket-help-card p{margin:0 0 14px;color:#74869a;font-size:11px;line-height:1.7}
+.ticket-help-card .role-button{width:100%;margin-top:8px}
+.ticket-detail-page .role-footer{padding:2px 0 12px}
+@media(max-width:850px){.ticket-detail-layout{grid-template-columns:1fr}.ticket-detail-side-column{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.ticket-detail-main{margin-top:17px}.ticket-detail-heading{align-items:flex-start;flex-direction:column;padding:19px 17px}.ticket-heading-actions{width:100%;grid-template-columns:1fr auto;align-items:center;justify-items:start}.ticket-heading-actions .role-button{min-height:38px;padding:0 10px;font-size:11px}.ticket-progress-card,.ticket-information-card,.ticket-history-card,.ticket-assignment-card,.ticket-help-card{padding:16px}.ticket-progress-card{overflow:hidden}.ticket-section-heading{align-items:flex-start}.ticket-progress-steps{gap:5px;margin-top:16px}.ticket-progress-steps::before{right:10%;left:10%}.ticket-step-dot{width:28px;height:28px}.ticket-step-label{font-size:9px;line-height:1.35}.ticket-updated{max-width:110px;text-align:right;font-size:9px}.ticket-detail-side-column{grid-template-columns:1fr}.ticket-facts{grid-template-columns:1fr}.ticket-timeline-title{align-items:flex-start;flex-direction:column;gap:2px}.ticket-timeline li{padding-bottom:14px}}
+.api-feedback{padding:10px 12px;border:1px solid #dbe8f1;border-radius:9px;background:#f5fafe;color:#506a82;font-size:11px;line-height:1.55}.api-feedback[data-state=success]{border-color:#d8eee3;background:#eff9f3;color:#267754}.api-feedback[data-state=error]{border-color:#f1d3d0;background:#fff5f3;color:#a34840}.api-feedback[hidden]{display:none!important}
+
+:root{--blue:#157fc5;--blue-deep:#0f6aa8;--green:#25835e}.role-stats .role-stat{transition:transform .18s,box-shadow .18s}.role-stats .role-stat:hover{transform:translateY(-2px);box-shadow:0 12px 26px #17395615}
+
+.api-feedback[data-state=info]{border-color:#dbe8f1;background:#f5fafe;color:#506a82}
+
+/* Customer dashboard and ticket list */
+.role-main.student-dashboard,.role-main.student-tickets{margin-top:32px}
+.student-dashboard .role-welcome{min-height:190px;padding:32px 36px;border-color:#d4e7f4;background:linear-gradient(112deg,#fff 0%,#f4faff 62%,#e8f5fd 100%);box-shadow:0 13px 34px #17466b10}
+.student-dashboard .role-welcome::after{right:9%;top:-92px;width:245px;height:245px;border-color:#c8e2f2;box-shadow:0 0 0 30px #d7ebf766,0 0 0 65px #e2f1fa80}
+.student-dashboard .role-kicker,.student-tickets .role-kicker{display:inline-flex;align-items:center;gap:8px}
+.student-dashboard .role-kicker::before,.student-tickets .role-kicker::before{width:7px;height:7px;border-radius:50%;background:#34ad8a;box-shadow:0 0 0 4px #34ad8a1c;content:""}
+.student-dashboard .role-welcome h1{font-size:clamp(29px,3.5vw,38px);letter-spacing:-1.15px}
+.student-dashboard .role-welcome p{font-size:13px}
+.student-dashboard .role-welcome .role-button{min-height:47px;padding:0 19px}
+.student-dashboard .role-stats{gap:14px;margin:0 0 19px}
+.student-dashboard .role-stat{min-height:126px;padding:18px 20px;border-color:#e1eaf1;box-shadow:0 7px 22px #193b5b0a;transition:transform .18s,box-shadow .18s}
+.student-dashboard .role-stat:hover{transform:translateY(-3px);box-shadow:0 13px 26px #193b5b14}
+.student-dashboard .role-stat::before{width:4px;height:100%;border-radius:4px 0 0 4px;background:#328ed0}
+.student-dashboard .role-stat:nth-child(2)::before{background:#8975d9}
+.student-dashboard .role-stat:nth-child(3)::before{background:#38a887}
+.student-dashboard .role-stat:nth-child(4)::before{background:#e4a442}
+.student-dashboard .role-stat>span{font-size:11px}
+.student-dashboard .role-stat>strong{margin-top:12px;font-size:31px;letter-spacing:-.9px}
+.student-dashboard .role-grid{grid-template-columns:minmax(0,1.7fr) minmax(280px,.85fr);gap:18px}
+.student-dashboard .role-card,.student-tickets .role-card{border-color:#e0e9f0;border-radius:16px;box-shadow:0 8px 25px #1739560a}
+.student-dashboard .role-card h2,.student-tickets .role-card h2{padding-bottom:13px;border-bottom:1px solid #edf2f6;font-size:16px}
+.student-dashboard .role-table,.student-tickets .role-table{min-width:700px}
+.student-dashboard .role-table th,.student-tickets .role-table th{padding:12px 11px;background:#f7fafc}
+.student-dashboard .role-table td,.student-tickets .role-table td{padding:14px 11px;font-size:12px}
+.student-dashboard .role-table tbody tr:hover,.student-tickets .role-table tbody tr:hover{background:#f4faff}
+.student-dashboard .role-table tbody td:first-child strong{color:#147dbb;font-size:12px}
+.student-dashboard .role-list-item{padding:14px 9px}
+.student-dashboard .role-list-icon{width:39px;height:39px;border-radius:12px;background:linear-gradient(145deg,#edf8ff,#e3f2fb);font-size:14px}
+.student-dashboard .role-grid>aside .role-button{min-height:44px}
+.student-dashboard .role-grid>aside .role-button.secondary{margin-top:9px!important}
+.student-tickets .role-welcome{margin-bottom:18px}
+.student-tickets .role-card{padding:20px 22px}
+.student-tickets .role-table{min-width:780px}
+.student-tickets .role-table td:first-child a{color:#117bbd;font-weight:700;text-decoration:none}
+.student-tickets .role-table td:first-child a:hover{text-decoration:underline}
+.student-tickets .role-table td:nth-child(2){color:#304b65;font-weight:600}
+.student-tickets .role-table td:last-child{color:#71859a;font-size:11px}
+.student-tickets .card-lead{margin:15px 0 0!important;padding-top:13px;border-top:1px solid #edf2f6}
+.student-tickets .api-feedback:not([hidden]){margin-bottom:12px}
+@media(max-width:850px){.student-dashboard .role-welcome{min-height:170px}.student-dashboard .role-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.role-main.student-dashboard,.role-main.student-tickets{margin-top:18px}.student-dashboard .role-welcome{min-height:0;padding:22px 19px}.student-dashboard .role-welcome h1{font-size:27px}.student-dashboard .role-welcome::after{right:-105px;top:-52px;width:180px;height:180px}.student-dashboard .role-stats{gap:9px}.student-dashboard .role-stat{min-height:105px;padding:14px 14px 14px 17px}.student-dashboard .role-stat>strong{margin-top:8px;font-size:26px}.student-dashboard .role-card,.student-tickets .role-card{padding:15px}.student-dashboard .role-table,.student-tickets .role-table{min-width:700px}.student-tickets .role-welcome{margin-bottom:13px}}
+
+/* Small-screen layout: keep navigation usable and contain wide tables/cards. */
+@media(max-width:760px){
+    html,body.role-page{max-width:100%;overflow-x:clip}
+    .role-shell,.role-main,.role-grid,.ticket-detail-layout,.account-layout{min-width:0}
+    .role-main{width:calc(100% - 32px)}
+    .role-grid,.ticket-detail-layout{grid-template-columns:minmax(0,1fr)}
+    .ticket-detail-side-column{grid-template-columns:minmax(0,1fr)}
+    .role-table-wrap{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+    .role-card,.role-welcome{min-width:0}
+}
+@media(max-width:600px){
+    .role-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 10px;padding:10px 12px}
+    .role-brand{grid-column:1;grid-row:1;min-width:0}
+    .role-brand-image{width:145px;height:46px;max-width:100%}
+    .role-nav{grid-column:1/-1;grid-row:2;display:flex;width:100%;flex-wrap:nowrap;gap:4px;overflow-x:auto;padding:6px 0 2px;border-top:1px solid #e8eef4;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .role-nav::-webkit-scrollbar{display:none}
+    .role-nav a{flex:0 0 auto;white-space:nowrap;padding:8px 10px;font-size:12px}
+    .role-main{width:calc(100% - 24px);margin:15px auto 28px}
+    .role-grid,.ticket-detail-layout,.ticket-detail-side-column{grid-template-columns:minmax(0,1fr)}
+    .role-welcome>.role-button,.ticket-heading-actions .role-button{width:100%;justify-content:center;white-space:normal;text-align:center}
+    .role-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .role-table{min-width:640px}
+    .ticket-progress-steps{gap:3px}
+    .ticket-step-label{font-size:9px;overflow-wrap:anywhere}
+    .ticket-step-dot{width:25px;height:25px}
+    .ticket-heading-actions{grid-template-columns:minmax(0,1fr)}
+    .ticket-updated{max-width:none;text-align:left}
+    .ticket-facts,.account-facts{grid-template-columns:minmax(0,1fr)}
+    .role-form input,.role-form select,.role-form textarea{max-width:100%;font-size:14px}
+    input,select,textarea{max-width:100%;font-size:16px}
+}
+@media(max-width:380px){
+    .role-main{width:calc(100% - 18px)}
+    .role-topbar{padding-right:9px;padding-left:9px}
+    .role-brand-image{width:128px}
+    .role-stats{gap:7px}
+    .role-stat{padding:11px}
+    .role-stat>span{font-size:10px}
+    .role-account-details{display:none!important}
+}
+
+.role-brand-image{width:190px;height:58px;max-width:55vw;flex:none;object-fit:contain;filter:none}
+
+/* Compact student page titles so every screen uses the same two-line hierarchy. */
+.role-main .role-welcome{min-height:0;padding-top:23px;padding-bottom:23px}
+.role-main .role-welcome .role-kicker{display:none}
+.role-main .role-welcome h1{margin:0 0 5px;font-size:clamp(24px,3vw,31px);line-height:1.22}
+.role-main .role-welcome p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;line-height:1.45}
+@media(max-width:600px){.role-main .role-welcome{padding-top:18px;padding-bottom:18px}.role-main .role-welcome h1{font-size:24px}.role-main .role-welcome p{-webkit-line-clamp:2}}
+
+.ticket-attachment-grid a.js-image-preview{cursor:zoom-in}
+.image-lightbox{position:fixed;inset:0;z-index:3000;display:grid;place-items:center;padding:28px;background:rgba(9,24,43,.82);backdrop-filter:blur(5px);cursor:zoom-out}
+.image-lightbox__image{display:block;max-width:min(92vw,1400px);max-height:88vh;object-fit:contain;border:1px solid rgba(255,255,255,.45);border-radius:12px;background:#fff;box-shadow:0 24px 80px rgba(0,0,0,.38);cursor:default}
+.image-lightbox__close{position:absolute;top:18px;right:22px;display:grid;width:44px;height:44px;place-items:center;border:1px solid rgba(255,255,255,.55);border-radius:50%;background:#fff;color:#183653;font-size:28px;line-height:1;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+@media(max-width:600px){.image-lightbox{padding:14px}.image-lightbox__image{max-width:96vw;max-height:82vh;border-radius:8px}.image-lightbox__close{top:10px;right:10px;width:40px;height:40px}}
+
+/* Five-step ticket progress shared visually with the staff workspace. */
+.ticket-progress-heading{align-items:center;margin-bottom:16px}
+.ticket-progress-heading .role-kicker{display:block;margin-bottom:3px;font-size:11px;letter-spacing:.8px}
+.ticket-progress-heading p{margin:0;color:#8393a3;font-size:11px;line-height:1.5}
+.ticket-progress-heading>.role-badge{flex:none;font-size:11px}
+.ticket-progress-steps{align-items:start;gap:8px;margin:22px 0 0;padding:0}
+.ticket-progress-steps::before{display:none}
+.ticket-progress-steps li{grid-template-rows:46px auto auto 22px;justify-items:center;align-content:start;gap:5px;padding:0 5px;text-align:center}
+.ticket-progress-steps li:not(:last-child)::after{position:absolute;z-index:-1;top:22px;left:calc(50% + 25px);right:calc(-50% + 25px);height:2px;background:#dce6ed;content:""}
+.ticket-progress-steps li.is-complete:not(:last-child)::after{background:#e6c579}
+.ticket-step-dot{width:42px;height:42px;border:1px solid #dce7ed;background:#fff;color:#92a1af;font-size:16px;box-shadow:0 0 0 5px #fff}
+.ticket-progress-steps li.is-complete .ticket-step-dot{border-color:#f2d590;background:#fff7e6;color:#a46a08}
+.ticket-progress-steps li.is-current .ticket-step-dot{border-color:#b9dcff;background:#eaf4ff;color:#1479c9;box-shadow:0 0 0 5px #f5faff}
+.ticket-step-label{display:block;max-width:100%;color:#708297;font-size:12px;font-weight:700;line-height:1.35}
+.ticket-progress-steps li.is-complete .ticket-step-label{color:#9b680e}
+.ticket-progress-steps li.is-current{color:#1479c9}
+.ticket-step-description{display:block;max-width:190px;color:#8393a3;font-size:10px;font-weight:400;line-height:1.4}
+.ticket-step-current{display:inline-flex;align-items:center;justify-content:center;min-height:20px;padding:2px 9px;border-radius:999px;background:#e9f3ff;color:#1479c9;font-size:10px;font-weight:700}
+@media(max-width:680px){.ticket-progress-heading{align-items:flex-start}.ticket-progress-heading>.role-badge{font-size:10px}.ticket-progress-steps{grid-template-columns:1fr;gap:0;margin-top:15px}.ticket-progress-steps li{grid-template-columns:42px minmax(0,1fr);grid-template-rows:auto auto auto;justify-items:start;align-items:center;gap:3px 12px;min-height:74px;padding:0;text-align:left}.ticket-step-dot{grid-column:1;grid-row:1/4;width:38px;height:38px}.ticket-step-label{grid-column:2;grid-row:1;font-size:12px}.ticket-step-description{grid-column:2;grid-row:2;max-width:none;font-size:11px}.ticket-step-current{grid-column:2;grid-row:3;min-height:18px;font-size:9px}.ticket-progress-steps li:not(:last-child)::after{top:42px;bottom:0;left:18px;right:auto;width:2px;height:auto}}

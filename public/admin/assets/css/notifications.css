@@ -1,0 +1,12 @@
+.notification-group{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:12px;margin:0 0 8px;padding:12px 13px!important;border:1px solid #e7eef5!important;border-radius:12px;color:inherit;text-decoration:none;transition:background .16s ease,border-color .16s ease,box-shadow .16s ease}
+.notification-group:last-child{margin-bottom:0}
+.notification-group:hover{border-color:#c8dfef!important;background:#f8fbfe;box-shadow:0 4px 12px rgba(28,74,112,.06)}
+.notification-group.is-unread{border-color:#cfe4f5!important;background:#f2f8fd}
+.notification-group-copy{display:block;min-width:0}
+.notification-group-copy strong,.notification-group-copy small{display:block}
+.notification-group-copy strong{color:#294966;font-size:13px;line-height:1.4}
+
+.notification-group-copy small{margin-top:4px;color:#70849a;font-size:11px;line-height:1.5}
+.notification-group-count{padding:5px 9px;border:1px solid #e1eaf2;border-radius:999px;background:#fff;color:#71849a;font-size:10px;font-weight:700;white-space:nowrap}
+.notification-group.is-unread .notification-group-count{border-color:#c8e0f3;background:#e8f4fd;color:#176fa8}
+@media(max-width:620px){.notification-group{grid-template-columns:36px minmax(0,1fr);gap:9px;padding:11px!important}.notification-group-count{grid-column:2;justify-self:start}.notification-group-copy strong{font-size:12px}.notification-group-copy small{font-size:10px}}

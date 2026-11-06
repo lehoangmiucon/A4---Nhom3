@@ -1,0 +1,91 @@
+/* Dashboard refresh: presentation only; existing routes and ticket workflow stay unchanged. */
+.customer-dashboard-page{--dash-navy:#123b70;--dash-blue:#1769d2;--dash-line:#e2eaf3}
+.customer-dashboard-page .role-topbar{min-height:72px;padding-top:10px;padding-bottom:10px;background:#123b70;border:0;box-shadow:0 5px 18px #0c2e5924}
+.customer-dashboard-page .role-brand,.customer-dashboard-page .role-nav a{color:#eaf3ff}
+.customer-dashboard-page .role-nav a:hover,.customer-dashboard-page .role-nav a.current{background:#2364b4;color:#fff}
+.customer-dashboard-page .role-account{border-color:#ffffff28;background:#ffffff12}
+.customer-dashboard-page .role-account-profile:hover,.customer-dashboard-page .role-account-profile.is-current{background:#ffffff12}
+.customer-dashboard-page .role-account-details strong{color:#fff}
+.customer-dashboard-page .role-account-details small{color:#c8d9ed}
+.customer-dashboard-page .role-account-icon{background:#e4f0ff;color:#1769d2}
+.customer-dashboard-page .role-logout{border-color:#ffffff35;background:#ffffff12;color:#fff}
+.customer-dashboard-page .role-logout:hover{border-color:#ffc9c4;background:#fff5f4;color:#bd4137}
+.customer-dashboard-page .role-main.student-dashboard{width:min(1240px,calc(100% - 48px));margin:30px auto 48px}
+.student-hero{position:relative;isolation:isolate;overflow:hidden;display:flex;min-height:210px;align-items:center;justify-content:space-between;gap:24px;margin-bottom:22px;padding:30px 34px;border:1px solid #d5e4f2;border-radius:20px;background:linear-gradient(112deg,#fff 0%,#f5faff 58%,#e7f3ff 100%);box-shadow:0 12px 32px #183d660d}
+.student-hero-copy{position:relative;z-index:1;max-width:590px}
+.student-hero .role-kicker,.staff-hero .role-kicker{font-size:11px;letter-spacing:.9px}
+.student-hero h1,.staff-hero h1{margin:8px 0;color:#15385f;font-size:clamp(29px,3vw,38px);line-height:1.2;letter-spacing:-1px}
+.student-hero p,.staff-hero p{margin:0;color:#617994;font-size:16px;line-height:1.65}
+.student-campus-art{position:absolute;z-index:0;right:16%;bottom:0;width:250px;height:132px;opacity:.82;pointer-events:none}
+.student-hero-cta{margin-left:auto}
+.student-dashboard .role-stats{gap:14px;margin-bottom:22px}
+.student-dashboard .role-stat,.staff-dashboard .role-stat{min-height:118px;padding:18px 19px 16px 22px;border-color:#e0e9f2;border-radius:15px;box-shadow:0 7px 22px #193b5b09}
+.student-dashboard .role-stat::before,.staff-dashboard .role-stat::before{width:5px;height:100%;border-radius:5px 0 0 5px}
+.student-dashboard .role-stat>span,.staff-dashboard .role-stat>span{font-size:13px;color:#617994}
+.student-dashboard .role-stat>strong,.staff-dashboard .role-stat>strong{margin-top:5px;font-size:30px}
+.student-dashboard .role-stat>small{display:block;margin-top:3px;color:#8596a9;font-size:11px}
+.stat-blue::before{background:#2476df!important}.stat-violet::before{background:#8057d8!important}.stat-teal::before{background:#0c9692!important}.stat-green::before{background:#28a76e!important}.stat-amber::before{background:#e19a21!important}
+.student-report-options{display:flex;align-items:center;gap:17px;margin-bottom:22px;padding:22px 24px;border:1px solid #dce7f2;border-radius:18px;background:linear-gradient(110deg,#fff 0%,#f8fbff 100%);box-shadow:0 8px 24px #1736530a}
+.student-report-heading-icon{display:grid;width:46px;height:46px;place-items:center;flex:none;border-radius:13px;background:#eaf3ff;color:#1769d2}
+.student-report-heading-icon svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.student-report-copy{min-width:0;flex:1}
+.student-report-copy .role-kicker{font-size:10px}
+.student-report-copy h2{margin:3px 0;color:#193a60;font-size:19px}
+.student-report-copy p{max-width:700px;margin:0;color:#71849a;font-size:13px;line-height:1.55}
+.student-report-copy small{display:block;margin-top:6px;color:#8293a7;font-size:11px}
+.student-report-cta{min-width:190px}
+.student-recent-card{padding:23px;border-color:#e0e9f2;border-radius:17px;box-shadow:0 7px 22px #193b5b09}
+.student-section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:15px}
+.student-section-heading .role-kicker{font-size:10px}
+.student-section-heading h2{margin:4px 0 0;font-size:20px}
+.student-section-heading>a{color:#1769d2;font-size:14px;font-weight:700;text-decoration:none;white-space:nowrap}
+.student-ticket-table{min-width:800px}
+.student-ticket-table th{padding:12px 11px;background:#f3f7fc;font-size:11px}
+.student-ticket-table td{padding:13px 11px;font-size:13px}
+.student-ticket-table td strong{font-size:13px}
+.student-ticket-table td small{display:block;margin-top:3px;color:#8293a7;font-size:11px}
+.student-ticket-number,.student-view-link{color:#1769d2;font-weight:700;text-decoration:none}
+.student-view-link{white-space:nowrap}
+.student-all-tickets{margin-top:15px}
+.student-empty{display:grid;justify-items:center;gap:7px;padding:28px 12px;color:#71849a;text-align:center}
+.student-empty strong{color:#244563;font-size:15px}
+.student-empty span{font-size:13px}
+.student-empty a{margin-top:5px;color:#1769d2;font-weight:700;text-decoration:none}
+.customer-dashboard-page .role-footer{font-size:12px}
+@media(max-width:900px){.customer-dashboard-page .role-topbar{flex-wrap:wrap}.customer-dashboard-page .role-main.student-dashboard{margin-top:22px}.student-campus-art{right:10%;opacity:.35}}
+@media(max-width:650px){
+ .customer-dashboard-page .role-topbar{align-items:center;gap:8px;padding:10px 14px}
+ .customer-dashboard-page .role-brand{font-size:17px}
+ .customer-dashboard-page .role-nav{justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;max-width:100%;padding:2px 0;scrollbar-width:none}
+ .customer-dashboard-page .role-nav::-webkit-scrollbar{display:none}
+ .customer-dashboard-page .role-nav a{flex:none;padding:8px 10px;font-size:12px}
+ .customer-dashboard-page .role-account{align-self:stretch;margin-left:auto;gap:7px;padding:4px}
+ .customer-dashboard-page .role-account-details small{display:none!important}
+ .customer-dashboard-page .role-account-details strong{max-width:90px;font-size:11px}
+ .customer-dashboard-page .role-account-icon{width:30px;height:30px;flex-basis:30px}
+ .customer-dashboard-page .role-logout{min-height:30px;padding:0 8px;font-size:10px}
+ .customer-dashboard-page .role-main.student-dashboard{width:calc(100% - 28px);margin:18px auto 30px}
+ .student-hero{min-height:0;flex-direction:column;align-items:flex-start;gap:16px;margin-bottom:14px;padding:22px 19px}
+ .student-hero h1,.staff-hero h1{font-size:27px;overflow-wrap:anywhere}
+ .student-hero p,.staff-hero p{font-size:14px}
+ .student-campus-art{right:-12px;bottom:8px;width:150px;height:90px;opacity:.19}
+ .student-hero-cta{width:100%;margin:0}
+ .student-dashboard .role-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px}
+ .student-dashboard .role-stat{min-height:100px;padding:13px 12px 12px 16px}
+ .student-dashboard .role-stat>span{font-size:11px;line-height:1.4}
+ .student-dashboard .role-stat>strong{font-size:25px}
+ .student-dashboard .role-stat>small{font-size:10px}
+ .student-report-options{align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:14px;padding:16px}
+ .student-report-heading-icon{width:40px;height:40px;border-radius:11px}
+ .student-report-copy{flex-basis:calc(100% - 55px)}
+ .student-report-copy h2{font-size:17px}
+ .student-report-copy p{font-size:12px}
+ .student-report-copy small{font-size:10px}
+ .student-report-cta{width:100%;min-height:43px}
+ .student-recent-card{padding:16px}
+ .student-section-heading{align-items:flex-start}
+ .student-section-heading h2{font-size:18px}
+ .student-section-heading>a{font-size:12px}
+ .student-ticket-table{min-width:760px}
+ .student-ticket-table th,.student-ticket-table td{padding:10px 8px;font-size:12px}
+}

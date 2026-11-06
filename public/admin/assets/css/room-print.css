@@ -1,0 +1,30 @@
+.room-qr-print-brand{display:none}
+.room-qr-scan-help{margin:5px 0 0;color:#8292a3;font-size:11px;line-height:1.5}
+
+@page{size:A4 portrait;margin:0}
+@media print{
+    html,body{width:210mm!important;height:297mm!important;margin:0!important;background:#fff!important}
+    body:has(.room-detail-page){-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body:has(.room-detail-page) .sidebar,
+    body:has(.room-detail-page) .topbar,
+    body:has(.room-detail-page) .page-footer,
+    body:has(.room-detail-page) .nav-scrim,
+    .room-detail-page .page-title-row,
+    .room-detail-page .room-detail-info,
+    .room-detail-page .room-qr-print-button{display:none!important}
+    body:has(.room-detail-page) .app-shell,
+    body:has(.room-detail-page) .main-area{display:block!important;width:210mm!important;min-width:210mm!important;height:297mm!important;min-height:297mm!important;margin:0!important;padding:0!important;background:#fff!important}
+    .room-detail-page{display:grid!important;width:210mm!important;height:297mm!important;min-height:0!important;margin:0!important;padding:0!important;place-items:center!important;background:#fff!important}
+    .room-detail-grid{display:grid!important;width:100%!important;height:100%!important;margin:0!important;padding:0!important;place-items:center!important}
+    .room-qr-card{position:relative;display:grid!important;align-content:center!important;justify-items:center!important;gap:0!important;width:118mm!important;min-height:0!important;margin:0!important;padding:13mm 11mm 11mm!important;overflow:hidden!important;border:1px solid #a9d3f0!important;border-radius:5mm!important;background:#f2f8fe!important;box-shadow:none!important;text-align:center!important;break-inside:avoid}
+    .room-qr-card::before{position:absolute;top:0;right:0;left:0;height:4mm;background:linear-gradient(90deg,#087bbf,#28a2e6);content:""}
+    .room-qr-print-brand{display:flex!important;flex-direction:column;align-items:center;gap:3mm;margin-bottom:7mm;padding:5mm 10mm;border:1px solid #d8eafa;border-radius:4mm;background:#fff}
+    .room-qr-print-brand img{display:block;width:48mm;height:auto;max-height:18mm;object-fit:contain}
+    .room-qr-print-brand span{color:#2975a7;font-family:Arial,sans-serif;font-size:8pt;font-weight:700;letter-spacing:1.1pt}
+    .room-qr-card .eyebrow{justify-self:center!important;width:auto!important;margin:0 0 2mm!important;color:#1780c2!important;font-size:8pt!important;letter-spacing:1pt!important;text-align:center!important}
+    .room-qr-card h2{max-width:94mm;margin:0 0 6mm!important;color:#173653!important;font-size:15pt!important;line-height:1.4!important}
+    .room-qr-card #room-qr-image{display:block!important;width:72mm!important;height:72mm!important;margin:0!important;padding:2.5mm!important;border:1px solid #c7e0f4!important;border-radius:3mm!important;background:#fff!important;object-fit:contain!important;image-rendering:pixelated}
+    .room-qr-card>p:not(.eyebrow):not(.room-qr-scan-help){margin:6mm 0 0!important;padding:2mm 5mm!important;border:1px solid #d5eafa!important;border-radius:20mm!important;background:#e7f3fc!important;color:#1d5e89!important;font-size:11pt!important;font-weight:700!important}
+    .room-qr-card .room-qr-scan-help{margin:2mm 0 0!important;color:#4d7898!important;font-size:8pt!important;font-weight:500!important}
+    .room-qr-card code{display:none!important}
+}

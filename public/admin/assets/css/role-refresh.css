@@ -1,0 +1,456 @@
+﻿/* Shared customer/staff page refresh. Presentation only: keep existing routes and workflow intact. */
+.customer-role-page,
+.staff-role-page {
+    --role-ink: #173653;
+    --role-muted: #607993;
+    --role-blue: #1769d2;
+    --role-line: #dce7f2;
+    min-height: 100vh;
+    color: var(--role-ink);
+    background: #f3f7fc;
+    font-size: 15px;
+}
+
+.customer-role-page .role-topbar,
+.staff-role-page .role-topbar {
+    min-height: 76px;
+    padding: 10px max(24px, calc((100% - 1240px) / 2));
+    border: 0;
+    background: #123b70;
+    box-shadow: 0 5px 20px #102f501f;
+}
+.customer-role-page .role-brand,
+.staff-role-page .role-brand { color: #fff; }
+.customer-role-page .role-brand-image,
+.staff-role-page .role-brand-image { filter: brightness(0) invert(1); }
+.customer-role-page .role-nav,
+.staff-role-page .role-nav {
+    gap: 4px;
+    padding: 5px;
+    border: 1px solid #ffffff26;
+    border-radius: 13px;
+    background: #ffffff12;
+}
+.customer-role-page .role-nav a,
+.staff-role-page .role-nav a,
+.staff-role-page .staff-topbar .role-nav a {
+    padding: 10px 14px;
+    border-radius: 9px;
+    color: #eaf3ff;
+    font-size: 14px;
+    font-weight: 700;
+}
+.customer-role-page .role-nav a:hover,
+.staff-role-page .role-nav a:hover,
+.staff-role-page .staff-topbar .role-nav a:hover {
+    color: #fff;
+    background: #ffffff1c;
+}
+.customer-role-page .role-nav a.current,
+.staff-role-page .role-nav a.current,
+.staff-role-page .staff-topbar .role-nav a.current {
+    color: #fff;
+    background: #2375df;
+    box-shadow: inset 0 0 0 1px #ffffff28;
+}
+.staff-role-page .staff-topbar .role-nav {
+    border-color: #dce7f2;
+    background: #fff;
+}
+.staff-role-page .staff-topbar .role-nav a { color: #385873; }
+.staff-role-page .staff-topbar .role-nav a:hover {
+    color: #1457ad;
+    background: #edf5ff;
+}
+.staff-role-page .staff-topbar .role-nav a.current {
+    color: #fff;
+    background: #2375df;
+}
+.customer-role-page .role-account,
+.staff-role-page .role-account {
+    border-color: #ffffff35;
+    background: #ffffff12;
+}
+.customer-role-page .role-account-profile,
+.staff-role-page .role-account-profile { color: #fff; }
+.customer-role-page .role-account-profile:hover,
+.customer-role-page .role-account-profile.is-current,
+.staff-role-page .role-account-profile:hover,
+.staff-role-page .role-account-profile.is-current { background: #ffffff13; }
+.customer-role-page .role-account-details strong,
+.staff-role-page .role-account-details strong { color: #fff; font-size: 13px; }
+.customer-role-page .role-account-details small,
+.staff-role-page .role-account-details small { color: #cfdef0; font-size: 11px; }
+.customer-role-page .role-account-icon,
+.staff-role-page .role-account-icon { background: #e7f1ff; color: #1769d2; }
+.customer-role-page .role-logout,
+.staff-role-page .role-logout {
+    border-color: #ffffff38;
+    background: #ffffff12;
+    color: #fff;
+}
+.customer-role-page .role-logout:hover,
+.staff-role-page .role-logout:hover { background: #fff; color: #b33c37; }
+
+.customer-role-page .role-main,
+.staff-role-page .role-main { margin-top: 30px; margin-bottom: 48px; }
+.customer-role-page .role-welcome,
+.staff-role-page .role-welcome,
+.customer-role-page .role-card,
+.staff-role-page .role-card {
+    border-color: var(--role-line);
+    box-shadow: 0 8px 24px #1736530a;
+}
+.customer-role-page .role-welcome h1,
+.staff-role-page .role-welcome h1 { color: #173653; font-size: clamp(27px, 3vw, 36px); }
+.customer-role-page .role-welcome p,
+.staff-role-page .role-welcome p { color: var(--role-muted); font-size: 15px; }
+.customer-role-page .role-kicker,
+.staff-role-page .role-kicker { color: #54718e; font-size: 12px; }
+.customer-role-page .role-card h2,
+.staff-role-page .role-card h2 { color: #173653; font-size: 19px; }
+.customer-role-page .role-card p,
+.staff-role-page .role-card p { color: var(--role-muted); }
+.customer-role-page .role-list-item strong,
+.staff-role-page .role-list-item strong { color: #244563; font-size: 14px; }
+.customer-role-page .role-list-item small,
+.staff-role-page .role-list-item small { color: #607993; font-size: 12px; }
+.customer-role-page .role-footer,
+.staff-role-page .role-footer { color: #71869c; font-size: 12px; }
+.customer-role-page :is(input, select, textarea),
+.staff-role-page :is(input, select, textarea) { font-size: 14px; }
+.customer-role-page :is(button, .role-button),
+.staff-role-page :is(button, .role-button) { font-size: 14px; }
+.customer-role-page a,
+.staff-role-page a { -webkit-tap-highlight-color: transparent; }
+.customer-role-page :focus-visible,
+.staff-role-page :focus-visible { outline: 3px solid #2781e466; outline-offset: 2px; }
+
+@media (max-width: 900px) {
+    .customer-role-page .role-topbar,
+    .staff-role-page .role-topbar { padding-right: 20px; padding-left: 20px; }
+}
+@media (max-width: 760px) {
+    .customer-role-page .role-topbar,
+    .staff-role-page .role-topbar {
+        gap: 8px 12px;
+        padding: 10px 16px;
+        background: #123b70;
+    }
+    .customer-role-page .role-nav,
+    .staff-role-page .role-nav {
+        max-width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+    }
+    .customer-role-page .role-nav::-webkit-scrollbar,
+    .staff-role-page .role-nav::-webkit-scrollbar { display: none; }
+    .customer-role-page .role-nav a,
+    .staff-role-page .role-nav a,
+    .staff-role-page .staff-topbar .role-nav a { flex: 0 0 auto; white-space: nowrap; }
+    .customer-role-page .role-main,
+    .staff-role-page .role-main { width: calc(100% - 32px); margin-top: 20px; margin-bottom: 32px; }
+}
+@media (max-width: 520px) {
+    .customer-role-page .role-topbar,
+    .staff-role-page .role-topbar { padding: 9px 12px; }
+    .customer-role-page .role-brand-image,
+    .staff-role-page .role-brand-image { max-width: 142px; }
+    .customer-role-page .role-nav,
+    .staff-role-page .role-nav { width: 100%; justify-content: flex-start; }
+    .customer-role-page .role-nav a,
+    .staff-role-page .role-nav a,
+    .staff-role-page .staff-topbar .role-nav a { padding: 9px 11px; font-size: 13px; }
+    .customer-role-page .role-main,
+    .staff-role-page .role-main { width: calc(100% - 24px); margin-top: 16px; }
+    .customer-role-page .role-welcome,
+    .staff-role-page .role-welcome { padding: 19px 16px; }
+    .customer-role-page .role-welcome h1,
+    .staff-role-page .role-welcome h1 { font-size: 25px; }
+    .customer-role-page .role-welcome p,
+    .staff-role-page .role-welcome p { font-size: 14px; }
+    .customer-role-page .role-card,
+    .staff-role-page .role-card { padding: 16px; }
+}
+
+/* Customer navigation follows the same light Helpdesk header as the report portal. */
+.customer-role-page .customer-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    min-height: 82px;
+    padding: 10px max(24px, calc((100% - 1320px) / 2));
+    border-bottom: 1px solid #e4edf4;
+    background: #ffffffed;
+    box-shadow: none;
+    backdrop-filter: blur(14px);
+}
+.customer-role-page .customer-topbar .role-brand {
+    flex: 0 0 auto;
+    gap: 15px;
+    color: #173653;
+}
+.customer-role-page .customer-topbar .role-brand-image { width: 174px; max-width: none; filter: none; }
+.customer-brand-caption {
+    padding-left: 15px;
+    border-left: 1px solid #e5edf4;
+    color: #8293a5;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .8px;
+    white-space: nowrap;
+}
+.customer-role-page .customer-topbar .role-nav {
+    display: flex;
+    flex: 0 1 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+.customer-role-page .customer-topbar .role-nav a {
+    display: flex;
+    min-height: 39px;
+    align-items: center;
+    padding: 0 12px;
+    border-radius: 9px;
+    color: #647a91;
+    font-size: 13px;
+    font-weight: 650;
+}
+.customer-role-page .customer-topbar .role-nav a:hover,
+.customer-role-page .customer-topbar .role-nav a.current {
+    color: #137dc3;
+    background: #eaf5fd;
+    box-shadow: none;
+}
+.customer-role-page .customer-user-menu { display: flex; flex: 0 0 auto; align-items: center; gap: 9px; }
+.customer-role-page .customer-management-link {
+    padding: 9px 12px;
+    border: 1px solid #dce7f2;
+    border-radius: 9px;
+    color: #3b6689;
+    font-size: 11px;
+    font-weight: 650;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.customer-role-page .customer-management-link:hover { background: #f5fafe; border-color: #c9dfef; }
+.customer-role-page .customer-topbar .role-account {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+.customer-role-page .customer-topbar .role-account-profile { gap: 9px; padding: 5px 8px 5px 5px; border: 1px solid #dce7f2; border-radius: 11px; color: #314c67; }
+.customer-role-page .customer-topbar .role-account-profile:hover,
+.customer-role-page .customer-topbar .role-account-profile.is-current { background: #f5fafe; }
+.customer-role-page .customer-topbar .role-account-details strong { color: #314c67; font-size: 11px; }
+.customer-role-page .customer-topbar .role-account-details small { color: #8798a9; font-size: 9px; }
+.customer-role-page .customer-topbar .role-account-icon { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 10px; background: #e8f4fd; color: #1680c6; }
+.customer-role-page .customer-topbar .role-logout { min-height: 34px; padding: 0 11px; border-color: #e0e8ef; background: #fff; color: #62778c; font-size: 10px; }
+.customer-role-page .customer-topbar .role-logout:hover { border-color: #f0c8c3; background: #fff7f6; color: #bd4e43; }
+
+@media (max-width: 1120px) {
+    .customer-role-page .customer-topbar { gap: 12px; }
+    .customer-role-page .customer-topbar .role-brand-image { width: 150px; }
+    .customer-role-page .customer-topbar .role-nav a { padding: 0 9px; font-size: 12px; }
+    .customer-role-page .customer-topbar .role-account-details small { display: none; }
+}
+@media (max-width: 920px) {
+    .customer-role-page .customer-topbar { flex-wrap: wrap; gap: 8px 14px; padding: 10px 20px; }
+    .customer-role-page .customer-topbar .role-brand { margin-right: auto; }
+    .customer-role-page .customer-topbar .role-nav { order: 3; flex: 1 0 100%; justify-content: flex-start; margin: 0; padding-top: 5px; border-top: 1px solid #edf2f6; }
+}
+@media (max-width: 620px) {
+    .customer-role-page .customer-topbar { gap: 8px; padding: 9px 12px; }
+    .customer-role-page .customer-topbar .role-brand-image { width: 136px; }
+    .customer-brand-caption, .customer-role-page .customer-management-link { display: none; }
+    .customer-role-page .customer-topbar .role-nav { width: 100%; overflow-x: auto; scrollbar-width: none; }
+    .customer-role-page .customer-topbar .role-nav::-webkit-scrollbar { display: none; }
+    .customer-role-page .customer-topbar .role-nav a { flex: 0 0 auto; padding: 0 10px; font-size: 11px; }
+    .customer-role-page .customer-topbar .role-account-profile { padding: 3px; }
+    .customer-role-page .customer-topbar .role-account-details { display: none; }
+    .customer-role-page .customer-topbar .role-account-icon { flex-basis: 32px; width: 32px; height: 32px; }
+    .customer-role-page .customer-topbar .role-logout { min-height: 32px; padding: 0 8px; }
+}
+
+/* Customer notification count and icon */
+.customer-role-page .customer-topbar .role-nav a { position: relative; }
+.customer-notification-badge {
+    display: inline-flex;
+    min-width: 19px;
+    height: 19px;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5px;
+    padding: 0 5px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: #e34d59;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(35, 65, 92, .16);
+}
+.customer-role-page .notification-bell-icon svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+/* Match the student header to the technical staff header. */
+.customer-role-page .customer-topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    min-height: 76px;
+    gap: 22px;
+    padding: 10px max(24px, calc((100% - 1240px) / 2));
+    border: 0;
+    background: #123b70;
+    box-shadow: 0 5px 20px #102f501f;
+}
+.customer-role-page .customer-topbar .role-brand {
+    width: max-content;
+    max-width: 100%;
+    gap: 0;
+    color: #fff;
+}
+.customer-role-page .customer-topbar .role-brand-image {
+    display: block;
+    width: 178px;
+    height: 52px;
+    max-width: 100%;
+    filter: brightness(0) invert(1);
+    object-position: left center;
+}
+.customer-role-page .customer-brand-caption { display: none; }
+.customer-role-page .customer-topbar .role-nav {
+    justify-self: center;
+    flex: none;
+    gap: 5px;
+    margin: 0;
+    padding: 4px;
+    border: 1px solid #edf2f7;
+    border-radius: 13px;
+    background: #fff;
+}
+.customer-role-page .customer-topbar .role-nav a {
+    min-height: 39px;
+    padding: 9px 14px;
+    color: #385873;
+    font-size: 13px;
+}
+.customer-role-page .customer-topbar .role-nav a:hover {
+    color: #1457ad;
+    background: #edf5ff;
+}
+.customer-role-page .customer-topbar .role-nav a.current {
+    color: #fff;
+    background: #2375df;
+    box-shadow: inset 0 0 0 1px #ffffff28;
+}
+.customer-role-page .customer-user-menu {
+    justify-self: end;
+    min-width: 0;
+    gap: 8px;
+}
+.customer-role-page .customer-management-link {
+    padding: 8px 10px;
+    border-color: #ffffff38;
+    color: #eaf3ff;
+    font-size: 11px;
+}
+.customer-role-page .customer-management-link:hover {
+    border-color: #ffffff70;
+    background: #ffffff12;
+    color: #fff;
+}
+.customer-role-page .customer-topbar .role-account {
+    gap: 8px;
+    padding: 5px 6px 5px 9px;
+    border: 1px solid #ffffff35;
+    border-radius: 14px;
+    background: #ffffff12;
+}
+.customer-role-page .customer-topbar .role-account-profile {
+    gap: 9px;
+    padding: 3px 5px;
+    border: 0;
+    color: #fff;
+}
+.customer-role-page .customer-topbar .role-account-profile:hover,
+.customer-role-page .customer-topbar .role-account-profile.is-current { background: #ffffff13; }
+.customer-role-page .customer-topbar .role-account-details strong { color: #fff; font-size: 12px; }
+.customer-role-page .customer-topbar .role-account-details small { max-width: 145px; color: #cfdef0; font-size: 10px; }
+.customer-role-page .customer-topbar .role-account-icon {
+    width: 35px;
+    height: 35px;
+    flex-basis: 35px;
+    border: 1px solid #d8eafa;
+    border-radius: 50%;
+    background: #eaf5fd;
+    color: #177bb8;
+}
+.customer-role-page .customer-topbar .role-logout {
+    min-height: 34px;
+    padding: 0 11px;
+    border-color: #ffffff38;
+    background: #ffffff12;
+    color: #fff;
+    font-size: 11px;
+}
+.customer-role-page .customer-topbar .role-logout:hover { background: #fff; color: #b33c37; }
+
+@media (max-width: 1150px) {
+    .customer-role-page .customer-topbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas: "brand account" "nav nav";
+        gap: 8px 14px;
+        padding: 10px 20px 9px;
+    }
+    .customer-role-page .customer-topbar .role-brand { grid-area: brand; }
+    .customer-role-page .customer-topbar .role-nav {
+        grid-area: nav;
+        justify-self: start;
+        width: 100%;
+        justify-content: center;
+        overflow-x: auto;
+        border: 0;
+        border-top: 1px solid #ffffff26;
+        border-radius: 0;
+        background: transparent;
+        padding: 7px 0 0;
+    }
+    .customer-role-page .customer-user-menu { grid-area: account; }
+}
+@media (max-width: 760px) {
+    .customer-role-page .customer-topbar .role-nav { justify-content: flex-start; }
+}
+@media (max-width: 480px) {
+    .customer-role-page .customer-topbar { gap: 5px 8px; padding: 9px 12px; }
+    .customer-role-page .customer-topbar .role-brand-image { width: min(154px, 42vw); height: 43px; }
+    .customer-role-page .customer-management-link { display: none; }
+    .customer-role-page .customer-topbar .role-account { gap: 3px; padding: 3px; border: 0; background: transparent; }
+    .customer-role-page .customer-topbar .role-account-profile { gap: 5px; padding: 2px; }
+    .customer-role-page .customer-topbar .role-account-icon { width: 30px; height: 30px; flex-basis: 30px; }
+    .customer-role-page .customer-topbar .role-account-details { max-width: 92px; }
+    .customer-role-page .customer-topbar .role-account-details strong { font-size: 10px; }
+    .customer-role-page .customer-topbar .role-account-details small { display: none; }
+    .customer-role-page .customer-topbar .role-logout { min-height: 30px; padding: 0 7px; font-size: 9px; }
+    .customer-role-page .customer-topbar .role-nav a { padding: 8px 10px; font-size: 11px; }
+}

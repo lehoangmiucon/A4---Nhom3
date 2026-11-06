@@ -1,0 +1,143 @@
+/* One palette for ticket states across admin, student and staff pages. */
+:root {
+    --ticket-status-new-color: #9a6100;
+    --ticket-status-assigned-color: #1769b3;
+    --ticket-status-in-progress-color: #7049c6;
+    --ticket-status-resolved-color: #087f85;
+    --ticket-status-closed-color: #16835d;
+    --ticket-status-reopened-color: #ad4d24;
+}
+
+.ticket-status-new {
+    --ticket-status-color: var(--ticket-status-new-color);
+    --ticket-status-background: #fff4dc;
+    --ticket-status-border: #f4dba7;
+}
+
+.ticket-status-assigned {
+    --ticket-status-color: var(--ticket-status-assigned-color);
+    --ticket-status-background: #eaf4ff;
+    --ticket-status-border: #c9e3fc;
+}
+
+.ticket-status-in-progress {
+    --ticket-status-color: var(--ticket-status-in-progress-color);
+    --ticket-status-background: #f2edff;
+    --ticket-status-border: #dfd2ff;
+}
+
+.ticket-status-resolved {
+    --ticket-status-color: var(--ticket-status-resolved-color);
+    --ticket-status-background: #e8f8f7;
+    --ticket-status-border: #bde5e1;
+}
+
+.ticket-status-closed {
+    --ticket-status-color: var(--ticket-status-closed-color);
+    --ticket-status-background: #e8f7ee;
+    --ticket-status-border: #c6e9d4;
+}
+
+.ticket-status-reopened {
+    --ticket-status-color: var(--ticket-status-reopened-color);
+    --ticket-status-background: #fff0e8;
+    --ticket-status-border: #f4cfbd;
+}
+
+.ticket-status-cancelled {
+    --ticket-status-color: #64748b;
+    --ticket-status-background: #f1f4f8;
+    --ticket-status-border: #d7dee8;
+}
+
+.status-badge.ticket-status,
+.role-badge.ticket-status,
+.staff-ticket-status.ticket-status,
+.assignment-status.ticket-status,
+.workflow-current.ticket-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid var(--ticket-status-border, #d7dee8);
+    border-radius: 999px;
+    background: var(--ticket-status-background, #f1f4f8);
+    color: var(--ticket-status-color, #64748b);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.ticket-reopened-note.ticket-status-reopened {
+    border-color: var(--ticket-status-border);
+    background: var(--ticket-status-background);
+    color: var(--ticket-status-color);
+}
+
+.ticket-state-notice[class*="ticket-status-"] {
+    border-color: var(--ticket-status-border);
+    background: var(--ticket-status-background);
+}
+
+.ticket-state-notice[class*="ticket-status-"] .ticket-state-icon {
+    background: #fff;
+    color: var(--ticket-status-color);
+}
+
+.ticket-state-notice[class*="ticket-status-"] strong {
+    color: var(--ticket-status-color);
+}
+
+/* The active step and the log use the color of their actual state. */
+.workflow-process-step:is(.is-current, .is-done)[class*="ticket-status-"] .workflow-process-marker,
+.ticket-progress-steps li:is(.is-current, .is-complete)[class*="ticket-status-"] .ticket-step-dot {
+    border-color: var(--ticket-status-border);
+    background: var(--ticket-status-background);
+    color: var(--ticket-status-color);
+    box-shadow: 0 0 0 4px var(--ticket-status-background);
+}
+
+.workflow-process-step:is(.is-current, .is-done)[class*="ticket-status-"] .workflow-process-copy strong,
+.ticket-progress-steps li:is(.is-current, .is-complete)[class*="ticket-status-"] .ticket-step-label,
+.history-item[class*="ticket-status-"] strong,
+.ticket-timeline li[class*="ticket-status-"] .ticket-timeline-title strong {
+    color: var(--ticket-status-color);
+}
+
+.workflow-process-step.is-current[class*="ticket-status-"] .workflow-process-tag,
+.ticket-timeline li[class*="ticket-status-"] .ticket-timeline-marker {
+    border-color: var(--ticket-status-border);
+    background: var(--ticket-status-background);
+    color: var(--ticket-status-color);
+}
+
+.workflow-process-step.is-done[class*="ticket-status-"]::after {
+    background: var(--ticket-status-color);
+}
+
+.history-item[class*="ticket-status-"] > i {
+    border-color: var(--ticket-status-color);
+    background: var(--ticket-status-background);
+}
+
+.staff-ticket-detail .role-list-item[class*="ticket-status-"] .role-list-icon {
+    border-color: var(--ticket-status-border);
+    background: var(--ticket-status-background);
+    color: var(--ticket-status-color);
+}
+
+.student-dashboard .role-stat:nth-child(2)::before,
+.staff-dashboard .role-stat:nth-child(1)::before {
+    background: var(--ticket-status-assigned-color);
+}
+
+.student-dashboard .role-stat:nth-child(3)::before,
+.staff-dashboard .role-stat:nth-child(2)::before {
+    background: var(--ticket-status-in-progress-color);
+}
+
+.student-dashboard .role-stat:nth-child(4)::before {
+    background: var(--ticket-status-closed-color);
+}
+
+.staff-dashboard .role-stat:nth-child(4)::before {
+    background: var(--ticket-status-resolved-color);
+}

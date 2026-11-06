@@ -1,0 +1,19 @@
+.month-days .day-cell{height:150px;min-height:150px;max-height:150px;overflow:hidden}
+.month-days .day-number{position:relative;z-index:1}
+.month-days .day-cell .cal-event{margin-top:3px;padding:3px 5px;border-radius:7px;line-height:1.05}
+.month-days .day-cell .cal-event[hidden]{display:none!important}
+.month-days .day-cell .cal-event.is-overflowed{display:none!important}
+.month-days .day-cell .cal-event .event-time{font-size:9px;line-height:1.05}
+.month-days .day-cell .cal-event .event-title{margin-top:1px;overflow:hidden;font-size:10px;line-height:1.05;text-overflow:ellipsis;white-space:nowrap}
+.month-days .day-cell .cal-event .event-meta{margin-top:1px;overflow:hidden;font-size:9px;line-height:1.05;text-overflow:ellipsis;white-space:nowrap}
+.day-more-events{display:block;width:100%;min-height:18px;margin-top:3px;padding:2px 6px;border:1px solid #d9eafa;border-radius:6px;background:#f2f8fe;color:#1978b7;font:700 9px 'Be Vietnam Pro',Arial,sans-serif;text-align:center;cursor:pointer;transition:background .15s,border-color .15s}
+.day-more-events:hover{border-color:#a9d2ef;background:#e8f4fd}
+.day-more-events[hidden]{display:none!important}
+@media(max-width:700px){
+    .month-days .day-cell{height:142px;min-height:142px;max-height:142px;padding:5px 4px}
+    .month-days .day-cell .cal-event{margin-top:3px;padding:3px 5px;line-height:1.05}
+    .month-days .day-cell .cal-event .event-time{font-size:8px;line-height:1.05}
+    .month-days .day-cell .cal-event .event-title{margin-top:1px;font-size:9px;line-height:1.1}
+    .month-days .day-cell .cal-event .event-meta{margin-top:1px;font-size:8px;line-height:1.1}
+    .day-more-events{position:relative;z-index:2;min-height:18px;margin-top:3px;padding:2px 4px;border-radius:999px;background:#edf6ff;color:#1978b7;font-size:8px;text-align:center;white-space:nowrap}
+}
