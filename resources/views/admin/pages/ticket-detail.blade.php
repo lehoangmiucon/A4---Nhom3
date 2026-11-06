@@ -229,7 +229,11 @@ $stateMessage = $ticket->assignee
             @if($ticket->reportAttachments->isNotEmpty())
             <div class="ticket-attachments evidence-card-attachments">
                 @foreach($ticket->reportAttachments as $attachment)
+                @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($attachment->path))
                 <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh sinh viên gửi: {{ $attachment->original_name }}"><span><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Xem ảnh</span></a>
+                @else
+                <p class="evidence-empty" title="{{ $attachment->original_name }}">Không tìm thấy ảnh gốc. Vui lòng khôi phục hoặc tải lại ảnh minh chứng.</p>
+                @endif
                 @endforeach
             </div>
             @else
@@ -249,7 +253,11 @@ $stateMessage = $ticket->assignee
             @if($ticket->repairAttachments->isNotEmpty())
             <div class="ticket-attachments evidence-card-attachments repair-evidence-attachments">
                 @foreach($ticket->repairAttachments as $attachment)
+                @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($attachment->path))
                 <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh nhân viên sửa chữa: {{ $attachment->original_name }}"><span><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Xem ảnh</span></a>
+                @else
+                <p class="evidence-empty" title="{{ $attachment->original_name }}">Không tìm thấy ảnh gốc. Vui lòng khôi phục hoặc tải lại ảnh minh chứng.</p>
+                @endif
                 @endforeach
             </div>
             @else
