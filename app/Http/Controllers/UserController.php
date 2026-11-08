@@ -49,11 +49,17 @@ class UserController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $users = User::query()->select('id', 'name', 'email', 'phone', 'role', 'is_deleted', 'email_verified_at', 'created_at')
+        $request->validate(['search' => ['nullable', 'string', 'max:120'], 'role' => ['nullable', Rule::in(['student', 'staff', 'admin'])], 'member_type' => ['nullable', Rule::in(['student', 'lecturer'])], 'status' => ['nullable', Rule::in(['active', 'locked', 'unverified'])]]);
+        $users = User::query()->select('id', 'name', 'email', 'phone', 'role', 'member_type', 'member_code', 'is_deleted', 'email_verified_at', 'created_at')
             ->when($request->filled('role'), fn($query) => $query->where('role', $request->string('role')))
+            ->when($request->filled('member_type'), fn($query) => $query->where('role', 'student')->where(fn($q) => $request->input('member_type') === 'student' ? $q->where('member_type', 'student')->orWhereNull('member_type') : $q->where('member_type', 'lecturer')))
+            ->when($request->input('status') === 'locked', fn($q) => $q->where('is_deleted', true))
+            ->when($request->input('status') === 'active', fn($q) => $q->where('is_deleted', false)->whereNotNull('email_verified_at'))
+            ->when($request->input('status') === 'unverified', fn($q) => $q->where('is_deleted', false)->whereNull('email_verified_at'))
             ->when($request->filled('search'), fn($query) => $query->where(fn($q) => $q
                 ->where('name', 'like', '%' . $request->string('search') . '%')
                 ->orWhere('email', 'like', '%' . $request->string('search') . '%')
+                ->orWhere('member_code', 'like', '%' . $request->string('search') . '%')
                 ->orWhere('phone', 'like', '%' . $request->string('search') . '%')))
             ->orderBy('name')->paginate(25);
         return response()->json($users);
@@ -62,6 +68,12 @@ class UserController extends Controller
     public function staff(): JsonResponse
     {
         return response()->json(['data' => User::with('categories:id,name,color')->where('role', 'staff')->where('is_deleted', false)->orderBy('name')->get(['id', 'name', 'email', 'phone'])]);
+    }
+
+    public function show(User $user): JsonResponse
+    {
+        $user->load('categories:id,name,color');
+        return response()->json(['data' => $user->only('id', 'name', 'email', 'phone', 'role', 'member_type', 'member_code', 'email_verified_at', 'is_deleted', 'created_at', 'categories')]);
     }
 
     public function createStaff(Request $request): JsonResponse
@@ -145,6 +157,7 @@ class UserController extends Controller
         $user->save();
         $user->categories()->sync($data['category_ids']);
 
+        if (! empty($data['password'])) $user->tokens()->delete();
         ActivityLog::record($request, 'staff.updated', $user, 'Updated staff account and issue categories.', [
             'category_ids' => array_map('intval', $data['category_ids']),
             'password_changed' => ! empty($data['password']),

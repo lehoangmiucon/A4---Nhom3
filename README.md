@@ -1,6 +1,7 @@
 # Helpdesk phòng học
 
-Backend Laravel phục vụ website HTML/CSS hiện có và API dùng chung cho ứng dụng Flutter sau này.
+Backend Laravel phục vụ website HTML/CSS và API dùng chung cho ứng dụng Flutter.
+Ứng dụng Android Flutter hiện nằm trong [`mobile/`](mobile/README.md), có giao diện SV/GV, KTV và admin. Xem [tổng kết mobile và backend](mobile/TONG_KET_MOBILE_VA_BACKEND.md) để biết chức năng, kiểm thử và phần còn cần hoàn thiện. Khi cập nhật backend, chạy migration để bổ sung các trường mới trước khi dùng app.
 
 ## Chạy với XAMPP
 

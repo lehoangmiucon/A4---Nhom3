@@ -10,6 +10,51 @@ use Illuminate\Validation\ValidationException;
 
 class AccountController extends Controller
 {
+    private function profileData(Request $request): array
+    {
+        return $request->user()->only('id', 'name', 'email', 'role', 'member_type', 'member_code', 'phone', 'email_verified_at');
+    }
+
+    public function profile(Request $request): \Illuminate\Http\JsonResponse
+    {
+        return response()->json(['data' => $this->profileData($request)]);
+    }
+
+    public function saveMobileProfile(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $student = $request->user()->role === 'student' && $request->user()->member_type !== 'lecturer';
+        if ($request->has('member_code')) $request->merge(['member_code' => trim((string) $request->input('member_code'))]);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'phone' => ['nullable', 'string', 'regex:/^\+?[0-9]{9,15}$/'],
+            'member_code' => $student ? ['sometimes', 'required', 'string', 'max:80', \Illuminate\Validation\Rule::unique('users', 'member_code')->ignore($request->user()->id)] : ['prohibited'],
+        ], ['member_code.required' => 'Vui lòng nhập mã sinh viên.', 'member_code.unique' => 'Mã sinh viên đã được sử dụng bởi tài khoản khác.']);
+        $changes = ['name' => trim($data['name']), 'phone' => $data['phone'] ?? null];
+        if ($student && array_key_exists('member_code', $data)) $changes['member_code'] = $data['member_code'];
+        $request->user()->forceFill($changes)->save();
+        return response()->json(['message' => 'Đã lưu hồ sơ.', 'data' => $this->profileData($request)]);
+    }
+
+    private function requireSchoolMember(Request $request): void
+    {
+        abort_unless($request->user()->role === 'student' && $request->user()->email_verified_at
+            && str_ends_with(strtolower($request->user()->email), '@ut.edu.vn'), 403, 'Chức năng này chỉ dành cho sinh viên và giảng viên có email trường đã xác minh.');
+    }
+
+    public function sendPasswordCode(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $this->requireSchoolMember($request);
+        $request->merge(['email' => $request->user()->email]);
+        return app(MobileAuthController::class)->forgot($request);
+    }
+
+    public function resetWithCode(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $this->requireSchoolMember($request);
+        $request->merge(['email' => $request->user()->email]);
+        return app(MobileAuthController::class)->reset($request);
+    }
+
     public function updateProfile(Request $request): RedirectResponse
     {
         $data = $request->validate([

@@ -22,6 +22,31 @@ use Illuminate\Validation\ValidationException;
 
 class TicketController extends Controller
 {
+    public function adminSummary(): JsonResponse
+    {
+        return response()->json(['data' => [
+            'pending_review' => Ticket::where('status', 'new')->where(fn($q) => $q->whereNull('triage_status')->orWhere('triage_status', 'needs_info'))->count(),
+            'needs_assignment' => Ticket::where(fn($q) => $q->where('status', 'reopened')->orWhere(fn($q) => $q->where('status', 'new')->where('triage_status', 'approved')))->count(),
+            'pending_confirmation' => Ticket::where('status', 'resolved')->count(),
+            'total_tickets' => Ticket::count(),
+        ]]);
+    }
+
+    public function triage(Request $request, Ticket $ticket): JsonResponse
+    {
+        $data = $request->validate(['decision' => ['required', Rule::in(['approved', 'needs_info'])], 'note' => ['required_if:decision,needs_info', 'nullable', 'string', 'max:2000']]);
+        DB::transaction(function () use ($request, $ticket, $data) {
+            $current = Ticket::whereKey($ticket->id)->lockForUpdate()->firstOrFail();
+            abort_unless($current->status === 'new', 422, 'Chỉ duyệt thông tin phiếu đang chờ tiếp nhận.');
+            if ($data['decision'] === 'approved') abort_unless($current->reporter_id && $current->room_id && $current->category_id && filled($current->title) && filled($current->description), 422, 'Phiếu cần đủ người gửi, vị trí, danh mục và mô tả trước khi duyệt.');
+            $current->forceFill(['triage_status' => $data['decision'], 'triaged_at' => now()])->save();
+            $note = $data['decision'] === 'approved' ? 'Quản lý đã duyệt thông tin phiếu.' : 'Yêu cầu bổ sung: '.$data['note'];
+            TicketLog::create(['ticket_id' => $current->id, 'user_id' => $request->user()->id, 'from_status' => $current->status, 'to_status' => $current->status, 'note' => $note]);
+            $this->notifyPeople($current, ['ticket_id' => $current->id, 'ticket_number' => $current->ticket_number, 'title' => $current->title, 'status' => $current->status, 'message' => $note]);
+            ActivityLog::record($request, 'ticket.triaged', $current, $note);
+        });
+        return response()->json(['message' => $data['decision'] === 'approved' ? 'Đã duyệt phiếu. Có thể phân công xử lý.' : 'Đã gửi yêu cầu bổ sung cho người báo.']);
+    }
     public function rooms(): JsonResponse
     {
         return response()->json(['data' => Room::with('building:id,code,name')->orderBy('code')->get()]);
@@ -99,6 +124,15 @@ class TicketController extends Controller
         $query = Ticket::with(['room.building:id,code,name', 'assignee:id,name', 'category:id,name,color'])->latest();
         $this->scopeTickets($query, $request->user());
         if ($request->filled('status')) $query->where('status', $request->string('status'));
+        if ($request->input('status_group') === 'active') $query->whereIn('status', ['new', 'assigned', 'in_progress', 'reopened']);
+        if ($request->input('status_group') === 'completed') $query->whereIn('status', ['resolved', 'closed']);
+        if ($request->user()->role === 'admin' && $request->input('queue') === 'action') $query->whereIn('status', ['new', 'reopened', 'resolved']);
+        if ($request->user()->role === 'admin' && $request->input('queue') === 'assignment') $query->where(fn($q) => $q->where('status', 'reopened')->orWhere(fn($q) => $q->where('status', 'new')->where('triage_status', 'approved')));
+        $request->validate(['search' => ['nullable', 'string', 'max:180']]);
+        if ($request->filled('search')) {
+            $search = '%'.trim($request->input('search')).'%';
+            $query->where(fn ($q) => $q->where('ticket_number', 'like', $search)->orWhere('title', 'like', $search)->orWhere('description', 'like', $search));
+        }
         return response()->json($query->paginate(20));
     }
 
@@ -198,6 +232,7 @@ class TicketController extends Controller
                 'description' => $data['description'],
                 'priority' => $this->priority($data['priority'] ?? 'normal'),
             ]);
+            $lockedTicket->forceFill(['triage_status' => null, 'triaged_at' => null])->save();
 
             if ($request->hasFile('attachments') || $request->boolean('remove_attachments')) {
                 $oldAttachments = $lockedTicket->reportAttachments()->get();
@@ -233,8 +268,27 @@ class TicketController extends Controller
             ? $ticket->reportAttachments->values()->toArray()
             : $ticket->reportAttachments->concat($ticket->repairAttachments)->values()->toArray();
         $data['assigned_staff'] = $ticket->assignee;
+        if ($request->user()->role === 'staff') {
+            $data['staff_schedules'] = $ticket->schedules()->where('staff_id', $request->user()->id)->where('status', '!=', 'cancelled')->orderBy('starts_at')->get(['id', 'starts_at', 'note', 'status', 'acknowledged_at']);
+        }
+        $data['can_review'] = (int) $ticket->reporter_id === (int) $request->user()->id
+            && in_array($ticket->status, ['resolved', 'closed'], true) && !$ticket->feedback_at;
+        $data['can_supplement'] = $request->user()->role === 'student' && (int) $ticket->reporter_id === (int) $request->user()->id && $ticket->status === 'new' && $ticket->triage_status === 'needs_info';
         $data['equipment'] = ['name' => $ticket->equipment_label];
         return response()->json(['data' => $data]);
+    }
+
+    public function review(Request $request, Ticket $ticket): JsonResponse
+    {
+        abort_unless((int) $ticket->reporter_id === (int) $request->user()->id, 403);
+        $data = $request->validate(['satisfied' => ['required', 'boolean'], 'comment' => ['nullable', 'string', 'max:2000']]);
+        DB::transaction(function () use ($ticket, $data) {
+            $locked = Ticket::whereKey($ticket->id)->lockForUpdate()->firstOrFail();
+            abort_unless(in_array($locked->status, ['resolved', 'closed'], true), 422, 'Chỉ đánh giá sau khi phiếu đã hoàn tất.');
+            abort_if($locked->feedback_at, 409, 'Phiếu đã được đánh giá.');
+            $locked->forceFill(['feedback_satisfied' => $data['satisfied'], 'feedback_comment' => $data['comment'] ?? null, 'feedback_at' => now()])->save();
+        });
+        return response()->json(['message' => 'Đã gửi đánh giá. Cảm ơn bạn đã góp ý.']);
     }
 
     public function logs(Request $request, Ticket $ticket): JsonResponse
@@ -254,6 +308,9 @@ class TicketController extends Controller
         if ($request->user()->role !== 'admin') $schedules->where('staff_id', $request->user()->id);
         $items = $schedules->where('starts_at', '>=', now()->subDays(30))
             ->orderBy('starts_at')->get()->map(fn($schedule) => [
+                'id' => $schedule->id,
+                'status' => $schedule->status,
+                'acknowledged_at' => $schedule->acknowledged_at,
                 'ticket_id' => $schedule->ticket_id,
                 'starts_at' => $schedule->starts_at,
                 'note' => $schedule->note,
@@ -274,11 +331,19 @@ class TicketController extends Controller
     public function assign(Request $request, Ticket $ticket): JsonResponse
     {
         $data = $request->validate([
-            'staff_id' => ['required', 'integer', Rule::exists('users', 'id')->where('role', 'staff')->where('is_deleted', false)],
+            'staff_id' => ['required', 'integer', Rule::exists('users', 'id')->where('role', 'staff')->where('is_deleted', 0)],
             'scheduled_at' => ['nullable', 'date', 'after_or_equal:now'],
             'note' => ['nullable', 'string', 'max:2000'],
             'schedule_id' => ['nullable', 'integer', Rule::exists('ticket_schedules', 'id')->where('ticket_id', $ticket->id)],
+            'priority' => ['sometimes', Rule::in(['low', 'normal', 'high', 'urgent'])],
         ]);
+        if (!empty($data['scheduled_at'])) {
+            $start = \Illuminate\Support\Carbon::parse($data['scheduled_at']);
+            $conflict = TicketSchedule::where('staff_id', $data['staff_id'])->where('status', '!=', 'cancelled')
+                ->where('starts_at', '<', $start->copy()->addHour())->where(fn($q) => $q->where('ends_at', '>', $start)->orWhere(fn($q) => $q->whereNull('ends_at')->where('starts_at', '>=', $start->copy()->subHour())))
+                ->when(!empty($data['schedule_id']), fn($q) => $q->where('id', '!=', $data['schedule_id']))->exists();
+            if ($conflict) throw ValidationException::withMessages(['scheduled_at' => 'Kỹ thuật viên đã có lịch trùng thời gian này. Chọn thời gian khác.']);
+        }
         if ($ticket->category_id && ! User::findOrFail($data['staff_id'])->categories()->whereKey($ticket->category_id)->exists()) {
             throw ValidationException::withMessages([
                 'staff_id' => 'Nhân viên này chưa được gán danh mục sự cố phù hợp với phiếu.',
@@ -309,6 +374,7 @@ class TicketController extends Controller
         }
         DB::transaction(function () use ($ticket, $data, $oldStatus, $previousStaffId, $request) {
             $ticket->update(['assigned_to_id' => $data['staff_id'], 'status' => 'assigned']);
+            $ticket->forceFill(['triage_status' => 'approved', 'triaged_at' => now(), 'priority' => $data['priority'] ?? $ticket->priority])->save();
             if ($previousStaffId && (int) $previousStaffId !== (int) $data['staff_id']) {
                 $ticket->schedules()->where('status', '!=', 'cancelled')->update(['staff_id' => $data['staff_id']]);
             }
@@ -444,15 +510,16 @@ class TicketController extends Controller
         $data = $request->validate([
             'status' => ['required', Rule::in(['in_progress', 'resolved'])],
             'note' => ['required', 'string', 'max:3000'],
+            'explicit_status' => ['sometimes', 'boolean'],
             'attachments' => ['nullable', 'array', 'max:5'],
             'attachments.*' => ['image', 'max:5120'],
         ]);
 
-        // Once the ticket is in progress, uploading repair evidence submits the result for manager review.
-        $targetStatus = $data['status'] === 'resolved'
+        // Mobile explicitly selects status; retain photo-submit behavior for existing web forms.
+        $targetStatus = $request->boolean('explicit_status') ? $data['status'] : ($data['status'] === 'resolved'
             || ($ticket->status === 'in_progress' && $request->hasFile('attachments'))
             ? 'resolved'
-            : 'in_progress';
+            : 'in_progress');
 
         if ($targetStatus === 'in_progress' && !in_array($ticket->status, ['assigned', 'reopened', 'in_progress'], true)) {
             abort(422, 'Phiếu chưa sẵn sàng để bắt đầu xử lý.');

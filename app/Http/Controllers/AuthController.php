@@ -168,7 +168,7 @@ class AuthController extends Controller
             'message' => 'Đăng nhập API thành công.',
             'token_type' => 'Bearer',
             'access_token' => $token->plainTextToken,
-            'user' => $user->only('id', 'name', 'email', 'role'),
+            'user' => $user->only('id', 'name', 'email', 'role', 'member_type', 'member_code', 'phone', 'email_verified_at'),
         ]);
     }
 
@@ -208,6 +208,7 @@ class AuthController extends Controller
 
         $user->password = $data['password'];
         $user->save();
+        $user->tokens()->delete();
 
         return response()->json(['message' => 'Đổi mật khẩu thành công.']);
     }

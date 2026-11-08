@@ -29,6 +29,12 @@ class NotificationController extends Controller
         return response()->json(['message' => 'Đã đánh dấu thông báo đã đọc.']);
     }
 
+    public function readAll(Request $request): JsonResponse
+    {
+        $request->user()->unreadNotifications()->update(['read_at' => now()]);
+        return response()->json(['message' => 'Đã đánh dấu tất cả thông báo là đã đọc.']);
+    }
+
     public function readTicket(Request $request, int $ticketId): JsonResponse
     {
         $updated = $request->user()->notifications()

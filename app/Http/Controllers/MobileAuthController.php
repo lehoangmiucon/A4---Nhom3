@@ -11,11 +11,11 @@ use Illuminate\Validation\ValidationException;
 
 class MobileAuthController extends Controller {
     public function register(Request $request) {
-        $request->merge(['email' => Str::lower(trim((string) $request->input('email'))), 'member_code' => trim((string) $request->input('member_code'))]);
+        $request->merge(['email' => Str::lower(trim((string) $request->input('email'))), 'member_code' => $request->input('member_type') === 'lecturer' ? null : trim((string) $request->input('member_code'))]);
         $identity = $request->validate([
             'member_type' => ['required', 'in:student,lecturer'],
-            'member_code' => ['required', 'string', 'max:80', 'unique:users,member_code'],
-            'phone' => ['required', 'string', 'regex:/^\+?[0-9]{9,15}$/'],
+            'member_code' => ['required_if:member_type,student', 'nullable', 'string', 'max:80', 'unique:users,member_code'],
+            'phone' => ['nullable', 'string', 'regex:/^\+?[0-9]{9,15}$/'],
         ]);
         // Keep the existing OTP transaction and school-email validation.
         return DB::transaction(function () use ($request, $identity) {

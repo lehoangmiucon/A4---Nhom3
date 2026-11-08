@@ -16,7 +16,7 @@ class Ticket extends Model
 
     protected function casts(): array
     {
-        return ['resolved_at' => 'datetime', 'closed_at' => 'datetime'];
+        return ['resolved_at' => 'datetime', 'closed_at' => 'datetime', 'feedback_satisfied' => 'boolean', 'feedback_at' => 'datetime'];
     }
 
     public function reporter(): BelongsTo

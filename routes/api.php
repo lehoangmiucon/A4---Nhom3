@@ -22,16 +22,25 @@ Route::get('/categories', [CategoryController::class, 'options']);
 Route::post('/tickets', [TicketController::class, 'store'])->middleware(['auth:sanctum', 'account.active']);
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::get('/account/profile', [\App\Http\Controllers\AccountController::class, 'profile']);
+    Route::patch('/account/profile', [\App\Http\Controllers\AccountController::class, 'saveMobileProfile']);
+    Route::post('/account/password-code', [\App\Http\Controllers\AccountController::class, 'sendPasswordCode'])->middleware('throttle:3,1');
+    Route::patch('/account/password-code', [\App\Http\Controllers\AccountController::class, 'resetWithCode'])->middleware('throttle:5,1');
     Route::post('/account/password', [AuthController::class, 'changePassword']);
     Route::get('/tickets', [TicketController::class, 'index']);
     Route::patch('/tickets/{ticket}', [TicketController::class, 'updateReport']);
     Route::get('/tickets/{ticket}/logs', [TicketController::class, 'logs']);
     Route::get('/tickets/{ticket}', [TicketController::class, 'show']);
+    Route::patch('/tickets/{ticket}/review', [TicketController::class, 'review'])->middleware('throttle:10,1');
     Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::patch('/notifications/read-all', [NotificationController::class, 'readAll']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'read']);
     Route::patch('/notifications/tickets/{ticketId}/read', [NotificationController::class, 'readTicket']);
 
     Route::prefix('admin')->middleware('role:admin')->group(function () {
+        Route::get('/summary', [TicketController::class, 'adminSummary']);
+        Route::get('/users/{user}', [UserController::class, 'show']);
+        Route::post('/tickets/{ticket}/triage', [TicketController::class, 'triage']);
         Route::get('/team/filter', [UserController::class, 'filterTeam']);
         Route::get('/schedules/filter', [TicketController::class, 'filterSchedules']);
         Route::get('/users', [UserController::class, 'index']);
