@@ -9,6 +9,11 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 // Sanctum accepts stateful website sessions and Bearer tokens from mobile clients.
+Route::post('/auth/register', [\App\Http\Controllers\MobileAuthController::class, 'register'])->middleware('throttle:5,1');
+Route::post('/auth/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
+Route::post('/auth/resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:3,1');
+Route::post('/auth/forgot-password', [\App\Http\Controllers\MobileAuthController::class, 'forgot'])->middleware('throttle:3,1');
+Route::post('/auth/reset-password', [\App\Http\Controllers\MobileAuthController::class, 'reset'])->middleware('throttle:5,1');
 Route::post('/auth/login', [AuthController::class, 'tokenLogin'])->middleware('throttle:10,1');
 Route::post('/auth/logout', [AuthController::class, 'tokenLogout'])->middleware('auth:sanctum');
 Route::get('/rooms', [TicketController::class, 'rooms']);

@@ -104,3 +104,6 @@ a{color:inherit}
 .api-feedback[data-state=info]{border-color:#dbe8f1;background:#f5fafe;color:#506a82}
 
 .role-brand-image{width:190px;height:58px;max-width:55vw;flex:none;object-fit:contain;filter:none}
+
+.role-field .reset-code-input{font-size:16px;text-transform:uppercase;letter-spacing:2px}
+.role-field .reset-code-input::placeholder{font-family:inherit;font-size:12px;text-transform:none;letter-spacing:normal}

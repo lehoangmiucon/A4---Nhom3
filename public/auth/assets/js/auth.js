@@ -62,7 +62,7 @@
     const form = event.target.closest('form[data-api-endpoint]');
     if (!form) return;
     event.preventDefault();
-    if (form.dataset.redirectPending === 'true') return;
+    if (form.dataset.redirectPending === 'true' || form.dataset.submitting === 'true') return;
     if (!form.reportValidity()) return;
     if (!apiEnabled) {
       showFeedback(form, 'API chưa được bật.', 'error');
@@ -79,6 +79,7 @@
     }
 
     const button = form.querySelector('button[type="submit"]');
+    form.dataset.submitting = 'true';
     const originalLabel = button?.textContent;
     if (button) button.disabled = true;
     if (button && form.dataset.apiEndpoint === '/register') button.textContent = 'Đang gửi OTP...';
@@ -109,7 +110,7 @@
       }
       if (form.dataset.successRedirect) {
         const destination = new URL(form.dataset.successRedirect, document.baseURI);
-        if (form.elements.email?.value && destination.pathname.endsWith('verify-otp')) {
+        if (form.elements.email?.value && destination.pathname.endsWith('/verify-otp')) {
           destination.searchParams.set('email', payload.email || form.elements.email.value.trim().toLowerCase());
         }
         const delay = Number(form.dataset.successDelay || 0);
@@ -131,6 +132,7 @@
     } catch (error) {
       showFeedback(form, error.message || 'Không thể kết nối máy chủ.', 'error');
     } finally {
+      delete form.dataset.submitting;
       if (button) {
         button.disabled = form.dataset.redirectPending === 'true';
         if (originalLabel) button.textContent = originalLabel;

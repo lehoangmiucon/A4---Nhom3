@@ -35,6 +35,7 @@
                     <div class="role-form-note">Sau khi xác thực, hệ thống mở khu vực phù hợp với vai trò đã được cấp cho tài khoản.</div>
                     <p class="api-feedback" data-api-feedback role="status" aria-live="polite" hidden></p>
                 </form>
+                <a class="auth-back" href="{{ url('/auth/forgot-password') }}">Quên mật khẩu?</a>
                 <div class="auth-switch">Chưa có tài khoản sinh viên? <a href="register">Đăng ký</a></div>
             </div>
         </section>

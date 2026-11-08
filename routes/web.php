@@ -14,6 +14,8 @@ Route::post('/register', [AuthController::class, 'register'])->middleware('throt
 Route::post('/email/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
 Route::post('/email/resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:3,1');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/forgot-password', [\App\Http\Controllers\MobileAuthController::class, 'forgot'])->middleware('throttle:3,1');
+Route::post('/reset-password', [\App\Http\Controllers\MobileAuthController::class, 'reset'])->middleware('throttle:5,1');
 Route::get('/login', fn () => redirect(url('/auth/login')))->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
 Route::middleware(['auth', 'account.active'])->group(function () {
@@ -24,12 +26,15 @@ Route::middleware(['auth', 'account.active'])->group(function () {
 Route::get('/', fn () => response()->view('index'));
 Route::get('/index.html', fn () => redirect(url('/')));
 Route::get('/auth/{page}', function (string $page) {
-    abort_unless(in_array($page, ['login', 'register', 'verify-otp'], true), 404);
+    abort_unless(in_array($page, ['login', 'register', 'verify-otp', 'forgot-password', 'reset-password'], true), 404);
+    if ($page === 'reset-password' && !session('password_reset_email')) {
+        return redirect(url('/auth/forgot-password'));
+    }
     return response()->view("auth.{$page}");
-})->where('page', 'login|register|verify-otp');
+})->where('page', 'login|register|verify-otp|forgot-password|reset-password');
 Route::get('/auth', fn () => redirect(url('/auth/login')));
 Route::get('/auth/{page}.html', fn (string $page) => redirect(url('/auth/'.$page), 301))
-    ->where('page', 'login|register|verify-otp');
+    ->where('page', 'login|register|verify-otp|forgot-password|reset-password');
 Route::get('/r/{code}', function (Request $request, string $code) {
     $room = Room::with('building')->where('qr_code', $code)->orWhere('code', $code)->firstOrFail();
     $portalPath = $request->user()?->role === 'student' || !$request->user() ? '/customer/portal' : '/admin/portal';

@@ -145,12 +145,12 @@ class AuthController extends Controller
     public function tokenLogin(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
             'device_name' => ['required', 'string', 'max:100'],
         ]);
 
-        $user = User::where('email', Str::lower($data['email']))->first();
+        $user = User::where('email', Str::lower(trim($data['email'])))->orWhere('member_code', trim($data['email']))->first();
         if (!$user || !Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages(['email' => 'Email hoặc mật khẩu không chính xác.']);
         }
