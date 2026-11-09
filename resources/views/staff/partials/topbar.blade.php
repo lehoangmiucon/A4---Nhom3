@@ -10,6 +10,7 @@
             @if(($unreadNotificationCount ?? 0) > 0)<span class="role-nav-notification-badge" aria-label="{{ $unreadNotificationCount }} unread notifications">{{ min($unreadNotificationCount, 99) }}{{ $unreadNotificationCount > 99 ? '+' : '' }}</span>
             @endif
         </a>
+        <a class="{{ ($pagePath ?? '') === 'account' ? 'current' : '' }}" href="{{ url('/staff/account') }}">Tài khoản</a>
     </nav>
 
     <section class="role-account" aria-label="Tài khoản đang đăng nhập">

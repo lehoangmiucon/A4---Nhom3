@@ -13,6 +13,7 @@
             @endif
         </a>
         <a class="{{ request()->is('customer/portal') ? 'current' : '' }}" href="{{ url('/customer/portal') }}">Gửi sự cố</a>
+        <a class="{{ ($pagePath ?? '') === 'account' ? 'current' : '' }}" href="{{ url('/customer/account') }}">Cá nhân</a>
     </nav>
 
     <div class="customer-user-menu">

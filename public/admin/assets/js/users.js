@@ -14,6 +14,8 @@
       const matchesStatus = !statusFilter?.value || row.dataset.userStatus === statusFilter.value;
       row.hidden = !(matchesSearch && matchesStatus);
     });
+    const empty = document.querySelector("[data-users-empty]");
+    if (empty) empty.hidden = !rows.length || rows.some(row => !row.hidden);
   }
 
   function showFeedback(message, error = false) {

@@ -118,10 +118,15 @@ class AuthController extends Controller
 
     public function login(Request $request): JsonResponse
     {
-        $credentials = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
-        if (!Auth::attempt($credentials)) {
-            throw ValidationException::withMessages(['email' => 'Email hoặc mật khẩu không chính xác.']);
+        $credentials = $request->validate(['email' => ['required', 'string', 'max:255'], 'password' => ['required', 'string']]);
+        $identifier = trim($credentials['email']);
+        $user = str_contains($identifier, '@')
+            ? User::where('email', Str::lower($identifier))->first()
+            : User::where('role', 'student')->where(fn ($query) => $query->whereNull('member_type')->orWhere('member_type', '!=', 'lecturer'))->where('member_code', $identifier)->first();
+        if (!$user || !Hash::check($credentials['password'], $user->password)) {
+            throw ValidationException::withMessages(['email' => 'Email, mã sinh viên hoặc mật khẩu không chính xác.']);
         }
+        Auth::login($user);
         $request->session()->regenerate();
         $user = $request->user();
         if ($user->is_deleted) {
@@ -194,6 +199,7 @@ class AuthController extends Controller
 
     public function changePassword(Request $request): JsonResponse
     {
+        abort_unless(in_array($request->user()->role, ['admin', 'staff'], true), 403, 'Vui lòng xác thực mã qua email trường để đổi mật khẩu.');
         $data = $request->validate([
             'current_password' => ['required', 'string'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],

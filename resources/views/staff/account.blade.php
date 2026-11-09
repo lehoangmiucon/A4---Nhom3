@@ -54,6 +54,11 @@
                         <label for="staff-email">Email đăng nhập</label>
                         <input id="staff-email" type="email" value="{{ $currentUser->email }}" readonly aria-readonly="true">
                     </div>
+                    <div class="role-field">
+                        <label for="staff-phone">Số điện thoại (không bắt buộc)</label>
+                        <input id="staff-phone" type="tel" name="phone" value="{{ old('phone', $currentUser->phone) }}" autocomplete="tel" pattern="\+?[0-9]{9,15}" maxlength="16">
+                        @error('phone')<small class="staff-account-error">{{ $message }}</small>@enderror
+                    </div>
                     <button class="role-button" type="submit">Lưu thông tin</button>
                 </form>
             </section>

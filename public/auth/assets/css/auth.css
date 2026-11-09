@@ -107,3 +107,20 @@ a{color:inherit}
 
 .role-field .reset-code-input{font-size:16px;text-transform:uppercase;letter-spacing:2px}
 .role-field .reset-code-input::placeholder{font-family:inherit;font-size:12px;text-transform:none;letter-spacing:normal}
+
+.auth-role-tabs{display:flex;gap:6px;padding:5px;margin:24px 0;background:#eef4fa;border-radius:12px}.auth-role-tabs button{flex:1;padding:12px;border:0;border-radius:8px;background:transparent;color:#526d87;font:inherit;font-weight:600;cursor:pointer}.auth-role-tabs button[aria-selected="true"]{background:#fff;color:#117fc3;box-shadow:0 2px 8px #173b6212}.auth-role-tabs button:focus-visible{outline:2px solid #1287d0;outline-offset:2px}[data-student-code][hidden]{display:none}
+
+/* Compact registration, scoped to preserve login and recovery layouts. */
+.auth-register .auth-content{padding:24px}
+.auth-register .auth-card{width:min(540px,100%);padding:26px 30px}
+.auth-register .auth-card>p{margin-bottom:14px}
+.auth-register .auth-role-tabs{margin:16px 0;padding:4px}
+.auth-register .auth-role-tabs button{padding:10px}
+.auth-register .role-form{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.auth-register .role-field{gap:5px;min-width:0}
+.auth-register .role-field input{min-height:42px;padding:10px 12px;font-size:12px}
+.auth-register .registration-email,.auth-register .auth-role-note,.auth-register .role-form>.role-button,.auth-register .api-feedback{grid-column:1/-1}
+.auth-register .role-form:has([data-student-code][hidden]) .registration-name{grid-column:1/-1}
+.auth-register .auth-role-note{padding:9px 12px}
+.auth-register .auth-switch{margin-top:12px}
+@media(max-width:600px){.auth-register .auth-content{padding:20px 16px}.auth-register .auth-card{padding:22px 20px}.auth-register .role-form{grid-template-columns:1fr}.auth-register .role-field{grid-column:1/-1}}

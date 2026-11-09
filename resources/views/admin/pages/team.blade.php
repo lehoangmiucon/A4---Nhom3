@@ -11,6 +11,10 @@
     </div>
     <div class="title-actions"><a class="button button-secondary" href="schedule">Lịch phân công</a><button class="button button-primary" type="button" data-open-team-create><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Tạo tài khoản</button></div>
 </section>
+@if(session('status'))<p class="account-feedback account-feedback-success" role="status">{{ session('status') }}</p>@endif
+@if($errors->has('current_password') || $errors->has('password'))
+<div class="account-feedback" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>
+@endif
 <p class="api-feedback" id="team-feedback" role="status" aria-live="polite" hidden></p>
 
 <section class="summary-strip">
@@ -39,6 +43,11 @@
     <button class="button button-secondary" type="button" id="team-filter-reset">Xóa lọc</button>
 </section>
 <style>
+    .team-table .team-ticket-count { text-align: center; font-variant-numeric: tabular-nums; }
+    #team-password-modal { width: min(460px, calc(100% - 32px)); }
+    #team-password-modal .form-item { display: grid; gap: 7px; margin: 16px 0; }
+    #team-password-modal input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #d8e4ef; border-radius: 9px; font: inherit; }
+    #team-password-modal input:focus-visible { outline: 2px solid #1887d5; outline-offset: 2px; }
     .team-filter-bar {
         display: grid;
         grid-template-columns: minmax(250px, 1.8fr) repeat(3, minmax(145px, 1fr)) auto;
@@ -142,7 +151,7 @@
                 <tr>
                     <th>TÀI KHOẢN</th>
                     <th>VAI TRÒ</th>
-                    <th>PHIẾU ĐƯỢC GIAO</th>
+                    <th class="team-ticket-count">PHIẾU ĐƯỢC GIAO</th>
                     <th>TRẠNG THÁI</th>
                     <th>THAO TÁC</th>
                 </tr>
@@ -152,13 +161,13 @@
                 <tr data-team-row data-team-role="admin" data-team-status="{{ $teamUser->is_deleted ? 'locked' : ($teamUser->email_verified_at ? 'active' : 'unverified') }}" data-team-categories="" data-team-phone="{{ $teamUser->phone }}" data-team-search="{{ $teamUser->name }} {{ $teamUser->email }} {{ $teamUser->phone }}">
                     <td><b>{{ $teamUser->name }}</b><br><small>{{ $teamUser->email }}</small><br><small>{{ $teamUser->phone ?: 'Chưa có số điện thoại' }}</small></td>
                     <td>Quản lý</td>
-                    <td>{{ $teamUser->assigned_tickets_count }}</td>
+                    <td class="team-ticket-count">{{ $teamUser->assigned_tickets_count }}</td>
                     <td><span class="status-badge {{ $teamUser->is_deleted ? 'status-locked' : 'status-done' }}">{{ $teamUser->is_deleted ? 'Đã khóa' : ($teamUser->email_verified_at ? 'Đang hoạt động' : 'Chưa xác thực') }}</span></td>
                     <td>
                         <div class="staff-row-actions">
                             <a class="button button-secondary team-detail-button" href="{{ url('/admin/pages/team-detail?user='.$teamUser->id) }}"><i class="fa-solid fa-eye" aria-hidden="true"></i> Chi tiết</a>
                             @if($teamUser->is($currentUser))
-                            <button class="button button-secondary management-lock-button" type="button" disabled title="Không thể khóa tài khoản đang đăng nhập"><i class="fa-solid fa-lock" aria-hidden="true"></i> Tài khoản của bạn</button>
+                            <button class="button button-secondary" type="button" data-open-self-password><i class="fa-solid fa-key" aria-hidden="true"></i> Đổi mật khẩu</button>
                             @else
                             <button class="button {{ $teamUser->is_deleted ? 'button-secondary' : 'button-danger' }} management-lock-button" type="button" data-toggle-account data-user-id="{{ $teamUser->id }}" data-user-name="{{ $teamUser->name }}" data-locked="{{ (int) $teamUser->is_deleted }}"><i class="fa-solid {{ $teamUser->is_deleted ? 'fa-lock-open' : 'fa-lock' }}" aria-hidden="true"></i> {{ $teamUser->is_deleted ? 'Mở khóa' : 'Khóa tài khoản' }}</button>
                             @endif
@@ -187,7 +196,7 @@
                     <th>TÀI KHOẢN</th>
                     <th>VAI TRÒ</th>
                     <th>DANH MỤC CÓ THỂ XỬ LÝ</th>
-                    <th>PHIẾU ĐƯỢC GIAO</th>
+                    <th class="team-ticket-count">PHIẾU ĐƯỢC GIAO</th>
                     <th>TRẠNG THÁI</th>
                     <th>THAO TÁC</th>
                 </tr>
@@ -200,7 +209,7 @@
                     <td>
                         <div class="staff-category-tags">@forelse($teamUser->categories as $category)<span style="--staff-category-color:{{ $category->color ?? '#64748B' }}">{{ $category->name }}</span>@empty<span class="staff-category-empty">Chưa gán danh mục</span>@endforelse</div>
                     </td>
-                    <td>{{ $teamUser->assigned_tickets_count }}</td>
+                    <td class="team-ticket-count">{{ $teamUser->assigned_tickets_count }}</td>
                     <td><span class="status-badge {{ $teamUser->is_deleted ? 'status-locked' : 'status-done' }}">{{ $teamUser->is_deleted ? 'Đã khóa' : ($teamUser->email_verified_at ? 'Đang hoạt động' : 'Chưa xác thực') }}</span></td>
                     <td>
                         <div class="staff-row-actions">
@@ -218,6 +227,20 @@
     </div>
 </section>
 
+<dialog class="calendar-modal" id="team-password-modal" aria-labelledby="self-password-title" data-has-password-errors="{{ $errors->has('current_password') || $errors->has('password') ? 'true' : 'false' }}">
+    <header class="modal-head"><span class="modal-calendar-icon"><i class="fa-solid fa-key" aria-hidden="true"></i></span><button class="modal-close" type="button" data-close-self-password aria-label="Đóng">×</button></header>
+    <h2 id="self-password-title">Đổi mật khẩu của bạn</h2>
+    <p>{{ $currentUser->email }}</p>
+    <form action="{{ url('/account/password') }}" method="post">
+        @csrf
+        <label class="form-item"><span>Mật khẩu hiện tại</span><input name="current_password" type="password" autocomplete="current-password" required></label>
+        @error('current_password')<p role="alert">{{ $message }}</p>@enderror
+        <label class="form-item"><span>Mật khẩu mới</span><input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+        @error('password')<p role="alert">{{ $message }}</p>@enderror
+        <label class="form-item"><span>Xác nhận mật khẩu mới</span><input name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required></label>
+        <footer class="calendar-modal-footer"><button class="button button-secondary" type="button" data-close-self-password>Hủy</button><button class="button button-primary" type="submit">Đổi mật khẩu</button></footer>
+    </form>
+</dialog>
 <dialog class="calendar-modal team-account-modal" id="team-account-modal" aria-labelledby="team-modal-title">
     <header class="modal-head"><span class="modal-calendar-icon"><i class="fa-solid fa-user-gear" aria-hidden="true"></i></span><button class="modal-close" type="button" data-close-team-modal aria-label="Đóng">×</button></header>
     <h2 id="team-modal-title">Tạo tài khoản</h2>
@@ -248,4 +271,5 @@
 
 @section('scripts')
 <script src="../assets/js/team.js?v=20261106-fast-actions1"></script>
+<script src="{{ url('/admin/assets/js/team-password.js?v=20261109') }}" defer></script>
 @endsection

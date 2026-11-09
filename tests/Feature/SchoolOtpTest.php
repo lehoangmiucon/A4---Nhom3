@@ -24,6 +24,8 @@ class SchoolOtpTest extends TestCase
             '0001_01_01_000000_create_users_table.php',
             '2026_11_02_135001_create_email_otps_table.php',
             '2026_11_03_110000_add_is_deleted_to_users_table.php',
+            '2026_11_05_120000_add_phone_to_users_table.php',
+            '2026_11_08_100000_add_member_identity_to_users_table.php',
         ] as $migration) {
             (require database_path('migrations/'.$migration))->up();
         }
@@ -32,7 +34,7 @@ class SchoolOtpTest extends TestCase
     private function registerStudent(string $email = 'trong@ut.edu.vn')
     {
         return $this->postJson('/register', [
-            'name' => 'Trọng', 'email' => $email,
+            'name' => 'Trọng', 'email' => $email, 'member_type' => 'student', 'member_code' => 'SV0001',
             'password' => 'Example-password-123', 'password_confirmation' => 'Example-password-123',
         ]);
     }

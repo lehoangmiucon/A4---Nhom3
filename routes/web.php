@@ -10,7 +10,7 @@ use App\Models\Room;
 use App\Models\Building;
 use App\Models\Category;
 
-Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+Route::post('/register', [\App\Http\Controllers\MobileAuthController::class, 'register'])->middleware('throttle:5,1');
 Route::post('/email/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
 Route::post('/email/resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:3,1');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
@@ -19,6 +19,8 @@ Route::post('/reset-password', [\App\Http\Controllers\MobileAuthController::clas
 Route::get('/login', fn () => redirect(url('/auth/login')))->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
 Route::middleware(['auth', 'account.active'])->group(function () {
+    Route::post('/account/password-code', [AccountController::class, 'sendPasswordCode'])->middleware('throttle:3,1');
+    Route::post('/account/password-confirm', [AccountController::class, 'resetWebWithCode'])->middleware('throttle:5,1');
     Route::post('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
     Route::post('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
 });

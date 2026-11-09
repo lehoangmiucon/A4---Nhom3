@@ -57,16 +57,11 @@ class AccountController extends Controller
 
     public function updateProfile(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-        ]);
-
         $user = $request->user();
         $oldName = $user->name;
-        $user->name = trim($data['name']);
-        $user->save();
+        $this->saveMobileProfile($request);
 
-        ActivityLog::record($request, 'account.profile_updated', $user, 'Người dùng cập nhật tên tài khoản.', [
+        ActivityLog::record($request, 'account.profile_updated', $user, 'Người dùng cập nhật hồ sơ cá nhân.', [
             'old_name' => $oldName,
             'new_name' => $user->name,
         ]);
@@ -74,8 +69,18 @@ class AccountController extends Controller
         return back()->with('status', 'Đã cập nhật thông tin cá nhân.');
     }
 
+    public function resetWebWithCode(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $this->resetWithCode($request);
+        \Illuminate\Support\Facades\Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return response()->json(['message' => 'Đã đổi mật khẩu. Vui lòng đăng nhập lại.', 'redirect' => url('/auth/login')]);
+    }
+
     public function updatePassword(Request $request): RedirectResponse
     {
+        abort_unless(in_array($request->user()->role, ['admin', 'staff'], true), 403, 'Vui lòng xác thực mã qua email trường để đổi mật khẩu.');
         $data = $request->validate([
             'current_password' => ['required', 'string'],
             'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],

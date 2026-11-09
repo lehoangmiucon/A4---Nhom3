@@ -7,20 +7,20 @@ Người báo sự cố · Helpdesk trường học
 @section('content')
 <section class="page-title-row">
     <div>
-        <p class="eyebrow">TÀI KHOẢN SINH VIÊN</p>
+        <p class="eyebrow">SINH VIÊN VÀ GIẢNG VIÊN</p>
         <h1>Người báo sự cố</h1>
-        <p>Danh sách sinh viên đã đăng ký và gửi phiếu hỗ trợ.</p>
+        <p>Danh sách sinh viên và giảng viên đã đăng ký và gửi phiếu hỗ trợ.</p>
     </div>
-    <span class="helper-text">Sinh viên tự đăng ký; admin tạo tài khoản nhân viên và quản lý.</span>
+    <span class="helper-text">SV/GV tự đăng ký; admin tạo tài khoản nhân viên và quản lý.</span>
 </section>
 <section class="summary-strip">
-    <div class="summary-tile"><span>Tổng sinh viên</span><strong>{{ $users->count() }}</strong></div>
+    <div class="summary-tile"><span>Tổng người dùng</span><strong>{{ $users->count() }}</strong></div>
     <div class="summary-tile"><span>Đang hoạt động</span><strong>{{ $users->where('is_deleted', false)->count() }}</strong></div>
     <div class="summary-tile"><span>Đã khóa</span><strong>{{ $users->where('is_deleted', true)->count() }}</strong></div>
-    <div class="summary-tile"><span>Phiếu sinh viên gửi tháng này</span><strong>{{ $monthlyTicketCount }}</strong></div>
+    <div class="summary-tile"><span>Phiếu gửi tháng này</span><strong>{{ $monthlyTicketCount }}</strong></div>
 </section>
 <section class="filter-bar">
-    <input id="users-search" class="search-field" type="search" placeholder="Tìm theo tên hoặc email...">
+    <input id="users-search" class="search-field" type="search" placeholder="Tìm theo tên, mã sinh viên hoặc email...">
     <select id="users-status-filter" class="select-field">
         <option value="">Tất cả trạng thái</option>
         <option value="active">Đang hoạt động</option>
@@ -34,7 +34,7 @@ Người báo sự cố · Helpdesk trường học
             <thead>
                 <tr>
                     <th>NGƯỜI DÙNG</th>
-                    <th>EMAIL</th>
+                    <th>MÃ SINH VIÊN</th><th>EMAIL</th>
                     <th>PHIẾU ĐÃ GỬI</th>
                     <th>TRẠNG THÁI</th>
                     <th>THAO TÁC</th>
@@ -42,9 +42,9 @@ Người báo sự cố · Helpdesk trường học
             </thead>
             <tbody>
                 @forelse($users as $listedUser)
-                <tr data-user-row data-user-status="{{ $listedUser->is_deleted ? 'locked' : 'active' }}" data-user-search="{{ mb_strtolower($listedUser->name.' '.$listedUser->email) }}">
+                <tr data-user-row data-user-status="{{ $listedUser->is_deleted ? 'locked' : 'active' }}" data-user-search="{{ mb_strtolower($listedUser->name.' '.$listedUser->email.' '.$listedUser->member_code) }}">
                     <td><span class="person-cell"><span class="mini-avatar av-blue">{{ mb_strtoupper(mb_substr($listedUser->name, 0, 1)) }}</span><strong>{{ $listedUser->name }}</strong></span></td>
-                    <td>{{ $listedUser->email }}</td>
+                    <td>{{ $listedUser->member_type === 'lecturer' ? 'Giảng viên' : ($listedUser->member_code ?: 'Chưa cập nhật') }}</td><td>{{ $listedUser->email }}</td>
                     <td>{{ $listedUser->reported_tickets_count }}</td>
                     <td><span class="status-badge {{ $listedUser->is_deleted ? 'status-locked' : 'status-done' }}">{{ $listedUser->is_deleted ? 'Đã khóa' : 'Đang hoạt động' }}</span></td>
                     <td>
@@ -64,12 +64,13 @@ Người báo sự cố · Helpdesk trường học
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="5">Chưa có sinh viên.</td></tr>
+                <tr><td colspan="6">Chưa có người dùng.</td></tr>
                 @endforelse
+                <tr data-users-empty hidden><td colspan="6">Không tìm thấy người dùng phù hợp.</td></tr>
             </tbody>
         </table>
     </div>
-    <div class="pagination"><span>Hiển thị {{ $users->count() }} sinh viên</span></div>
+    <div class="pagination"><span>Hiển thị {{ $users->count() }} người dùng</span></div>
 </section>
 
 @endsection

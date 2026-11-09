@@ -36,6 +36,27 @@
   };
 
   document.addEventListener('DOMContentLoaded', () => {
+    const tabs = [...document.querySelectorAll('[data-member-tab]')];
+    const selectRole = (tab) => {
+      tabs.forEach(item => { item.setAttribute('aria-selected', String(item === tab)); item.tabIndex = item === tab ? 0 : -1; });
+      const form = document.querySelector('#registration-panel');
+      if (!form) return;
+      form.setAttribute('aria-labelledby', tab.id);
+      form.elements.member_type.value = tab.dataset.memberTab;
+      const student = tab.dataset.memberTab === 'student';
+      form.querySelector('[data-student-code]').hidden = !student;
+      form.elements.member_code.disabled = !student;
+      form.elements.member_code.required = student;
+    };
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => selectRole(tab));
+      tab.addEventListener('keydown', event => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        const next = tabs[event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + 1) % tabs.length];
+        selectRole(next); next.focus();
+      });
+    });
     const email = new URLSearchParams(window.location.search).get('email');
     const emailInput = document.querySelector('input[name="email"]');
     if (email && emailInput && !emailInput.value) emailInput.value = email;

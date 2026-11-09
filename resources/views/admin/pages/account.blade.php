@@ -51,6 +51,11 @@
                 <input id="account-email" type="email" value="{{ $currentUser->email }}" readonly>
                 <small class="account-field-hint">Email được dùng để đăng nhập và không thể đổi tại đây.</small>
             </div>
+            <div class="form-item">
+                <label for="account-phone">Số điện thoại (không bắt buộc)</label>
+                <input id="account-phone" name="phone" type="tel" value="{{ old('phone', $currentUser->phone) }}" autocomplete="tel" pattern="\+?[0-9]{9,15}" maxlength="16">
+                @error('phone')<small class="account-field-error">{{ $message }}</small>@enderror
+            </div>
             <div class="account-details-row">
                 <div><small>Vai trò</small><strong>{{ $roleLabels[$currentUser->role] ?? $currentUser->role }}</strong></div>
                 <div><small>Email xác thực</small><strong>{{ $currentUser->email_verified_at ? 'Đã xác thực' : 'Chưa xác thực' }}</strong></div>
