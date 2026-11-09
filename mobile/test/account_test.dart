@@ -15,7 +15,7 @@ void main() {
   );
   test('Member labels reflect account role', () {
     expect(
-      memberLabel({'role': 'student', 'member_type': 'lecturer'}),
+      memberLabel({'role': 'teacher', 'member_type': 'lecturer'}),
       'Giảng viên',
     );
     expect(
@@ -31,7 +31,7 @@ void main() {
         'id': 1,
         'name': 'Giảng viên',
         'email': 'gv@ut.edu.vn',
-        'role': 'student',
+        'role': 'teacher',
         'member_type': 'lecturer',
         'member_code': null,
         'phone': null,
@@ -81,7 +81,11 @@ void main() {
     final api = AuthApi(
       client: MockClient((request) async {
         saved = true;
-        expect(jsonDecode(request.body), {'name': 'New', 'phone': null, 'member_code': 'SV123'});
+        expect(jsonDecode(request.body), {
+          'name': 'New',
+          'phone': null,
+          'member_code': 'SV123',
+        });
         return http.Response(
           jsonEncode({
             'data': {...user, 'name': 'New', 'phone': null},

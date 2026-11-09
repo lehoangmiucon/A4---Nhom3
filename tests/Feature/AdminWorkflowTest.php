@@ -42,7 +42,7 @@ class AdminWorkflowTest extends TestCase {
         $this->postJson('/api/admin/tickets/'.$ticket->id.'/reopen',['note'=>'Còn lỗi'])->assertOk();$this->assertSame('reopened',$ticket->fresh()->status);
     }
     public function test_admin_user_search_create_staff_and_lock_controls():void{
-        $admin=$this->user('admin','admin@ut.edu.vn');$lecturer=$this->user('student','gv@ut.edu.vn');DB::table('users')->where('id',$lecturer->id)->update(['member_type'=>'lecturer']);Sanctum::actingAs($admin);
+        $admin=$this->user('admin','admin@ut.edu.vn');$lecturer=$this->user('student','gv@ut.edu.vn');DB::table('users')->where('id',$lecturer->id)->update(['role'=>'teacher','member_type'=>'lecturer']);Sanctum::actingAs($admin);
         $this->getJson('/api/admin/users?member_type=lecturer')->assertOk()->assertJsonCount(1,'data');
         $this->patchJson('/api/admin/users/'.$admin->id.'/status',['is_deleted'=>true])->assertUnprocessable();
         $this->patchJson('/api/admin/users/'.$lecturer->id.'/status',['is_deleted'=>true])->assertOk();

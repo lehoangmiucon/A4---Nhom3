@@ -1,14 +1,14 @@
 @extends('admin.layouts.app')
 
 @section('title')
-Người báo sự cố · Helpdesk trường học
+Danh sách người dùng · Helpdesk trường học
 @endsection
 
 @section('content')
 <section class="page-title-row">
     <div>
         <p class="eyebrow">SINH VIÊN VÀ GIẢNG VIÊN</p>
-        <h1>Người báo sự cố</h1>
+        <h1>Danh sách người dùng</h1>
         <p>Danh sách sinh viên và giảng viên đã đăng ký và gửi phiếu hỗ trợ.</p>
     </div>
     <span class="helper-text">SV/GV tự đăng ký; admin tạo tài khoản nhân viên và quản lý.</span>
@@ -21,6 +21,7 @@ Người báo sự cố · Helpdesk trường học
 </section>
 <section class="filter-bar">
     <input id="users-search" class="search-field" type="search" placeholder="Tìm theo tên, mã sinh viên hoặc email...">
+    <select id="users-type-filter" class="select-field" aria-label="Loại người dùng"><option value="">Tất cả loại người dùng</option><option value="student">Sinh viên</option><option value="teacher">Giảng viên</option></select>
     <select id="users-status-filter" class="select-field">
         <option value="">Tất cả trạng thái</option>
         <option value="active">Đang hoạt động</option>
@@ -34,7 +35,7 @@ Người báo sự cố · Helpdesk trường học
             <thead>
                 <tr>
                     <th>NGƯỜI DÙNG</th>
-                    <th>MÃ SINH VIÊN</th><th>EMAIL</th>
+                    <th>LOẠI NGƯỜI DÙNG</th><th>MÃ SINH VIÊN</th><th>EMAIL</th>
                     <th>PHIẾU ĐÃ GỬI</th>
                     <th>TRẠNG THÁI</th>
                     <th>THAO TÁC</th>
@@ -42,12 +43,13 @@ Người báo sự cố · Helpdesk trường học
             </thead>
             <tbody>
                 @forelse($users as $listedUser)
-                <tr data-user-row data-user-status="{{ $listedUser->is_deleted ? 'locked' : 'active' }}" data-user-search="{{ mb_strtolower($listedUser->name.' '.$listedUser->email.' '.$listedUser->member_code) }}">
+                <tr data-user-row data-user-type="{{ $listedUser->role }}" data-user-status="{{ $listedUser->is_deleted ? 'locked' : 'active' }}" data-user-search="{{ mb_strtolower($listedUser->name.' '.$listedUser->email.' '.$listedUser->member_code) }}">
                     <td><span class="person-cell"><span class="mini-avatar av-blue">{{ mb_strtoupper(mb_substr($listedUser->name, 0, 1)) }}</span><strong>{{ $listedUser->name }}</strong></span></td>
-                    <td>{{ $listedUser->member_type === 'lecturer' ? 'Giảng viên' : ($listedUser->member_code ?: 'Chưa cập nhật') }}</td><td>{{ $listedUser->email }}</td>
+                    <td>{{ $listedUser->role === 'teacher' ? 'Giảng viên' : 'Sinh viên' }}</td><td>{{ $listedUser->role === 'student' ? ($listedUser->member_code ?: 'Chưa cập nhật') : '—' }}</td><td>{{ $listedUser->email }}</td>
                     <td>{{ $listedUser->reported_tickets_count }}</td>
                     <td><span class="status-badge {{ $listedUser->is_deleted ? 'status-locked' : 'status-done' }}">{{ $listedUser->is_deleted ? 'Đã khóa' : 'Đang hoạt động' }}</span></td>
                     <td>
+                        @include('shared.teacher-confirmation', ['member' => $listedUser])
                         <a class="button button-secondary student-detail-button" href="{{ url('/admin/pages/user-detail?user='.$listedUser->id) }}">
                             <i class="fa-solid fa-eye" aria-hidden="true"></i> Xem chi tiết
                         </a>
@@ -64,9 +66,9 @@ Người báo sự cố · Helpdesk trường học
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="6">Chưa có người dùng.</td></tr>
+                <tr><td colspan="7">Chưa có người dùng.</td></tr>
                 @endforelse
-                <tr data-users-empty hidden><td colspan="6">Không tìm thấy người dùng phù hợp.</td></tr>
+                <tr data-users-empty hidden><td colspan="7">Không tìm thấy người dùng phù hợp.</td></tr>
             </tbody>
         </table>
     </div>
@@ -76,5 +78,5 @@ Người báo sự cố · Helpdesk trường học
 @endsection
 
 @section('scripts')
-<script src="{{ url('/admin/assets/js/users.js?v=20261106-fast-actions1') }}"></script>
+<script src="{{ url('/admin/assets/js/users.js?v=20261109-teacher') }}"></script>
 @endsection

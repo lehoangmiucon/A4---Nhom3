@@ -27,7 +27,7 @@ class UiController extends Controller
         $allowedRoles = match ($section) {
             'admin' => ['admin'],
             'staff' => ['admin', 'staff'],
-            'customer' => ['admin', 'staff', 'student'],
+            'customer' => ['admin', 'staff', 'student', 'teacher'],
             default => [],
         };
         abort_unless(in_array($request->user()->role, $allowedRoles, true), 403);
@@ -234,14 +234,14 @@ class UiController extends Controller
             $data['categories'] = Category::orderBy('name')->get();
         }
         if ($section === 'admin' && $path === 'pages/users') {
-            $data['users'] = User::where('role', 'student')->withCount('reportedTickets')->orderBy('name')->get();
+            $data['users'] = User::whereIn('role', ['student', 'teacher'])->withCount('reportedTickets')->orderBy('name')->get();
             $data['monthlyTicketCount'] = Ticket::whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
-                ->whereHas('reporter', fn($query) => $query->where('role', 'student'))
+                ->whereHas('reporter', fn($query) => $query->whereIn('role', ['student', 'teacher']))
                 ->count();
         }
         if ($section === 'admin' && $path === 'pages/user-detail') {
-            $data['student'] = User::where('role', 'student')
+            $data['student'] = User::whereIn('role', ['student', 'teacher'])
                 ->with(['reportedTickets' => fn($query) => $query->with(['room.building', 'category', 'assignee'])->latest()])
                 ->withCount('reportedTickets')
                 ->findOrFail($request->integer('user'));

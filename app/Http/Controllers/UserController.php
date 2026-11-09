@@ -49,10 +49,10 @@ class UserController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $request->validate(['search' => ['nullable', 'string', 'max:120'], 'role' => ['nullable', Rule::in(['student', 'staff', 'admin'])], 'member_type' => ['nullable', Rule::in(['student', 'lecturer'])], 'status' => ['nullable', Rule::in(['active', 'locked', 'unverified'])]]);
+        $request->validate(['search' => ['nullable', 'string', 'max:120'], 'role' => ['nullable', Rule::in(['student', 'teacher', 'staff', 'admin'])], 'member_type' => ['nullable', Rule::in(['student', 'lecturer'])], 'status' => ['nullable', Rule::in(['active', 'locked', 'unverified'])]]);
         $users = User::query()->select('id', 'name', 'email', 'phone', 'role', 'member_type', 'member_code', 'is_deleted', 'email_verified_at', 'created_at')
             ->when($request->filled('role'), fn($query) => $query->where('role', $request->string('role')))
-            ->when($request->filled('member_type'), fn($query) => $query->where('role', 'student')->where(fn($q) => $request->input('member_type') === 'student' ? $q->where('member_type', 'student')->orWhereNull('member_type') : $q->where('member_type', 'lecturer')))
+            ->when($request->filled('member_type'), fn($query) => $query->where('role', $request->input('member_type') === 'lecturer' ? 'teacher' : 'student'))
             ->when($request->input('status') === 'locked', fn($q) => $q->where('is_deleted', true))
             ->when($request->input('status') === 'active', fn($q) => $q->where('is_deleted', false)->whereNotNull('email_verified_at'))
             ->when($request->input('status') === 'unverified', fn($q) => $q->where('is_deleted', false)->whereNull('email_verified_at'))
@@ -169,11 +169,33 @@ class UserController extends Controller
         ]);
     }
 
+    public function confirmTeacher(Request $request, User $user): JsonResponse
+    {
+        abort_unless($request->user()->role === 'admin', 403);
+        $data = $request->validate(['is_teacher' => ['required', 'boolean']]);
+        DB::transaction(function () use ($request, $user, $data) {
+            $user = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            abort_unless(in_array($user->role, ['student', 'teacher'], true), 422, 'Chỉ xác nhận giảng viên cho tài khoản người dùng.');
+            abort_unless($user->email_verified_at && !$user->is_deleted && str_ends_with(strtolower($user->email), '@ut.edu.vn'), 422,
+                'Tài khoản cần xác thực email trường và không bị khóa.');
+            $role = $data['is_teacher'] ? 'teacher' : 'student';
+            $previous = $user->role;
+            if ($role === $previous) return;
+            $user->forceFill(['role' => $role, 'member_type' => $data['is_teacher'] ? 'lecturer' : 'student', 'remember_token' => Str::random(60)])->save();
+            $user->tokens()->delete();
+            if (Schema::hasTable('sessions')) DB::table('sessions')->where('user_id', $user->id)->delete();
+            ActivityLog::record($request, 'user.teacher_confirmed', $user, $data['is_teacher'] ? 'Admin xác nhận giảng viên.' : 'Admin bỏ xác nhận giảng viên.',
+                ['from_role' => $previous, 'to_role' => $role]);
+        });
+        return response()->json(['message' => $data['is_teacher'] ? 'Đã xác nhận giảng viên. Tài khoản cần đăng nhập lại.' : 'Đã chuyển về sinh viên. Tài khoản cần đăng nhập lại.',
+            'data' => $user->fresh()->only('id', 'name', 'email', 'role', 'member_type', 'member_code', 'email_verified_at', 'is_deleted')]);
+    }
+
     public function destroy(Request $request, User $user): JsonResponse
     {
         abort_unless($request->user()->role === 'admin', 403);
         abort_if($user->is($request->user()), 422, 'Không thể xóa tài khoản đang đăng nhập.');
-        abort_unless(in_array($user->role, ['student', 'staff'], true), 422, 'Chỉ được xóa tài khoản SV/GV hoặc KTV.');
+        abort_unless(in_array($user->role, ['student', 'teacher', 'staff'], true), 422, 'Chỉ được xóa tài khoản SV/GV hoặc KTV.');
         DB::transaction(function () use ($request, $user) {
             $user = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
             if ($user->role === 'staff') {

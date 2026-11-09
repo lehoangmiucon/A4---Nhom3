@@ -60,7 +60,7 @@ class TicketController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        abort_unless(in_array($request->user()?->role, ['admin', 'staff', 'student'], true), 403, 'Vui lòng đăng nhập bằng tài khoản sinh viên để gửi sự cố.');
+        abort_unless(in_array($request->user()?->role, ['admin', 'staff', 'student', 'teacher'], true), 403, 'Vui lòng đăng nhập bằng tài khoản sinh viên để gửi sự cố.');
         $data = $request->validate([
             'reporter' => ['nullable', 'string', 'max:120'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -192,7 +192,7 @@ class TicketController extends Controller
 
     public function updateReport(Request $request, Ticket $ticket): JsonResponse
     {
-        abort_unless($request->user()?->role === 'student' && (int) $ticket->reporter_id === (int) $request->user()->id, 403, 'Bạn không có quyền sửa phiếu này.');
+        abort_unless(in_array($request->user()?->role, ['student', 'teacher'], true) && (int) $ticket->reporter_id === (int) $request->user()->id, 403, 'Bạn không có quyền sửa phiếu này.');
         abort_unless($ticket->status === 'new', 422, 'Chỉ có thể sửa phiếu khi đang chờ tiếp nhận.');
 
         $data = $request->validate([
@@ -261,10 +261,10 @@ class TicketController extends Controller
     {
         abort_unless($this->canView($request->user(), $ticket), 403, 'Bạn không có quyền xem phiếu này.');
         $relations = ['room.building:id,code,name', 'assignee:id,name', 'reporter:id,name,email', 'category:id,name,color', 'reportAttachments', 'logs.user:id,name'];
-        if ($request->user()->role !== 'student') $relations[] = 'repairAttachments';
+        if (!in_array($request->user()->role, ['student', 'teacher'], true)) $relations[] = 'repairAttachments';
         $ticket->load($relations);
         $data = $ticket->toArray();
-        $data['attachments'] = $request->user()->role === 'student'
+        $data['attachments'] = in_array($request->user()->role, ['student', 'teacher'], true)
             ? $ticket->reportAttachments->values()->toArray()
             : $ticket->reportAttachments->concat($ticket->repairAttachments)->values()->toArray();
         $data['assigned_staff'] = $ticket->assignee;
@@ -273,7 +273,7 @@ class TicketController extends Controller
         }
         $data['can_review'] = (int) $ticket->reporter_id === (int) $request->user()->id
             && in_array($ticket->status, ['resolved', 'closed'], true) && !$ticket->feedback_at;
-        $data['can_supplement'] = $request->user()->role === 'student' && (int) $ticket->reporter_id === (int) $request->user()->id && $ticket->status === 'new' && $ticket->triage_status === 'needs_info';
+        $data['can_supplement'] = in_array($request->user()->role, ['student', 'teacher'], true) && (int) $ticket->reporter_id === (int) $request->user()->id && $ticket->status === 'new' && $ticket->triage_status === 'needs_info';
         $data['equipment'] = ['name' => $ticket->equipment_label];
         return response()->json(['data' => $data]);
     }

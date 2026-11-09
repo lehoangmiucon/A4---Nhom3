@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Chi tiết sinh viên · Helpdesk')
+@section('title', 'Chi tiết người dùng · Helpdesk')
 
 @push('styles')
 <style>
@@ -274,11 +274,11 @@
 @section('content')
 <section class="student-detail-heading">
     <div>
-        <p class="eyebrow">HỒ SƠ NGƯỜI BÁO SỰ CỐ</p>
-        <h1>Chi tiết sinh viên</h1>
+        <p class="eyebrow">HỒ SƠ NGƯỜI DÙNG</p>
+        <h1>Chi tiết người dùng</h1>
         <p>Thông tin tài khoản và lịch sử phiếu hỗ trợ đã gửi.</p>
     </div>
-    <a class="button button-secondary" href="{{ url('/admin/pages/users') }}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Danh sách sinh viên</a>
+    <a class="button button-secondary" href="{{ url('/admin/pages/users') }}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Danh sách người dùng</a>
 </section>
 
 <div class="student-detail-layout">
@@ -338,9 +338,12 @@
             @endforeach
         </div>
         @else
-        <div class="student-empty">Sinh viên này chưa gửi phiếu sự cố nào.</div>
+        <div class="student-empty">Người dùng này chưa gửi phiếu sự cố nào.</div>
         @endif
     </section>
 </div>
+<section class="panel" style="padding:22px;margin-top:20px"><h2>Loại người dùng: {{ $student->role === 'teacher' ? 'Giảng viên' : 'Sinh viên' }}</h2>
+@include('shared.teacher-confirmation', ['member' => $student])
+<p>Chỉ xác nhận giảng viên sau khi đối chiếu thông tin. Thao tác thay đổi loại người dùng sẽ yêu cầu tài khoản đăng nhập lại.</p></section>
 @include('shared.delete-user', ['deleteUser' => $student])
 @endsection

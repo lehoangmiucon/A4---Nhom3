@@ -45,13 +45,12 @@ class WebAccountTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_web_registration_requires_student_code_but_not_lecturer_code(): void
+    public function test_web_registration_is_shared_and_cannot_self_assign_teacher(): void
     {
         $data = ['name' => 'Thành viên', 'email' => 'new@ut.edu.vn', 'password' => 'Password123', 'password_confirmation' => 'Password123'];
-        $this->postJson('/register', [...$data, 'member_type' => 'student'])->assertUnprocessable()->assertJsonValidationErrors('member_code');
-        $this->postJson('/register', [...$data, 'member_type' => 'lecturer', 'member_code' => 'ignored', 'role' => 'admin'])->assertCreated();
-        $this->assertDatabaseHas('users', ['email' => 'new@ut.edu.vn', 'role' => 'student', 'member_type' => 'lecturer', 'member_code' => null]);
-        $this->postJson('/register', [...$data, 'email' => 'sv@ut.edu.vn', 'member_type' => 'student', 'member_code' => '000123'])->assertCreated();
+        $this->postJson('/register', [...$data, 'member_type' => 'lecturer', 'role' => 'teacher'])->assertCreated();
+        $this->assertDatabaseHas('users', ['email' => 'new@ut.edu.vn', 'role' => 'student', 'member_type' => 'student', 'member_code' => null]);
+        $this->postJson('/register', [...$data, 'email' => 'sv@ut.edu.vn', 'member_code' => '000123'])->assertCreated();
         $this->assertDatabaseHas('users', ['email' => 'sv@ut.edu.vn', 'member_code' => '000123', 'email_verified_at' => null]);
     }
 
@@ -62,7 +61,7 @@ class WebAccountTest extends TestCase
         $this->actingAs($user)->post('/account/profile', ['name' => 'Tên mới', 'member_code' => '00999', 'phone' => '0912345678', 'email' => 'wrong@ut.edu.vn', 'role' => 'admin'])->assertRedirect();
         $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => 'Tên mới', 'member_code' => '00999', 'phone' => '0912345678', 'email' => 'student@ut.edu.vn', 'role' => 'student']);
         $this->postJson('/account/profile', ['name' => 'Tên mới', 'member_code' => 'occupied'])->assertUnprocessable()->assertJsonValidationErrors('member_code');
-        $other->forceFill(['member_type' => 'lecturer'])->save();
+        $other->forceFill(['role' => 'teacher', 'member_type' => 'lecturer'])->save();
         $this->actingAs($other)->postJson('/account/profile', ['name' => 'GV', 'member_code' => 'bad'])->assertUnprocessable();
     }
 
@@ -81,7 +80,7 @@ class WebAccountTest extends TestCase
 
     public function test_school_password_code_is_bound_to_logged_in_member_and_signs_out_after_reset(): void
     {
-        $user = $this->member(['member_type' => 'lecturer', 'member_code' => null]);
+        $user = $this->member(['role' => 'teacher', 'member_type' => 'lecturer', 'member_code' => null]);
         $user->createToken('test');
         $this->actingAs($user)->postJson('/account/password-code', ['email' => 'other@ut.edu.vn'])->assertOk();
         $mail = Mail::mailer()->getSymfonyTransport()->messages()->last()->getOriginalMessage();
@@ -100,7 +99,7 @@ class WebAccountTest extends TestCase
     {
         $student = $this->member();
         $this->actingAs($student)->get('/customer/account')->assertOk()->assertSee('name="member_code"', false)->assertSee('data-password-code-form', false);
-        $student->forceFill(['member_type' => 'lecturer'])->save();
+        $student->forceFill(['role' => 'teacher', 'member_type' => 'lecturer'])->save();
         $this->get('/customer/account')->assertOk()->assertSee('Giảng viên')->assertDontSee('name="member_code"', false);
         foreach (['staff' => '/staff/account', 'admin' => '/admin/pages/account'] as $role => $page) {
             $user = $this->member(['email' => $role.'@example.test', 'role' => $role, 'member_code' => $role]);

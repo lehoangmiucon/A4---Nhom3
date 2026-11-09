@@ -41,7 +41,7 @@
                 <dl class="account-facts">
                     <div><dt>Họ và tên</dt><dd>{{ $currentUser->name }}</dd></div>
                     <div><dt>Email đăng nhập</dt><dd>{{ $currentUser->email }}</dd></div>
-                    <div><dt>Vai trò</dt><dd>{{ ['admin' => 'Quản lý', 'staff' => 'Nhân viên kỹ thuật', 'student' => $currentUser->member_type === 'lecturer' ? 'Giảng viên' : 'Sinh viên'][$currentUser->role] ?? 'Người dùng' }}</dd></div>
+                    <div><dt>Vai trò</dt><dd>{{ ['admin' => 'Quản lý', 'staff' => 'Nhân viên kỹ thuật', 'student' => 'Sinh viên', 'teacher' => 'Giảng viên'][$currentUser->role] ?? 'Người dùng' }}</dd></div>
                     <div><dt>Email xác thực</dt><dd>{{ $currentUser->email_verified_at ? 'Đã xác thực' : 'Chưa xác thực' }}</dd></div>
                     <div><dt>Ngày tạo tài khoản</dt><dd>{{ $currentUser->created_at?->format('d/m/Y') ?? '—' }}</dd></div>
                 </dl>
@@ -50,9 +50,9 @@
                     <h2>Chỉnh sửa hồ sơ</h2>
                     <label for="profile-name">Họ và tên</label>
                     <input id="profile-name" name="name" value="{{ old('name', $currentUser->name) }}" maxlength="120" autocomplete="name" required>
-                    @if($currentUser->member_type !== 'lecturer')
-                    <label for="profile-code">Mã sinh viên</label>
-                    <input id="profile-code" name="member_code" value="{{ old('member_code', $currentUser->member_code) }}" maxlength="80" required>
+                    @if($currentUser->role === 'student')
+                    <label for="profile-code">Mã sinh viên (không bắt buộc)</label>
+                    <input id="profile-code" name="member_code" value="{{ old('member_code', $currentUser->member_code) }}" maxlength="80">
                     @endif
                     <label for="profile-phone">Số điện thoại <small>(không bắt buộc)</small></label>
                     <input id="profile-phone" type="tel" name="phone" value="{{ old('phone', $currentUser->phone) }}" autocomplete="tel" pattern="\+?[0-9]{9,15}" maxlength="16">

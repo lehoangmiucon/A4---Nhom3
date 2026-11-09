@@ -1,4 +1,4 @@
-@if(in_array($deleteUser->role, ['student', 'staff'], true) && !$deleteUser->is($currentUser))
+@if(in_array($deleteUser->role, ['student', 'teacher', 'staff'], true) && !$deleteUser->is($currentUser))
 <section class="panel" style="margin-top:20px;padding:22px">
     <h2>Xóa tài khoản</h2>
     <p>Tài khoản sẽ bị xóa khỏi danh sách và không thể đăng nhập. Lịch sử phiếu vẫn được giữ lại.</p>

@@ -39,7 +39,7 @@ Route::get('/auth/{page}.html', fn (string $page) => redirect(url('/auth/'.$page
     ->where('page', 'login|register|verify-otp|forgot-password|reset-password');
 Route::get('/r/{code}', function (Request $request, string $code) {
     $room = Room::with('building')->where('qr_code', $code)->orWhere('code', $code)->firstOrFail();
-    $portalPath = $request->user()?->role === 'student' || !$request->user() ? '/customer/portal' : '/admin/portal';
+    $portalPath = in_array($request->user()?->role, ['student', 'teacher'], true) || !$request->user() ? '/customer/portal' : '/admin/portal';
     $target = $portalPath.'?'.http_build_query([
         'room_code' => $room->qr_code ?: $room->code,
         'room_name' => $room->name,
@@ -50,13 +50,13 @@ Route::get('/r/{code}', function (Request $request, string $code) {
         $request->session()->put('url.intended', url($target));
         return redirect(url('/auth/register'));
     }
-    abort_unless(in_array($request->user()->role, ['admin', 'staff', 'student'], true), 403);
+    abort_unless(in_array($request->user()->role, ['admin', 'staff', 'student', 'teacher'], true), 403);
     abort_if($request->user()->is_deleted, 403, 'Tai khoan da bi khoa.');
     return redirect(url($target));
 });
 Route::get('/report/{code}', function (Request $request, string $code) {
     $room = Room::with('building')->where('qr_code', $code)->orWhere('code', $code)->firstOrFail();
-    $portalPath = $request->user()?->role === 'student' || !$request->user() ? '/customer/portal' : '/admin/portal';
+    $portalPath = in_array($request->user()?->role, ['student', 'teacher'], true) || !$request->user() ? '/customer/portal' : '/admin/portal';
     $target = $portalPath.'?'.http_build_query([
         'room_code' => $room->qr_code ?: $room->code,
         'room_name' => $room->name,
@@ -67,7 +67,7 @@ Route::get('/report/{code}', function (Request $request, string $code) {
         $request->session()->put('url.intended', url($target));
         return redirect(url('/auth/register'));
     }
-    abort_unless(in_array($request->user()->role, ['admin', 'staff', 'student'], true), 403);
+    abort_unless(in_array($request->user()->role, ['admin', 'staff', 'student', 'teacher'], true), 403);
     abort_if($request->user()->is_deleted, 403, 'Tai khoan da bi khoa.');
     return redirect(url($target));
 });
@@ -77,8 +77,8 @@ Route::get('/admin/{path?}', function (Request $request, ?string $path = null) {
     if (in_array($path, ['portal', 'portal/index.html', 'portal/index'], true)) {
         if (!$request->user()) return redirect(url('/auth/login'));
         abort_if($request->user()->is_deleted, 403, 'Tai khoan da bi khoa.');
-        abort_unless(in_array($request->user()->role, ['admin', 'staff', 'student'], true), 403);
-        if ($request->user()->role === 'student') return redirect(url('/customer/portal').($request->getQueryString() ? '?'.$request->getQueryString() : ''));
+        abort_unless(in_array($request->user()->role, ['admin', 'staff', 'student', 'teacher'], true), 403);
+        if (in_array($request->user()->role, ['student', 'teacher'], true)) return redirect(url('/customer/portal').($request->getQueryString() ? '?'.$request->getQueryString() : ''));
         if ($request->user()->role === 'staff') return redirect(url('/staff/index'));
         return redirect(url('/admin/pages/incidents'));
     }
@@ -100,7 +100,7 @@ Route::get('/customer/{path?}', function (Request $request, ?string $path = null
             return redirect(url('/auth/login'));
         }
         abort_if($request->user()->is_deleted, 403, 'Tai khoan da bi khoa.');
-        if ($request->user()->role !== 'student') {
+        if (!in_array($request->user()->role, ['student', 'teacher'], true)) {
             return redirect(url($request->user()->role === 'staff' ? '/staff/index' : '/admin/index'));
         }
         return response()->view('customer.portal', [

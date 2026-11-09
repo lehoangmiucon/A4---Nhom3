@@ -122,7 +122,7 @@ class AuthController extends Controller
         $identifier = trim($credentials['email']);
         $user = str_contains($identifier, '@')
             ? User::where('email', Str::lower($identifier))->first()
-            : User::where('role', 'student')->where(fn ($query) => $query->whereNull('member_type')->orWhere('member_type', '!=', 'lecturer'))->where('member_code', $identifier)->first();
+            : User::where('role', 'student')->where('member_code', $identifier)->first();
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages(['email' => 'Email, mã sinh viên hoặc mật khẩu không chính xác.']);
         }

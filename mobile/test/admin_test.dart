@@ -75,7 +75,7 @@ void main() {
           'id': 3,
           'name': 'Giảng viên kiểm thử',
           'email': 'lecturer@example.test',
-          'role': 'student',
+          'role': 'teacher',
           'member_type': 'lecturer',
           'is_deleted': false,
           'email_verified_at': '2026-11-08',
@@ -268,7 +268,7 @@ void main() {
                 context: context,
                 isScrollControlled: true,
                 builder: (_) => SizedBox(
-                  height: 650,
+                  height: 480,
                   child: AdminUserSheet(
                     api: api,
                     currentUserId: 1,
@@ -292,7 +292,12 @@ void main() {
     );
     await tester.tap(find.text('Mở chi tiết'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Xóa tài khoản'));
+    await tester.scrollUntilVisible(
+      find.text('Xóa tài khoản'),
+      150,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Xóa tài khoản'));
     await tester.pumpAndSettle();
     expect(deletions, 0);
@@ -305,5 +310,49 @@ void main() {
     await tester.pumpAndSettle();
     expect(deletions, 1);
     expect(find.byType(AdminUserSheet), findsNothing);
+  });
+  testWidgets('Admin confirms teacher only after accepting the dialog', (
+    tester,
+  ) async {
+    var calls = 0;
+    final api = AuthApi(
+      client: MockClient((request) async {
+        expect(request.method, 'PATCH');
+        expect(request.url.path, endsWith('/admin/users/55/teacher'));
+        expect(jsonDecode(request.body), {'is_teacher': true});
+        calls++;
+        return jsonResponse({
+          'data': {'id': 55, 'role': 'teacher', 'member_type': 'lecturer'},
+        });
+      }),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AdminUserSheet(
+            api: api,
+            currentUserId: 1,
+            user: {
+              'id': 55,
+              'name': 'Giảng viên cần xác nhận',
+              'role': 'student',
+              'email': 'teacher@ut.edu.vn',
+              'email_verified_at': '2026-11-09',
+              'is_deleted': false,
+              'created_at': '2026-11-09',
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.ensureVisible(find.text('Xác nhận giảng viên'));
+    await tester.tap(find.text('Xác nhận giảng viên'));
+    await tester.pumpAndSettle();
+    expect(calls, 0);
+    await tester.tap(find.text('Xác nhận'));
+    await tester.pumpAndSettle();
+    expect(calls, 1);
+    expect(find.text('Giảng viên'), findsOneWidget);
+    expect(find.text('Bỏ xác nhận giảng viên'), findsOneWidget);
   });
 }

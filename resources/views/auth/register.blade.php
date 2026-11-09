@@ -29,14 +29,9 @@
         <section class="auth-content">
             <div class="auth-card">
                 <h2>Tạo tài khoản</h2>
-                <p>Chọn vai trò và đăng ký bằng email trường @ut.edu.vn.</p>
-                <div class="auth-role-tabs" role="tablist" aria-label="Vai trò đăng ký">
-                    <button type="button" id="student-tab" role="tab" aria-selected="true" aria-controls="registration-panel" data-member-tab="student">Sinh viên</button>
-                    <button type="button" id="lecturer-tab" role="tab" aria-selected="false" aria-controls="registration-panel" tabindex="-1" data-member-tab="lecturer">Giảng viên</button>
-                </div>
-                <form id="registration-panel" role="tabpanel" aria-labelledby="student-tab" class="role-form" action="#" method="post" data-api-endpoint="/register" data-success-redirect="verify-otp">
-                    <input type="hidden" name="member_type" value="student">
-                    <div class="role-field" data-student-code><label for="member-code">Mã sinh viên</label><input id="member-code" name="member_code" maxlength="80" placeholder="Nhập mã sinh viên" required></div>
+                <p>Đăng ký bằng email trường @ut.edu.vn. Giảng viên được admin xác nhận sau khi đăng ký.</p>
+                <form id="registration-panel" class="role-form" action="#" method="post" data-api-endpoint="/register" data-success-redirect="verify-otp">
+                    <div class="role-field" data-student-code><label for="member-code">Mã sinh viên (không bắt buộc)</label><input id="member-code" name="member_code" maxlength="80" placeholder="Nhập mã sinh viên nếu có"></div>
                     <div class="role-field registration-name"><label for="name">Họ và tên</label><input id="name" name="name" autocomplete="name" placeholder="Nguyễn Minh Anh" required></div>
                     <div class="role-field registration-email"><label for="email">Email trường học</label><input id="email" name="email" type="email" autocomplete="email" placeholder="ten@ut.edu.vn" pattern="[^@\s]+@[uU][tT]\.[eE][dD][uU]\.[vV][nN]" title="Nhập email trường có đuôi @ut.edu.vn" maxlength="255" required></div>
                     <div class="role-field"><label for="password">Mật khẩu</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="8" placeholder="Tối thiểu 8 ký tự" required></div>
@@ -49,7 +44,7 @@
             </div>
         </section>
     </main>
-    <script src="assets/js/auth.js?v=20261109"></script>
+    <script src="assets/js/auth.js?v=20261109-teacher"></script>
 </body>
 
 </html>

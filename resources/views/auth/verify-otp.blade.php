@@ -21,7 +21,7 @@
         <aside class="auth-aside"><a class="role-brand" href="{{ url('/') }}/"><img class="role-brand-image" src="{{ url('/shared/images/helpdesk-logo.png') }}" alt="Helpdesk"></a>
             <div><span class="role-kicker">BẢO VỆ TÀI KHOẢN</span>
                 <h1>Xác thực email trường học.</h1>
-                <p>Nhập mã dùng một lần được gửi đến email để hoàn tất đăng ký tài khoản sinh viên.</p>
+                <p>Nhập mã dùng một lần được gửi đến email để hoàn tất đăng ký tài khoản.</p>
             </div>
             <div class="auth-aside-foot">Mã xác thực gồm 6 chữ số.</div>
         </aside>

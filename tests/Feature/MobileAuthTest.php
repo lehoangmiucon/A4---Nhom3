@@ -16,8 +16,8 @@ class MobileAuthTest extends TestCase {
         $this->patchJson('/api/account/profile',['name'=>'Student','member_code'=>'NEW123'])->assertOk()->assertJsonPath('data.member_code','NEW123');
         $this->postJson('/api/auth/login',['email'=>'NEW123','password'=>'Password123','device_name'=>'test'])->assertOk();
         $this->patchJson('/api/account/profile',['name'=>'Student','member_code'=>'NEW123'])->assertOk();
-        $this->patchJson('/api/account/profile',['name'=>'Student','member_code'=>''])->assertUnprocessable();
-        DB::table('users')->where('id',$user->id)->update(['member_type'=>'lecturer']);
+        $this->patchJson('/api/account/profile',['name'=>'Student','member_code'=>''])->assertOk();
+        DB::table('users')->where('id',$user->id)->update(['role'=>'teacher','member_type'=>'lecturer']);
         $user->refresh();
         $this->patchJson('/api/account/profile',['name'=>'Lecturer','member_code'=>'OTHER'])->assertUnprocessable();
     }
@@ -46,13 +46,12 @@ class MobileAuthTest extends TestCase {
         $this->postJson('/api/account/password-code')->assertForbidden();
         $this->patchJson('/api/account/password-code')->assertForbidden();
     }
-    public function test_student_requires_code_but_lecturers_can_register_without_one(): void {
+    public function test_shared_registration_allows_no_code_and_ignores_role_claims(): void {
         $base=['name'=>'Test','email'=>'lecturer@ut.edu.vn','phone'=>'0901234567','password'=>'Password123!','password_confirmation'=>'Password123!'];
-        $this->postJson('/api/auth/register',[...$base,'member_type'=>'student'])->assertUnprocessable()->assertJsonValidationErrors('member_code');
-        $this->postJson('/api/auth/register',[...$base,'member_type'=>'lecturer'])->assertCreated();
-        $this->assertDatabaseHas('users',['email'=>'lecturer@ut.edu.vn','member_type'=>'lecturer','member_code'=>null,'role'=>'student']);
-        $this->postJson('/api/auth/register',[...$base,'email'=>'other@ut.edu.vn','member_type'=>'lecturer','member_code'=>'SHOULD-NOT-SAVE'])->assertCreated();
-        $this->assertDatabaseHas('users',['email'=>'other@ut.edu.vn','member_code'=>null]);
+        $this->postJson('/api/auth/register',[...$base,'member_type'=>'lecturer','role'=>'teacher'])->assertCreated();
+        $this->assertDatabaseHas('users',['email'=>'lecturer@ut.edu.vn','member_type'=>'student','member_code'=>null,'role'=>'student']);
+        $this->postJson('/api/auth/register',[...$base,'email'=>'other@ut.edu.vn','role'=>'admin','member_code'=>'SV123'])->assertCreated();
+        $this->assertDatabaseHas('users',['email'=>'other@ut.edu.vn','role'=>'student','member_code'=>'SV123']);
     }
     public function test_short_code_expires_resend_invalidates_old_code_and_attempts_are_shared(): void {
         $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);

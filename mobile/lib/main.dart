@@ -84,7 +84,6 @@ class _LoginPageState extends State<LoginPage> {
       confirmation = TextEditingController(),
       resetToken = TextEditingController();
   AuthScreen screen = AuthScreen.login;
-  String memberType = 'student';
   bool busy = false, hidden = true;
   String? error, notice;
   Map<String, dynamic>? user;
@@ -164,8 +163,7 @@ class _LoginPageState extends State<LoginPage> {
           'email': address,
           'password': password.text,
           'password_confirmation': confirmation.text,
-          'member_type': memberType,
-          if (memberType == 'student') 'member_code': code.text.trim(),
+          'member_code': code.text.trim(),
           'phone': phone.text.trim(),
         });
         if (mounted) {
@@ -248,8 +246,7 @@ class _LoginPageState extends State<LoginPage> {
   };
   String get subtitle => switch (screen) {
     AuthScreen.login => 'Tài khoản UTH',
-    AuthScreen.register =>
-      memberType == 'lecturer' ? 'Giảng viên' : 'Sinh viên',
+    AuthScreen.register => 'Tài khoản trường học',
     AuthScreen.otp => 'Đăng ký · Bước 2',
     AuthScreen.verified => 'Trạng thái tài khoản',
     _ => 'Khôi phục truy cập',
@@ -562,39 +559,17 @@ class _LoginPageState extends State<LoginPage> {
         ];
       case AuthScreen.register:
         return [
-          heading(
-            memberType == 'student'
-                ? 'Tạo tài khoản sinh viên'
-                : 'Tạo tài khoản giảng viên',
+          heading('Tạo tài khoản'),
+          info(
+            'Giảng viên được admin xác nhận sau khi đăng ký. Bạn vẫn có thể báo sự cố sau khi xác thực email.',
           ),
-          const Text('Vai trò', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            menuMaxHeight: 240,
-            itemHeight: 48,
-            borderRadius: BorderRadius.circular(14),
-            dropdownColor: Colors.white,
-            elevation: 3,
-            isExpanded: true,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF19332D)),
-            icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
-            initialValue: memberType,
-            items: const [
-              DropdownMenuItem(value: 'student', child: Text('Sinh viên')),
-              DropdownMenuItem(value: 'lecturer', child: Text('Giảng viên')),
-            ],
-            onChanged: busy
-                ? null
-                : (value) => setState(() {
-                    memberType = value!;
-                    if (memberType == 'lecturer') code.clear();
-                    error = null;
-                  }),
-          ),
-          const SizedBox(height: 16),
           field('Họ và tên', name, 'Nhập họ tên'),
-          if (memberType == 'student')
-            field('Mã sinh viên', code, 'Nhập mã sinh viên'),
+          field(
+            'Mã sinh viên (không bắt buộc)',
+            code,
+            'Nhập mã sinh viên nếu có',
+            validate: (v) => null,
+          ),
           field(
             'Email',
             email,

@@ -62,8 +62,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
           'page': '${reset ? 1 : page + 1}',
           'search': search.text.trim(),
           'status': status,
-          if (role == 'student' || role == 'lecturer') 'member_type': role,
-          if (role == 'staff' || role == 'admin') 'role': role,
+          if (role.isNotEmpty) 'role': role,
         },
       ).query;
       final data = await widget.api.get('admin/users?$query');
@@ -210,7 +209,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
           items: const [
             DropdownMenuItem(value: '', child: Text('Tất cả vai trò')),
             DropdownMenuItem(value: 'student', child: Text('Sinh viên')),
-            DropdownMenuItem(value: 'lecturer', child: Text('Giảng viên')),
+            DropdownMenuItem(value: 'teacher', child: Text('Giảng viên')),
             DropdownMenuItem(value: 'staff', child: Text('Kỹ thuật viên')),
             DropdownMenuItem(value: 'admin', child: Text('Quản trị viên')),
           ],
@@ -418,6 +417,59 @@ class _AdminUserSheetState extends State<AdminUserSheet> {
     }
   }
 
+  Future<void> confirmTeacher() async {
+    final becomingTeacher = user['role'] != 'teacher';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          becomingTeacher ? 'Xác nhận giảng viên?' : 'Bỏ xác nhận giảng viên?',
+        ),
+        content: Text(
+          'Cập nhật loại người dùng cho ${user['name']}? Tài khoản sẽ cần đăng nhập lại.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Xác nhận'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      final result = await widget.api.patch(
+        'admin/users/${user['id']}/teacher',
+        {'is_teacher': becomingTeacher},
+      );
+      if (mounted) {
+        setState(() {
+          user = {...user, ...Map<String, dynamic>.from(result['data'] as Map)};
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          error = errorLabel(e);
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          busy = false;
+        });
+      }
+    }
+  }
+
   Future<void> deleteAccount() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -479,8 +531,23 @@ class _AdminUserSheetState extends State<AdminUserSheet> {
         style: const TextStyle(color: Colors.blueGrey),
       ),
       const SizedBox(height: 20),
+      ticketPanel('Loại người dùng', memberLabel(user)),
       ticketPanel('Email', '${user['email']}'),
-      if (user['role'] == 'student' && user['member_type'] != 'lecturer')
+      if (['student', 'teacher'].contains(user['role']))
+        FilledButton.tonal(
+          onPressed:
+              busy ||
+                  user['email_verified_at'] == null ||
+                  user['is_deleted'] == true
+              ? null
+              : confirmTeacher,
+          child: Text(
+            user['role'] == 'teacher'
+                ? 'Bỏ xác nhận giảng viên'
+                : 'Xác nhận giảng viên',
+          ),
+        ),
+      if (user['role'] == 'student')
         ticketPanel(
           'Mã sinh viên',
           '${user['member_code'] ?? 'Chưa cập nhật'}',
@@ -528,7 +595,7 @@ class _AdminUserSheetState extends State<AdminUserSheet> {
           child: const Text('Chỉnh sửa KTV và danh mục'),
         ),
       if (user['id'] != widget.currentUserId &&
-          ['student', 'staff'].contains(user['role']))
+          ['student', 'teacher', 'staff'].contains(user['role']))
         OutlinedButton.icon(
           style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
           onPressed: busy ? null : deleteAccount,

@@ -7,10 +7,11 @@ import 'ticket_pages.dart';
 String memberLabel(Map<String, dynamic> user) {
   if (user['role'] == 'admin') return 'Quản trị viên';
   if (user['role'] == 'staff') return 'Kỹ thuật viên';
-  return user['member_type'] == 'lecturer' ? 'Giảng viên' : 'Sinh viên';
+  return user['role'] == 'teacher' ? 'Giảng viên' : 'Sinh viên';
 }
 
-bool schoolAccount(Map<String, dynamic> user) => user['role'] == 'student';
+bool schoolAccount(Map<String, dynamic> user) =>
+    ['student', 'teacher'].contains(user['role']);
 
 class AccountTab extends StatefulWidget {
   final AuthApi api;
@@ -114,7 +115,7 @@ class _AccountTabState extends State<AccountTab> {
             ],
           ),
         ),
-        if (schoolAccount(profile) && profile['member_type'] != 'lecturer')
+        if (profile['role'] == 'student')
           ticketPanel(
             'Mã sinh viên',
             profile['member_code']?.toString() ?? 'Chưa cập nhật',
@@ -213,8 +214,7 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController name, phone, memberCode;
-  bool get isStudent =>
-      schoolAccount(widget.user) && widget.user['member_type'] != 'lecturer';
+  bool get isStudent => widget.user['role'] == 'student';
   final form = GlobalKey<FormState>();
   bool busy = false;
   String? error;
@@ -296,7 +296,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               const SizedBox(height: 16),
               if (isStudent) ...[
-                const Text('Mã sinh viên'),
+                const Text('Mã sinh viên (không bắt buộc)'),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: memberCode,
@@ -305,9 +305,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   decoration: const InputDecoration(
                     hintText: 'Nhập mã sinh viên',
                   ),
-                  validator: (v) => v == null || v.trim().isEmpty
-                      ? 'Nhập mã sinh viên.'
-                      : null,
+                  validator: (v) => null,
                 ),
                 const SizedBox(height: 16),
               ],

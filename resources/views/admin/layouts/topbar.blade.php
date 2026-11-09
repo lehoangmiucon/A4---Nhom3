@@ -9,7 +9,7 @@
         'pages/locations' => 'Địa điểm & thiết bị',
         'pages/building-detail' => 'Chi tiết khu nhà',
         'pages/room-detail' => 'Chi tiết phòng',
-        'pages/users' => 'Người báo sự cố',
+        'pages/users' => 'Danh sách người dùng',
         'pages/user-detail' => 'Chi tiết sinh viên',
         'pages/team-detail' => 'Chi tiết đội ngũ',
         'pages/team' => 'Đội ngũ',

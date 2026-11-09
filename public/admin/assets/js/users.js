@@ -4,6 +4,7 @@
   const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
   const rows = [...document.querySelectorAll('[data-user-row]')];
   const search = document.querySelector('#users-search');
+  const typeFilter = document.querySelector('#users-type-filter');
   const statusFilter = document.querySelector('#users-status-filter');
   const feedback = document.querySelector('#users-feedback');
 
@@ -12,7 +13,7 @@
     rows.forEach((row) => {
       const matchesSearch = (row.dataset.userSearch || '').includes(phrase);
       const matchesStatus = !statusFilter?.value || row.dataset.userStatus === statusFilter.value;
-      row.hidden = !(matchesSearch && matchesStatus);
+      row.hidden = !(matchesSearch && matchesStatus && (!typeFilter?.value || row.dataset.userType === typeFilter.value));
     });
     const empty = document.querySelector("[data-users-empty]");
     if (empty) empty.hidden = !rows.length || rows.some(row => !row.hidden);
@@ -25,7 +26,7 @@
     feedback.hidden = false;
   }
 
-  [search, statusFilter].forEach((control) => control?.addEventListener('input', filterRows));
+  [search, statusFilter, typeFilter].forEach((control) => control?.addEventListener('input', filterRows));
   statusFilter?.addEventListener('change', filterRows);
 
   document.querySelectorAll('[data-account-toggle]').forEach((button) => {
