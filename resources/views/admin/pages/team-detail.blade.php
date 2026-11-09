@@ -350,4 +350,5 @@
         </div>
     </section>
 </div>
+@include('shared.delete-user', ['deleteUser' => $teamMember])
 @endsection

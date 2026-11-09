@@ -14,6 +14,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Đăng ký tài khoản · Helpdesk</title>
     <link rel="stylesheet" href="assets/css/auth.css?v=20261109-compact">
+    @include('shared.password-toggle')
 </head>
 
 <body class="role-page auth-register">

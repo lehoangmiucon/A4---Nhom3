@@ -82,6 +82,8 @@ class AuthApi {
     final token = await storage.read(key: 'access_token');
     final write = method == 'POST'
         ? client.post
+        : method == 'DELETE'
+        ? client.delete
         : method == 'PUT'
         ? client.put
         : client.patch;

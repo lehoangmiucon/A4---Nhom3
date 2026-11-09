@@ -169,6 +169,30 @@ class UserController extends Controller
         ]);
     }
 
+    public function destroy(Request $request, User $user): JsonResponse
+    {
+        abort_unless($request->user()->role === 'admin', 403);
+        abort_if($user->is($request->user()), 422, 'Không thể xóa tài khoản đang đăng nhập.');
+        abort_unless(in_array($user->role, ['student', 'staff'], true), 422, 'Chỉ được xóa tài khoản SV/GV hoặc KTV.');
+        DB::transaction(function () use ($request, $user) {
+            $user = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            if ($user->role === 'staff') {
+                abort_if($user->assignedTickets()->whereNotIn('status', ['resolved', 'closed'])->exists(), 422,
+                    'KTV còn phiếu chưa hoàn tất. Hãy phân công lại hoặc hoàn tất phiếu trước khi xóa.');
+                abort_if(\App\Models\TicketSchedule::where('staff_id', $user->id)->where('starts_at', '>', now())
+                    ->where('status', '!=', 'cancelled')->exists(), 422,
+                    'KTV còn lịch xử lý sắp tới. Hãy hủy hoặc phân công lại lịch trước khi xóa.');
+            }
+            $user->forceFill(['is_deleted' => true, 'remember_token' => Str::random(60)])->save();
+            $user->tokens()->delete();
+            if (Schema::hasTable('sessions')) DB::table('sessions')->where('user_id', $user->id)->delete();
+            DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+            ActivityLog::record($request, 'user.deleted', $user, 'Admin xóa tài khoản; giữ lịch sử phiếu.', ['role' => $user->role]);
+            $user->delete();
+        });
+        return response()->json(['message' => 'Đã xóa tài khoản. Lịch sử phiếu được giữ lại.']);
+    }
+
     public function updateRole(Request $request, User $user): JsonResponse
     {
         abort_if($user->is($request->user()), 422, 'Không thể tự đổi vai trò tài khoản đang đăng nhập.');

@@ -10,6 +10,6 @@ class TicketLog extends Model
     protected $fillable = ['ticket_id', 'user_id', 'from_status', 'to_status', 'note'];
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 }

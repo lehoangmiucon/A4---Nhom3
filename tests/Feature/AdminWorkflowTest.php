@@ -55,4 +55,42 @@ class AdminWorkflowTest extends TestCase {
         $this->putJson('/api/admin/staff/'.$staff->id,['name'=>'KTV cập nhật','password'=>'UpdatedPass123','category_ids'=>[$category->id]])->assertOk();
         $this->assertEquals(0,$staff->tokens()->count());
     }
+    public function test_admin_deletes_member_but_preserves_ticket_history_and_revokes_access(): void {
+        $admin=$this->user('admin','delete-admin@ut.edu.vn');
+        $member=$this->user('student','delete-member@ut.edu.vn');
+        $ticket=$this->ticket($member);
+        $member->createToken('device');
+        DB::table('sessions')->insert(['id'=>'member-session','user_id'=>$member->id,'payload'=>'test','last_activity'=>time()]);
+        DB::table('password_reset_tokens')->insert(['email'=>$member->email,'token'=>'old','created_at'=>now()]);
+        Sanctum::actingAs($admin);
+        $this->get('/admin/pages/user-detail?user='.$member->id)->assertOk()->assertSee('data-delete-user="'.$member->id.'"',false);
+        $this->deleteJson('/api/admin/users/'.$member->id)->assertOk();
+        $this->assertSoftDeleted('users',['id'=>$member->id]);
+        $this->assertNull(User::find($member->id));
+        $this->assertSame($member->name,$ticket->fresh()->reporter->name);
+        $this->assertDatabaseMissing('sessions',['user_id'=>$member->id]);
+        $this->assertDatabaseMissing('password_reset_tokens',['email'=>$member->email]);
+        $this->assertDatabaseMissing('personal_access_tokens',['tokenable_id'=>$member->id]);
+        $this->assertDatabaseHas('activity_logs',['action'=>'user.deleted','subject_id'=>$member->id]);
+        $this->getJson('/api/admin/users/'.$member->id)->assertNotFound();
+        $this->get('/admin/pages/user-detail?user='.$member->id)->assertNotFound();
+        $this->postJson('/login',['email'=>$member->email,'password'=>'Password123'])->assertUnprocessable();
+    }
+    public function test_deletion_requires_admin_and_rejects_self_other_admin_and_busy_staff(): void {
+        $admin=$this->user('admin','guard-admin@ut.edu.vn');
+        $other=$this->user('admin','guard-other@ut.edu.vn');
+        $staff=$this->user('staff','guard-staff@ut.edu.vn');
+        $member=$this->user('student','guard-member@ut.edu.vn');
+        Sanctum::actingAs($staff);
+        $this->deleteJson('/api/admin/users/'.$member->id)->assertForbidden();
+        Sanctum::actingAs($admin);
+        $this->deleteJson('/api/admin/users/'.$admin->id)->assertUnprocessable();
+        $this->deleteJson('/api/admin/users/'.$other->id)->assertUnprocessable();
+        $ticket=$this->ticket($member);$ticket->update(['assigned_to_id'=>$staff->id,'status'=>'in_progress']);
+        $this->deleteJson('/api/admin/users/'.$staff->id)->assertUnprocessable();
+        $ticket->update(['status'=>'closed']);
+        $this->deleteJson('/api/admin/users/'.$staff->id)->assertOk();
+        $this->assertSame($staff->name,$ticket->fresh()->assignee->name);
+        $this->assertSoftDeleted('users',['id'=>$staff->id]);
+    }
 }

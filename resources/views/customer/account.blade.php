@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="assets/css/customer.css?v=20261103-responsive1">
     <link rel="stylesheet" href="assets/css/account.css?v=20261109">
     <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261105-staff-header2">
+    @include('shared.password-toggle')
 </head>
 <body class="customer-role-page role-page account-page">
 <div class="role-shell">

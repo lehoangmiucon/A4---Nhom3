@@ -24,6 +24,7 @@
     @endif
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" crossorigin="anonymous">
     @stack('styles')
+    @include('shared.password-toggle')
 </head>
 <body>
     <input class="nav-toggle" type="checkbox" id="nav-toggle" aria-hidden="true">

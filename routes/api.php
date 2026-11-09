@@ -53,6 +53,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::put('/categories/{category}', [CategoryController::class, 'update']);
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
+        Route::delete('/users/{user}', [UserController::class, 'destroy']);
         Route::patch('/users/{user}/status', [UserController::class, 'updateStatus']);
         Route::get('/buildings', [LocationController::class, 'buildings']);
         Route::post('/buildings', [LocationController::class, 'createBuilding']);

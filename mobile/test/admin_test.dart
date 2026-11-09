@@ -247,4 +247,63 @@ void main() {
     await tester.pumpAndSettle();
     expect(created, true);
   });
+  testWidgets('Deleting a member requires confirmation and sends DELETE', (
+    tester,
+  ) async {
+    var deletions = 0;
+    final api = AuthApi(
+      client: MockClient((request) async {
+        expect(request.method, 'DELETE');
+        expect(request.url.path, endsWith('/admin/users/42'));
+        deletions++;
+        return jsonResponse({'message': 'Đã xóa tài khoản.'});
+      }),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => SizedBox(
+                  height: 650,
+                  child: AdminUserSheet(
+                    api: api,
+                    currentUserId: 1,
+                    user: {
+                      'id': 42,
+                      'name': 'Tài khoản thử',
+                      'email': 'test@ut.edu.vn',
+                      'role': 'student',
+                      'is_deleted': false,
+                      'email_verified_at': '2026-11-09',
+                      'created_at': '2026-11-09',
+                    },
+                  ),
+                ),
+              ),
+              child: const Text('Mở chi tiết'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Mở chi tiết'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Xóa tài khoản'));
+    await tester.tap(find.text('Xóa tài khoản'));
+    await tester.pumpAndSettle();
+    expect(deletions, 0);
+    await tester.tap(find.text('Hủy'));
+    await tester.pumpAndSettle();
+    expect(deletions, 0);
+    await tester.tap(find.text('Xóa tài khoản'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Xóa tài khoản'));
+    await tester.pumpAndSettle();
+    expect(deletions, 1);
+    expect(find.byType(AdminUserSheet), findsNothing);
+  });
 }

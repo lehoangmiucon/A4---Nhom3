@@ -10,7 +10,7 @@ class TicketFeedbackTest extends TestCase {
     protected function setUp(): void {
         parent::setUp();
         config(['database.default'=>'sqlite','database.connections.sqlite.database'=>':memory:']); DB::purge('sqlite');
-        foreach (['0001_01_01_000000_create_users_table.php','2026_11_03_110000_add_is_deleted_to_users_table.php','2026_11_02_135002_create_buildings_table.php','2026_11_02_135003_create_rooms_table.php','2026_11_02_135004_create_categories_table.php','2026_11_02_135005_create_equipment_table.php','2026_11_02_135006_create_tickets_table.php','2026_11_02_135010_create_notifications_table.php','2026_11_08_150000_add_feedback_to_tickets.php'] as $file) (require database_path('migrations/'.$file))->up();
+        foreach (['0001_01_01_000000_create_users_table.php', '2026_11_09_140000_add_deleted_at_to_users_table.php','2026_11_03_110000_add_is_deleted_to_users_table.php','2026_11_02_135002_create_buildings_table.php','2026_11_02_135003_create_rooms_table.php','2026_11_02_135004_create_categories_table.php','2026_11_02_135005_create_equipment_table.php','2026_11_02_135006_create_tickets_table.php','2026_11_02_135010_create_notifications_table.php','2026_11_08_150000_add_feedback_to_tickets.php'] as $file) (require database_path('migrations/'.$file))->up();
     }
     private function member(string $email): User { return User::create(['name'=>'Student','email'=>$email,'password'=>'Password123','role'=>'student']); }
     private function ticket(User $user, string $status='resolved'): Ticket { return Ticket::create(['ticket_number'=>'HD-'.uniqid(),'reporter_id'=>$user->id,'reporter_name'=>$user->name,'title'=>'Wi-Fi hỏng','description'=>'Mất mạng','status'=>$status]); }

@@ -7,6 +7,7 @@
     <title>Tài khoản nhân viên · Helpdesk</title>
     <link rel="stylesheet" href="assets/css/staff.css?v=20261106-cleanup1">
     <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261104-3">
+    @include('shared.password-toggle')
 </head>
 <body class="staff-role-page role-page">
 <div class="role-shell">

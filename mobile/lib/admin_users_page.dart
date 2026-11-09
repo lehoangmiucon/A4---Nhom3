@@ -418,6 +418,53 @@ class _AdminUserSheetState extends State<AdminUserSheet> {
     }
   }
 
+  Future<void> deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xóa tài khoản?'),
+        content: Text(
+          'Xóa ${user['name']} khỏi danh sách và thu hồi đăng nhập? Lịch sử phiếu vẫn được giữ lại.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Xóa tài khoản'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      await widget.api.patch('admin/users/${user['id']}', {}, method: 'DELETE');
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Đã xóa tài khoản.')));
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          error = errorLabel(e);
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          busy = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -479,6 +526,14 @@ class _AdminUserSheetState extends State<AdminUserSheet> {
                   }
                 },
           child: const Text('Chỉnh sửa KTV và danh mục'),
+        ),
+      if (user['id'] != widget.currentUserId &&
+          ['student', 'staff'].contains(user['role']))
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+          onPressed: busy ? null : deleteAccount,
+          icon: const Icon(Icons.delete_outline),
+          label: const Text('Xóa tài khoản'),
         ),
       const SizedBox(height: 12),
       if (user['id'] != widget.currentUserId)

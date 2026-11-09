@@ -14,6 +14,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Đăng nhập · Helpdesk</title>
     <link rel="stylesheet" href="assets/css/auth.css">
+    @include('shared.password-toggle')
 </head>
 
 <body class="role-page">

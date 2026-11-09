@@ -21,7 +21,7 @@ class SchoolOtpTest extends TestCase
         config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:', 'mail.default' => 'array']);
         DB::purge('sqlite');
         foreach ([
-            '0001_01_01_000000_create_users_table.php',
+            '0001_01_01_000000_create_users_table.php', '2026_11_09_140000_add_deleted_at_to_users_table.php',
             '2026_11_02_135001_create_email_otps_table.php',
             '2026_11_03_110000_add_is_deleted_to_users_table.php',
             '2026_11_05_120000_add_phone_to_users_table.php',

@@ -342,4 +342,5 @@
         @endif
     </section>
 </div>
+@include('shared.delete-user', ['deleteUser' => $student])
 @endsection
