@@ -378,7 +378,7 @@ body:has(.staff-ticket-detail) .image-lightbox__close{position:absolute;top:16px
 .staff-account-card{min-width:0;padding:24px}
 .staff-account-card>h2{margin:0 0 8px!important;padding:0!important;border:0!important;font-size:17px!important}
 .staff-account-identity{display:flex;align-items:center;gap:14px;padding-bottom:19px;border-bottom:1px solid #edf2f2}
-.staff-account-avatar{display:grid;width:58px;height:58px;place-items:center;flex:none;border-radius:17px;background:linear-gradient(145deg,#27aaa0,#087b7d);box-shadow:0 7px 16px #148b8628;color:#fff;font-size:20px;font-weight:800}
+.staff-account-avatar{display:grid;width:58px;height:58px;place-items:center;flex:none;border-radius:17px;background:linear-gradient(145deg,#27aaa0,#087b7d);box-shadow:0 7px 16px #148b8628;color:#fff;font-size:20px;font-weight:800}.staff-account-avatar:is(img){object-fit:cover}
 .staff-account-identity h2{margin:0;color:#203e57;font-size:18px}
 .staff-account-identity p{margin:3px 0 0;color:#788b9b;font-size:11px}
 .staff-account-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:17px 0 21px}
@@ -410,8 +410,8 @@ body:has(.staff-ticket-detail) .image-lightbox__close{position:absolute;top:16px
 .staff-ticket-detail .staff-ticket-update-card .role-form{border-color:#e1eaf2;background:#f8fbfe}
 .staff-ticket-detail .staff-ticket-update-card .role-field textarea,.staff-ticket-detail .staff-ticket-update-card .role-field select,.staff-ticket-detail .staff-ticket-update-card .role-field input{border-color:#d9e5ef;color:#304b67}
 .staff-ticket-detail .staff-ticket-update-card .role-field textarea:focus,.staff-ticket-detail .staff-ticket-update-card .role-field select:focus,.staff-ticket-detail .staff-ticket-update-card .role-field input:focus{border-color:#79b9e2;outline:0;box-shadow:0 0 0 3px #1686df18}
-.staff-ticket-detail .staff-ticket-update-card .role-form .role-button{border-color:#147fc9;background:linear-gradient(135deg,#168bd5,#1174b8);box-shadow:0 6px 15px #1683c52a}
-.staff-ticket-detail .staff-ticket-update-card .role-form .role-button:hover{background:linear-gradient(135deg,#117fc6,#0c69a8)}
+.staff-ticket-detail .staff-ticket-update-card .role-form .role-button{border-color:#108785;background:linear-gradient(135deg,#1b9b95,#087a7b);box-shadow:0 6px 15px #148b862a}
+.staff-ticket-detail .staff-ticket-update-card .role-form .role-button:hover{background:linear-gradient(135deg,#118b85,#076c6e);box-shadow:0 9px 20px #148b8636}
 .staff-ticket-next-step{display:grid;grid-template-columns:25px minmax(0,1fr);align-items:start;gap:9px;margin:0 0 14px;padding:11px 12px;border:1px solid #d8eaf6;border-radius:10px;background:#f2f9fe;color:#58738b;font-size:12px;line-height:1.55}
 .staff-ticket-next-step>span:first-child{display:grid;width:22px;height:22px;place-items:center;border-radius:7px;background:#e0f0fc;color:#187bb9;font-size:13px;font-weight:800}
 .staff-ticket-readonly-note{border-color:#d8eaf6;background:#f8fbfe}
@@ -515,3 +515,13 @@ body:has(.staff-ticket-detail) .image-lightbox__close{position:absolute;top:16px
 .staff-inline-validation:not([hidden]){display:flex;align-items:flex-start;gap:8px;margin:1px 0 0;padding:10px 12px;border:1px solid #f2b9bd;border-radius:9px;background:#fff1f2;color:#b4232c;font-size:12px;font-weight:650;line-height:1.5;animation:staff-validation-in .18s ease-out}
 .staff-inline-validation:not([hidden])::before{content:"\f06a";flex:none;margin-top:1px;font-family:"Font Awesome 7 Free";font-weight:900}
 @keyframes staff-validation-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+
+.staff-account-form .role-field .account-avatar-file{display:block;width:100%;min-height:50px;padding:7px 9px!important;border:1px solid #d4e8e5!important;border-radius:11px!important;background:#f8fcfb!important;color:#718a89!important;font:500 12px 'Be Vietnam Pro',Arial,sans-serif!important}
+.staff-account-form .account-avatar-file::file-selector-button{margin:0 12px 0 0;padding:9px 13px;border:1px solid #c9e7e3;border-radius:8px;background:#eaf8f6;color:#087e79;font:700 11px 'Be Vietnam Pro',Arial,sans-serif;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.staff-account-form .account-avatar-file::file-selector-button:hover{border-color:#91d0c9;background:#ddf3ef;transform:translateY(-1px)}
+.staff-account-form .account-avatar-file:focus-visible{outline:0;border-color:#2a9d96!important;box-shadow:0 0 0 3px #148b861c}
+
+.staff-ticket-priority.priority-low{background:#eff9f3;color:#267754}
+.staff-ticket-priority.priority-normal{background:#f2f6f9;color:#587087}
+.staff-ticket-priority.priority-high{background:#fff4df;color:#a2670a}
+.staff-ticket-priority.priority-urgent{background:#fff0ef;color:#b4473d}

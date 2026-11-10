@@ -57,8 +57,6 @@
                                 </select></div>
                             <div class="form-item" data-room-field hidden><label for="new-room-code">Mã phòng <b>*</b></label><input id="new-room-code" placeholder="Ví dụ: A.203" required></div>
                             <div class="form-item" data-room-field hidden><label for="new-room-name">Tên phòng / không gian <b>*</b></label><input id="new-room-name" placeholder="Ví dụ: Phòng học 203" required></div>
-                            <div class="form-item" data-room-field hidden><label for="new-room-floor">Tầng</label><input id="new-room-floor" type="number" min="0" max="99" placeholder="Tự nhận từ mã phòng"></div>
-                            <div class="form-item full room-floor-hint" data-room-field hidden><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>Tầng tự điền theo mã phòng (ví dụ A201 → tầng 2). Bạn có thể chỉnh lại nếu cần.</span></div>
                             <div class="form-item full room-qr-preview" data-room-field hidden><span class="room-qr-preview-icon"><i class="fa-solid fa-qrcode" aria-hidden="true"></i></span>
                                 <div><strong>Liên kết QR của phòng</strong><code id="room-qr-link">Chọn khu nhà và nhập mã phòng</code><small>Dùng liên kết này khi tạo mã QR dán tại phòng.</small></div>
                             </div>
@@ -70,5 +68,5 @@
 @endsection
 
 @section('scripts')
-<script src="../assets/js/locations.js?v=20261105-room-floor-input1"></script>
+<script src="../assets/js/locations.js?v=20261110-room-floor-removed1"></script>
 @endsection

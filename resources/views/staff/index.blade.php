@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="assets/css/staff.css?v=20261106-cleanup1">
     <link rel="stylesheet" href="../admin/assets/css/ticket-status.css?v=20261104-status1">
     <link rel="stylesheet" href="assets/css/dashboard-refresh.css?v=20261106-period2">
-    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261104-3">
+    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261110-pagination1">
 </head>
 <body class="staff-role-page role-page staff-dashboard-page">
 <div class="role-shell">
@@ -156,6 +156,47 @@ document.querySelectorAll('[data-staff-filter]').forEach(function (button) {
         if (empty) empty.hidden = visible !== 0;
     });
 });
+</script>
+<script>
+(function () {
+    var cards = Array.from(document.querySelectorAll('.staff-ticket-item'));
+    var list = document.getElementById('staff-ticket-list');
+    if (!list || !cards.length) return;
+    var pageSize = 15;
+    var page = 1;
+    var filter = 'all';
+    var nav = document.createElement('nav');
+    nav.className = 'ticket-pagination staff-ticket-pagination';
+    nav.setAttribute('aria-label', 'Phân trang phiếu kỹ thuật');
+    nav.innerHTML = '<span></span><div class="ticket-pagination-links"></div>';
+    list.after(nav);
+    function render() {
+        var matching = cards.filter(function (card) { return filter === 'all' || card.dataset.ticketStatus === filter; });
+        var pages = Math.max(1, Math.ceil(matching.length / pageSize));
+        page = Math.min(page, pages);
+        var first = (page - 1) * pageSize;
+        var shown = new Set(matching.slice(first, first + pageSize));
+        cards.forEach(function (card) { card.hidden = !shown.has(card); });
+        nav.querySelector('span').textContent = matching.length ? 'Hiển thị ' + (first + 1) + '–' + Math.min(first + pageSize, matching.length) + ' / ' + matching.length + ' phiếu' : 'Hiển thị 0 phiếu';
+        var links = nav.querySelector('.ticket-pagination-links');
+        links.replaceChildren();
+        if (pages < 2) return;
+        function button(label, target, disabled, active) {
+            var item = document.createElement('button');
+            item.type = 'button'; item.textContent = label; item.disabled = disabled;
+            if (active) { item.className = 'current'; item.setAttribute('aria-current', 'page'); }
+            item.addEventListener('click', function () { page = target; render(); });
+            links.append(item);
+        }
+        button('‹', page - 1, page === 1, false);
+        for (var number = Math.max(1, page - 2); number <= Math.min(pages, page + 2); number++) button(String(number), number, false, number === page);
+        button('›', page + 1, page === pages, false);
+    }
+    document.querySelectorAll('[data-staff-filter]').forEach(function (tab) {
+        tab.addEventListener('click', function () { filter = tab.dataset.staffFilter; page = 1; render(); });
+    });
+    render();
+})();
 </script>
 </body>
 </html>

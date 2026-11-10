@@ -18,7 +18,11 @@
     <div class="customer-user-menu">
         <section class="role-account" aria-label="Tài khoản đang đăng nhập">
             <a class="role-account-profile {{ ($pagePath ?? '') === 'account' ? 'is-current' : '' }}" href="{{ url('/customer/account') }}" aria-label="Xem thông tin tài khoản">
-                <span class="role-account-icon" aria-hidden="true">{{ mb_strtoupper(mb_substr($currentUser->name, 0, 1)) }}</span>
+                @if($currentUser->avatar_path)
+                    <img class="role-account-icon" style="object-fit:cover" src="{{ url('/storage/'.$currentUser->avatar_path) }}" alt="">
+                @else
+                    <span class="role-account-icon" aria-hidden="true">{{ mb_strtoupper(mb_substr($currentUser->name, 0, 1)) }}</span>
+                @endif
                 <span class="role-account-details"><strong>{{ $currentUser->name }}</strong><small>{{ $currentUser->email }}</small></span>
             </a>
             <form action="{{ url('/logout') }}" method="post" data-logout-form>
@@ -29,4 +33,5 @@
     </div>
 </header>
 <script src="{{ url('/shared/js/logout.js?v=20261106-csrf1') }}" defer></script>
-<script src="{{ url('/shared/js/page-feedback.js?v=20261106-fast1') }}" defer></script>
+<script src="{{ url('/shared/js/page-feedback.js?v=20261110-report-toast-center1') }}" defer></script>
+<script src="{{ url('/admin/assets/js/native-selects.js?v=20261110-custom-select1') }}" defer></script>

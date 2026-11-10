@@ -61,7 +61,19 @@ class TicketController extends Controller
         if (!$room) throw ValidationException::withMessages(['room_code' => 'Mã QR không gắn với phòng học hợp lệ.']);
 
         $category = \App\Models\Category::findOrFail($data['category_id']);
-        $ticket = DB::transaction(function () use ($request, $data, $room, $category) {
+        $reportResult = DB::transaction(function () use ($request, $data, $room, $category) {
+            Room::query()->whereKey($room->id)->lockForUpdate()->firstOrFail();
+            $existingTicket = in_array($request->user()->role, ['student', 'teacher'], true) ? Ticket::query()
+                ->where('room_id', $room->id)
+                ->where('category_id', $category->id)
+                ->whereIn('status', ['new', 'reopened', 'assigned', 'in_progress'])
+                ->latest()
+                ->lockForUpdate()
+                ->first() : null;
+            if ($existingTicket) {
+                return ['duplicate' => $existingTicket];
+            }
+
             $ticket = Ticket::create([
                 'ticket_number' => 'HD-' . now()->format('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3))),
                 'reporter_id' => $request->user()->id,
@@ -83,8 +95,15 @@ class TicketController extends Controller
                 $path = $file->store('ticket-attachments/reports', 'public');
                 TicketAttachment::create(['ticket_id' => $ticket->id, 'uploaded_by_id' => $request->user()->id, 'path' => $path, 'original_name' => $file->getClientOriginalName(), 'attachment_type' => 'report']);
             }
-            return $ticket;
+            return ['ticket' => $ticket];
         });
+        if (isset($reportResult['duplicate'])) {
+            return response()->json([
+                'message' => 'Lỗi này đã có người báo cáo trước đó và chúng tôi đã tiếp nhận. Cảm ơn bạn đã gửi báo cáo cho chúng tôi.',
+                'data' => ['ticket_number' => $reportResult['duplicate']->ticket_number],
+            ]);
+        }
+        $ticket = $reportResult['ticket'];
         ActivityLog::record($request, 'ticket.created', $ticket, 'Created a ticket.', [
             'ticket_number' => $ticket->ticket_number,
             'status' => $ticket->status,
@@ -108,7 +127,7 @@ class TicketController extends Controller
         $query = Ticket::with(['room.building:id,code,name', 'assignee:id,name', 'category:id,name,color'])->latest();
         $this->scopeTickets($query, $request->user());
         if ($request->filled('status')) $query->where('status', $request->string('status'));
-        return response()->json($query->paginate(20));
+        return response()->json($query->paginate(15));
     }
 
     public function filterIncidents(Request $request): JsonResponse
@@ -505,13 +524,15 @@ class TicketController extends Controller
                 'to_status' => $targetStatus,
                 'note' => $data['note'],
             ]);
+            $attachmentIndex = $ticket->repairAttachments()->count();
             foreach ($request->file('attachments', []) as $file) {
-                $path = $file->store('ticket-attachments/repairs', 'public');
+                $originalName = $ticket->ticket_number . '_' . (++$attachmentIndex) . '.' . $file->extension();
+                $path = $file->storeAs('ticket-attachments/repairs', $originalName, 'public');
                 TicketAttachment::create([
                     'ticket_id' => $ticket->id,
                     'uploaded_by_id' => $request->user()->id,
                     'path' => $path,
-                    'original_name' => $file->getClientOriginalName(),
+                    'original_name' => $originalName,
                     'attachment_type' => 'repair',
                 ]);
             }
@@ -610,9 +631,10 @@ class TicketController extends Controller
 
     private function priority(string $label): string
     {
-        $label = mb_strtolower($label);
-        if (str_contains($label, 'an toàn') || str_contains($label, 'sớm')) return 'urgent';
-        if (str_contains($label, 'cả lớp') || str_contains($label, 'phòng')) return 'high';
-        return in_array($label, ['low', 'normal', 'high', 'urgent'], true) ? $label : 'normal';
+        $label = trim(mb_strtolower($label));
+        if ($label === 'low' || str_starts_with($label, 'thấp')) return 'low';
+        if ($label === 'urgent' || str_starts_with($label, 'khẩn cấp') || str_contains($label, 'an toàn') || str_contains($label, 'sớm')) return 'urgent';
+        if ($label === 'high' || str_starts_with($label, 'cao') || str_contains($label, 'cả lớp') || str_contains($label, 'phòng')) return 'high';
+        return 'normal';
     }
 }

@@ -3,6 +3,7 @@
   const apiBase = (config.apiBase || '/api').replace(/\/+$/, '');
   const appBase = new URL(config.appUrl || '/', window.location.origin).pathname.replace(/\/+$/, '');
   const apiEnabled = config.apiEnabled === true;
+  const feedbackTimers = new WeakMap();
 
   const endpointUrl = (endpoint) => {
     const path = endpoint.startsWith('/') ? endpoint : `${apiBase}/${endpoint.replace(/^\/+/, '')}`;
@@ -33,6 +34,10 @@
     feedback.textContent = message;
     feedback.dataset.state = state;
     feedback.hidden = false;
+    window.clearTimeout(feedbackTimers.get(feedback));
+    feedbackTimers.set(feedback, window.setTimeout(() => {
+      feedback.hidden = true;
+    }, 5000));
   };
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -93,7 +98,12 @@
         if (form.elements.email?.value && destination.pathname.endsWith('verify-otp')) {
           destination.searchParams.set('email', form.elements.email.value);
         }
-        window.location.assign(destination.href);
+        const message = payload.message || form.dataset.successMessage || 'Đã gửi thành công.';
+        if (window.HelpdeskFeedback) window.HelpdeskFeedback.redirect(message, destination.href, {
+          variant: form.dataset.feedbackVariant || 'success',
+          position: form.dataset.feedbackPosition || 'top-right',
+        });
+        else window.location.assign(destination.href);
         return;
       }
 

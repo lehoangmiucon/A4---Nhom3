@@ -50,7 +50,11 @@
         </section>
         </div>
         <a class="top-user top-user-profile" href="{{ url('/admin/pages/account') }}" aria-label="Xem thông tin cá nhân và cài đặt tài khoản">
-            <span class="user-avatar">{{ mb_strtoupper(mb_substr($currentUser->name ?? 'AD', 0, 2)) }}</span>
+            @if($currentUser->avatar_path ?? null)
+                <img class="user-avatar" style="object-fit:cover" src="{{ url('/storage/'.$currentUser->avatar_path) }}" alt="">
+            @else
+                <span class="user-avatar">{{ mb_strtoupper(mb_substr($currentUser->name ?? 'AD', 0, 2)) }}</span>
+            @endif
             <span class="user-ident"><strong>{{ $currentUser->name ?? 'Quản trị viên' }}</strong><small>Quản trị viên</small></span>
         </a>
         <form class="topbar-logout-form" action="{{ url('/logout') }}" method="post" data-logout-form>
@@ -63,4 +67,4 @@
     </div>
 </header>
 <script src="{{ url('/shared/js/logout.js?v=20261106-csrf1') }}" defer></script>
-<script src="{{ url('/shared/js/page-feedback.js?v=20261106-fast1') }}" defer></script>
+<script src="{{ url('/shared/js/page-feedback.js?v=20261110-report-toast-center1') }}" defer></script>

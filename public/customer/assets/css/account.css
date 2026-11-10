@@ -19,6 +19,8 @@
 .account-profile-card,.account-password-card{padding:26px}
 .account-card-heading{display:flex;align-items:center;gap:16px;padding-bottom:22px;border-bottom:1px solid #e8eef4}
 .account-avatar{display:grid;flex:0 0 58px;width:58px;height:58px;place-items:center;border-radius:18px;background:linear-gradient(145deg,#e8f5ff,#d7edfc);color:#147fc4;font-size:23px;font-weight:800}
+.account-avatar-image{object-fit:cover}
+.account-avatar-form{display:grid;gap:9px;margin-top:19px;padding-top:17px;border-top:1px solid #e8eef4}.account-avatar-form>label{color:#405a73;font-size:12px;font-weight:700}.account-avatar-form>input[type=file]{width:100%;padding:10px;border:1px solid #dce6ef;border-radius:10px;background:#fff;color:#587087;font:inherit;font-size:12px}.account-avatar-form .account-submit{margin-top:2px}
 .account-card-heading h2,.account-section-heading h2{margin:4px 0 8px;color:#193652;font-size:19px}
 .account-status{display:inline-flex;align-items:center;gap:7px;color:#218a67;font-size:12px;font-weight:600}
 .account-status i{width:8px;height:8px;border-radius:50%;background:#31b487;box-shadow:0 0 0 3px #e5f7f0}
@@ -51,3 +53,8 @@
     .role-topbar .role-logout{min-height:30px;padding:0 7px;font-size:10px}
 }
 @media(max-width:380px){.role-topbar .role-account-details{display:none!important}}
+
+.account-avatar-form>.account-avatar-file{display:block;width:100%;min-height:50px;padding:7px 9px!important;border:1px solid #dbe6ee!important;border-radius:11px!important;background:#f8fbfd!important;color:#708399!important;font:500 12px 'Be Vietnam Pro',Arial,sans-serif!important}
+.account-avatar-form>.account-avatar-file::file-selector-button{margin:0 12px 0 0;padding:9px 13px;border:1px solid #d6e8f5;border-radius:8px;background:#edf7ff;color:#2478ae;font:700 11px 'Be Vietnam Pro',Arial,sans-serif;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.account-avatar-form>.account-avatar-file::file-selector-button:hover{border-color:#a9d0e9;background:#e2f2fd;transform:translateY(-1px)}
+.account-avatar-form>.account-avatar-file:focus-visible{outline:0;border-color:#55a1d1!important;box-shadow:0 0 0 3px #1686df1c}

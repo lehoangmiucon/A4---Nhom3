@@ -8,10 +8,50 @@
   const rows = [...tableBody.querySelectorAll('[data-incident-row]')];
   const originalEmptyRow = tableBody.querySelector('tr:not([data-incident-row]) td[colspan]')?.closest('tr');
   const resultCount = document.querySelector('.pagination span');
+  const pagination = document.querySelector('.pagination');
   const config = window.HELPDESK_CONFIG || {};
   const appBase = new URL(config.appUrl || '/', window.location.origin).pathname.replace(/\/+$/, '');
   let requestSequence = 0;
   let noResultsRow = null;
+  let currentPage = 1;
+  let matchingRows = rows;
+  const pageSize = 15;
+
+  function renderPage() {
+    const pageCount = Math.max(1, Math.ceil(matchingRows.length / pageSize));
+    currentPage = Math.min(currentPage, pageCount);
+    const start = (currentPage - 1) * pageSize;
+    const visibleRows = new Set(matchingRows.slice(start, start + pageSize));
+    rows.forEach((row) => { row.hidden = !visibleRows.has(row); });
+    if (resultCount) resultCount.textContent = matchingRows.length
+      ? `Hiển thị ${start + 1}–${Math.min(start + pageSize, matchingRows.length)} / ${matchingRows.length} phiếu sự cố`
+      : 'Hiển thị 0 phiếu sự cố';
+    let nav = pagination?.querySelector('.page-numbers');
+    if (pagination && !nav) {
+      nav = document.createElement('nav');
+      nav.className = 'page-numbers';
+      nav.setAttribute('aria-label', 'Phân trang phiếu sự cố');
+      pagination.append(nav);
+    }
+    if (!nav) return;
+    nav.replaceChildren();
+    if (pageCount <= 1) return;
+    const addButton = (label, page, disabled = false, active = false) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.disabled = disabled;
+      button.className = active ? 'current' : '';
+      if (active) button.setAttribute('aria-current', 'page');
+      button.addEventListener('click', () => { currentPage = page; renderPage(); });
+      nav.append(button);
+    };
+    addButton('‹', currentPage - 1, currentPage === 1);
+    for (let page = Math.max(1, currentPage - 2); page <= Math.min(pageCount, currentPage + 2); page++) {
+      addButton(String(page), page, false, page === currentPage);
+    }
+    addButton('›', currentPage + 1, currentPage === pageCount);
+  }
 
   const initialFilters = new URLSearchParams(window.location.search);
   [[reporterRoleSelect, 'reporter_role'], [periodSelect, 'period']].forEach(([select, key]) => {
@@ -49,20 +89,14 @@
       if (!response.ok) throw new Error(result.message || 'Không thể lọc phiếu sự cố.');
       if (sequence !== requestSequence) return;
       const matchingIds = new Set((result.data?.ids || []).map(String));
-      let visibleCount = 0;
-
-      rows.forEach((row) => {
+      matchingRows = rows.filter((row) => {
         const detailLink = row.querySelector('.ticket-code');
         const ticketId = detailLink ? new URL(detailLink.href).searchParams.get('ticket') : '';
-        const matches = matchingIds.has(String(ticketId));
-        row.hidden = !matches;
-        if (matches) visibleCount += 1;
+        return matchingIds.has(String(ticketId));
       });
-
-      if (noResultsRow) noResultsRow.hidden = visibleCount > 0;
-      if (resultCount) resultCount.textContent = rows.length
-        ? `Hiển thị ${visibleCount} / ${rows.length} phiếu sự cố`
-        : 'Hiển thị 0 phiếu sự cố';
+      currentPage = 1;
+      if (noResultsRow) noResultsRow.hidden = matchingRows.length > 0;
+      renderPage();
       delete filterBar.dataset.filterError;
       filterBar.removeAttribute('aria-description');
     } catch (error) {
@@ -75,10 +109,11 @@
 
   let searchTimer;
   searchInput?.addEventListener('input', () => {
+    currentPage = 1;
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(applyFilters, 250);
   });
   [statusSelect, categorySelect, buildingSelect, reporterRoleSelect, periodSelect]
-    .forEach((select) => select?.addEventListener('change', applyFilters));
+    .forEach((select) => select?.addEventListener('change', () => { currentPage = 1; applyFilters(); }));
   applyFilters();
 })();

@@ -86,7 +86,8 @@
         item.type = 'button';
         item.className = 'helpdesk-select-option';
         item.setAttribute('role', 'option');
-        item.disabled = option.disabled;
+        item.disabled = option.disabled || option.hidden;
+        item.hidden = option.hidden;
         const text = document.createElement('span');
         text.textContent = option.textContent.trim();
         const check = document.createElement('i');
@@ -151,11 +152,11 @@
     });
     select.addEventListener('input', sync);
     select.form?.addEventListener('reset', () => window.setTimeout(sync, 0));
-    new MutationObserver(rebuild).observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'label', 'value'] });
+    new MutationObserver(rebuild).observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'hidden', 'label', 'value'] });
     rebuild();
   }
 
-  document.querySelectorAll('.main-area select').forEach(enhance);
+  document.querySelectorAll('main select').forEach(enhance);
 
   document.addEventListener('pointerdown', (event) => {
     document.querySelectorAll('.helpdesk-select-control.is-open').forEach((wrapper) => {

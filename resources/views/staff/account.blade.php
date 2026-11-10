@@ -5,8 +5,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Tài khoản nhân viên · Helpdesk</title>
-    <link rel="stylesheet" href="assets/css/staff.css?v=20261106-cleanup1">
-    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261104-3">
+    <link rel="stylesheet" href="assets/css/staff.css?v=20261110-account-avatar-picker1">
+    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261110-custom-select1">
 </head>
 <body class="staff-role-page role-page">
 <div class="role-shell">
@@ -22,13 +22,17 @@
         </section>
 
         @if (session('status'))
-            <p class="staff-account-message is-success" role="status">{{ session('status') }}</p>
+            <p class="staff-account-message is-success" role="status" data-auto-dismiss>{{ session('status') }}</p>
         @endif
 
         <div class="staff-account-grid">
             <section class="role-card staff-account-card">
                 <div class="staff-account-identity">
-                    <span class="staff-account-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($currentUser->name, 0, 1)) }}</span>
+                    @if($currentUser->avatar_path)
+                        <img class="staff-account-avatar" src="{{ url('/storage/'.$currentUser->avatar_path) }}" alt="Ảnh đại diện của {{ $currentUser->name }}">
+                    @else
+                        <span class="staff-account-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($currentUser->name, 0, 1)) }}</span>
+                    @endif
                     <div>
                         <h2>{{ $currentUser->name }}</h2>
                         <p>{{ $currentUser->role === 'admin' ? 'Quản lý' : 'Nhân viên kỹ thuật' }} · Helpdesk trường học</p>
@@ -40,6 +44,18 @@
                     <div><span>Trạng thái email</span><strong>{{ $currentUser->email_verified_at ? 'Đã xác thực' : 'Chưa xác thực' }}</strong></div>
                     <div><span>Ngày tạo tài khoản</span><strong>{{ $currentUser->created_at?->format('d/m/Y') ?? '—' }}</strong></div>
                 </div>
+
+                <form class="role-form staff-account-form" action="{{ url('/account/profile') }}" method="post" enctype="multipart/form-data">
+                    @csrf
+                    <h2>Ảnh đại diện</h2>
+                    <div class="role-field">
+                        <label for="staff-avatar-upload">Ảnh đại diện</label>
+                        <input id="staff-avatar-upload" class="account-avatar-file" name="avatar" type="file" accept="image/*" required>
+                        <small>Ảnh JPG, PNG hoặc WebP, tối đa 5 MB.</small>
+                        @error('avatar')<small class="staff-account-error">{{ $message }}</small>@enderror
+                    </div>
+                    <button class="role-button" type="submit">Cập nhật ảnh đại diện</button>
+                </form>
 
                 <form class="role-form staff-account-form" action="{{ url('/account/profile') }}" method="post">
                     @csrf
@@ -54,7 +70,7 @@
                         <label for="staff-email">Email đăng nhập</label>
                         <input id="staff-email" type="email" value="{{ $currentUser->email }}" readonly aria-readonly="true">
                     </div>
-                    <button class="role-button" type="submit">Lưu thông tin</button>
+                    <button class="role-button" type="submit">Lưu tên hiển thị</button>
                 </form>
             </section>
 

@@ -583,6 +583,7 @@ html,body{max-width:100%;overflow-x:clip}
 .account-feedback-success{border-color:#c9eadb;background:#f0faf5;color:#287b5b}
 .account-hero{display:flex;align-items:center;gap:17px;margin-bottom:16px;padding:20px 23px;background:linear-gradient(115deg,#fff 30%,#f2f9ff)}
 .account-hero .account-avatar{width:66px;height:66px;flex:0 0 66px}
+.account-hero .account-avatar-image{object-fit:cover;border-radius:20px}
 .account-hero-copy{min-width:0;flex:1}
 .account-hero-copy h2{margin:7px 0 1px;color:#203a56;font-size:20px;line-height:1.35}
 .account-hero-copy p{margin:0;color:#74879b;font-size:13px;overflow-wrap:anywhere}
@@ -888,3 +889,15 @@ html,body{max-width:100%;overflow-x:clip}
 .teacher-metric-card .metric-icon{background:#ffefd9;color:#b96116}
 @media(max-width:1450px){.metric-grid.dashboard-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:850px){.metric-grid.dashboard-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-metric-grid .teacher-metric-card{grid-column:1/-1}}
+
+/* Styled avatar picker controls on the account settings page. */
+.account-settings-form .form-item .account-avatar-file{display:block;width:100%;min-height:50px;padding:7px 9px!important;border:1px solid #dbe6ee!important;border-radius:11px!important;background:#f8fbfd!important;color:#708399!important;font:500 12px 'Be Vietnam Pro',Arial,sans-serif!important}
+.account-avatar-file::file-selector-button{margin:0 12px 0 0;padding:9px 13px;border:1px solid #d6e8f5;border-radius:8px;background:#edf7ff;color:#2478ae;font:700 11px 'Be Vietnam Pro',Arial,sans-serif;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.account-avatar-file::file-selector-button:hover{border-color:#a9d0e9;background:#e2f2fd;transform:translateY(-1px)}
+.account-settings-form .form-item .account-avatar-file:focus-visible{outline:0;border-color:#55a1d1!important;box-shadow:0 0 0 3px #1686df1c}
+
+.status-badge.priority-badge{border:1px solid transparent;font-weight:700}
+.status-badge.priority-low{border-color:#cfe9dc;background:#eff9f3;color:#267754}
+.status-badge.priority-normal{border-color:#dce7f0;background:#f4f8fb;color:#587087}
+.status-badge.priority-high{border-color:#f0ddaf;background:#fff6e4;color:#a2670a}
+.status-badge.priority-urgent{border-color:#f1d1ce;background:#fff1ef;color:#b4473d}

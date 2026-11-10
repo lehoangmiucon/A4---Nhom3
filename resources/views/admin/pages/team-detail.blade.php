@@ -335,15 +335,16 @@
             <div class="team-history-heading">
                 <h2>Phiếu được giao gần đây</h2><span class="period-pill">{{ $teamMember->assigned_tickets_count }} phiếu</span>
             </div>
-            @if($teamMember->assignedTickets->isNotEmpty())
+            @if($assignedTicketPage->isNotEmpty())
             <div class="team-history-list">
-                @foreach($teamMember->assignedTickets as $ticket)
+                @foreach($assignedTicketPage as $ticket)
                 <a class="team-history-item" href="{{ url('/admin/pages/ticket-detail?ticket='.$ticket->id) }}">
                     <span class="team-history-item-main"><strong>{{ $ticket->ticket_number }} · {{ $ticket->title }}</strong><small>{{ $ticket->category?->name ?? 'Chưa phân loại' }} · {{ $ticket->room?->building?->name ?? $ticket->building_label }} · {{ $ticket->room?->name ?? $ticket->room_label }}</small></span>
                     <span class="status-badge ticket-status ticket-status-{{ str_replace('_', '-', $ticket->status) }}">{{ $statusLabels[$ticket->status] ?? $ticket->status }}</span>
                 </a>
                 @endforeach
             </div>
+            @include('shared.ticket-pagination', ['paginator' => $assignedTicketPage])
             @else
             <div class="team-detail-empty">Tài khoản này chưa được giao phiếu nào.</div>
             @endif

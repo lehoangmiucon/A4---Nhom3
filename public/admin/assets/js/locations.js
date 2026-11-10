@@ -42,15 +42,7 @@
   const feedback = document.querySelector('#location-feedback');
   const roomBuilding = document.querySelector('#new-room-building');
   const roomCode = document.querySelector('#new-room-code');
-  const roomFloor = document.querySelector('#new-room-floor');
   let mode = 'building';
-
-  function inferFloor(code) {
-    const match = code.trim().match(/(\d{3,4})$/);
-    if (!match) return '';
-    const digits = match[1].slice(0, -2);
-    return digits ? String(Number(digits)) : '';
-  }
 
   function setMode(nextMode) {
     mode = nextMode;
@@ -83,10 +75,6 @@
     const code = roomCode?.value.trim() || '';
     document.querySelector('#room-qr-link').textContent = code ? `${window.location.origin}${appPath(`/r/${encodeURIComponent(code)}`)}` : 'Chọn khu nhà và nhập mã phòng';
   }));
-  roomCode?.addEventListener('input', () => {
-    if (roomFloor) roomFloor.value = inferFloor(roomCode.value);
-  });
-
   document.querySelectorAll('[data-close-location]').forEach((button) => button.addEventListener('click', () => dialog.close()));
 
   const params = new URLSearchParams(window.location.search);
@@ -119,7 +107,6 @@
       : {
           code: document.querySelector('#new-room-code').value.trim(),
           name: document.querySelector('#new-room-name').value.trim(),
-          floor: roomFloor?.value === '' ? null : Number(roomFloor?.value),
         };
 
     const button = document.querySelector('#location-submit');

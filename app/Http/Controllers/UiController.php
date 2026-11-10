@@ -268,15 +268,22 @@ class UiController extends Controller
         }
         if ($section === 'admin' && $path === 'pages/user-detail') {
             $data['student'] = User::whereIn('role', ['student', 'teacher'])
-                ->with(['reportedTickets' => fn($query) => $query->with(['room.building', 'category', 'assignee'])->latest()])
                 ->withCount('reportedTickets')
                 ->findOrFail($request->integer('user'));
+            $data['reportedTicketPage'] = Ticket::with(['room.building', 'category', 'assignee'])
+                ->where('reporter_id', $data['student']->id)->latest()->paginate(15)->withQueryString();
+            $data['reportedTicketsInProgress'] = Ticket::where('reporter_id', $data['student']->id)
+                ->whereIn('status', ['assigned', 'in_progress'])->count();
+            $data['reportedTicketsResolved'] = Ticket::where('reporter_id', $data['student']->id)
+                ->whereIn('status', ['resolved', 'closed'])->count();
         }
         if ($section === 'admin' && $path === 'pages/team-detail') {
             $data['teamMember'] = User::whereIn('role', ['admin', 'staff'])
-                ->with(['categories:id,name,color', 'assignedTickets' => fn($query) => $query->with(['room.building', 'category', 'assignee'])->latest()])
+                ->with('categories:id,name,color')
                 ->withCount('assignedTickets')
                 ->findOrFail($request->integer('user'));
+            $data['assignedTicketPage'] = Ticket::with(['room.building', 'category', 'assignee'])
+                ->where('assigned_to_id', $data['teamMember']->id)->latest()->paginate(15)->withQueryString();
             $data['teamScheduleCount'] = $data['teamMember']->role === 'staff'
                 ? TicketSchedule::where('staff_id', $data['teamMember']->id)->count()
                 : 0;
@@ -293,7 +300,7 @@ class UiController extends Controller
             $data['categories'] = Category::orderBy('name')->get(['id', 'name', 'color']);
         }
         if ($section === 'customer' && $path === 'tickets') {
-            $data['tickets'] = Ticket::with('room.building')->where('reporter_id', $user->id)->latest()->get();
+            $data['tickets'] = Ticket::with('room.building')->where('reporter_id', $user->id)->latest()->paginate(15)->withQueryString();
         }
         if ($section === 'customer' && $path === 'notifications') {
             $data['notifications'] = $user->notifications()->latest()->get();

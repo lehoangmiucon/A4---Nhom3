@@ -17,11 +17,15 @@
 </section>
 
 @if(session('status'))
-    <div class="account-feedback account-feedback-success" role="status"><i class="fa-solid fa-circle-check" aria-hidden="true"></i>{{ session('status') }}</div>
+    <div class="account-feedback account-feedback-success" role="status" data-auto-dismiss><i class="fa-solid fa-circle-check" aria-hidden="true"></i>{{ session('status') }}</div>
 @endif
 
 <section class="account-hero panel">
-    <div class="account-avatar">{{ mb_strtoupper(mb_substr($currentUser->name, 0, 2)) }}</div>
+    @if($currentUser->avatar_path)
+        <img class="account-avatar account-avatar-image" src="{{ url('/storage/'.$currentUser->avatar_path) }}" alt="Ảnh đại diện của {{ $currentUser->name }}">
+    @else
+        <div class="account-avatar">{{ mb_strtoupper(mb_substr($currentUser->name, 0, 2)) }}</div>
+    @endif
     <div class="account-hero-copy">
         <span class="account-role-pill"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i>{{ $roleLabels[$currentUser->role] ?? $currentUser->role }}</span>
         <h2>{{ $currentUser->name }}</h2>
@@ -39,6 +43,16 @@
             <span><i class="fa-regular fa-id-card" aria-hidden="true"></i></span>
             <div><h2>Hồ sơ cá nhân</h2><p>Cập nhật tên hiển thị trong hệ thống.</p></div>
         </div>
+        <form method="POST" action="{{ url('/account/profile') }}" class="account-settings-form account-avatar-profile-form" enctype="multipart/form-data">
+            @csrf
+            <div class="form-item">
+                <label for="account-avatar-upload">Ảnh đại diện</label>
+                <input id="account-avatar-upload" class="account-avatar-file" name="avatar" type="file" accept="image/*" required>
+                <small class="account-field-hint">Chọn ảnh JPG, PNG hoặc WebP, tối đa 5 MB.</small>
+                @error('avatar')<small class="account-field-error">{{ $message }}</small>@enderror
+            </div>
+            <div class="account-form-actions"><button class="button button-primary" type="submit"><i class="fa-regular fa-floppy-disk" aria-hidden="true"></i>Cập nhật ảnh đại diện</button></div>
+        </form>
         <form method="POST" action="{{ url('/account/profile') }}" class="account-settings-form">
             @csrf
             <div class="form-item">
@@ -56,7 +70,7 @@
                 <div><small>Email xác thực</small><strong>{{ $currentUser->email_verified_at ? 'Đã xác thực' : 'Chưa xác thực' }}</strong></div>
                 <div><small>Ngày tham gia</small><strong>{{ $currentUser->created_at?->format('d/m/Y') ?? '—' }}</strong></div>
             </div>
-            <div class="account-form-actions"><button class="button button-primary" type="submit"><i class="fa-regular fa-floppy-disk" aria-hidden="true"></i>Lưu hồ sơ</button></div>
+            <div class="account-form-actions"><button class="button button-primary" type="submit"><i class="fa-regular fa-floppy-disk" aria-hidden="true"></i>Lưu tên hiển thị</button></div>
         </form>
     </section>
 

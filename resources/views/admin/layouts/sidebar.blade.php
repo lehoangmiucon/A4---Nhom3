@@ -17,9 +17,9 @@
         <a class="nav-link {{ $isCurrent(['index']) ? 'active' : '' }}" href="{{ url('/admin/index') }}">
             <i class="fa-solid fa-table-cells-large nav-icon-fa" aria-hidden="true"></i><span>Tổng quan</span>
         </a>
-        <a class="nav-link {{ $isCurrent(['pages/incidents', 'pages/ticket-detail', 'pages/ticket-review']) ? 'active' : '' }}" href="{{ url('/admin/pages/incidents') }}">
+        <a class="nav-link {{ $isCurrent(['pages/incidents', 'pages/ticket-detail', 'pages/ticket-review']) ? 'active' : '' }}" href="{{ url('/admin/pages/incidents?focus=unassigned') }}" aria-label="Phiếu sự cố, {{ $pendingTicketCount ?? 0 }} phiếu chờ tiếp nhận hoặc phân công">
             <i class="fa-solid fa-triangle-exclamation nav-icon-fa" aria-hidden="true"></i><span>Phiếu sự cố</span>
-            <span class="nav-count">{{ $pendingTicketCount ?? 0 }}</span>
+            @if(($pendingTicketCount ?? 0) > 0)<span class="nav-count" title="{{ $pendingTicketCount }} phiếu chờ tiếp nhận hoặc phân công">{{ $pendingTicketCount }}</span>@endif
         </a>
         <a class="nav-link {{ $isCurrent(['pages/schedule']) ? 'active' : '' }}" href="{{ url('/admin/pages/schedule') }}">
             <i class="fa-solid fa-calendar-days nav-icon-fa" aria-hidden="true"></i><span>Lịch phân công</span>

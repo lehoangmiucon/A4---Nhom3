@@ -253,6 +253,6 @@ Tổng quan · Helpdesk trường học
 @endsection
 
 @section('scripts')
-<script src="assets/js/api-client.js?v=20261106-fast-actions1"></script>
+<script src="assets/js/api-client.js?v=20261110-report-toast-center1"></script>
 <script src="{{ url('/admin/assets/js/dashboard-period.js?v=20261109-week-ajax1') }}"></script>
 @endsection

@@ -7,8 +7,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Tài khoản của tôi · Helpdesk</title>
     <link rel="stylesheet" href="assets/css/customer.css?v=20261103-responsive1">
-    <link rel="stylesheet" href="assets/css/account.css?v=20261103-responsive1">
-    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261105-staff-header2">
+    <link rel="stylesheet" href="assets/css/account.css?v=20261110-avatar-picker1">
+    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261110-custom-select1">
 </head>
 <body class="customer-role-page role-page account-page">
 <div class="role-shell">
@@ -27,7 +27,11 @@
         <div class="account-layout">
             <section class="role-card account-profile-card">
                 <div class="account-card-heading">
-                    <span class="account-avatar">{{ mb_strtoupper(mb_substr($currentUser->name, 0, 1)) }}</span>
+                    @if($currentUser->avatar_path)
+                        <img class="account-avatar account-avatar-image" src="{{ url('/storage/'.$currentUser->avatar_path) }}" alt="Ảnh đại diện của {{ $currentUser->name }}">
+                    @else
+                        <span class="account-avatar">{{ mb_strtoupper(mb_substr($currentUser->name, 0, 1)) }}</span>
+                    @endif
                     <div>
                         <span class="role-kicker">HỒ SƠ CỦA BẠN</span>
                         <h2>{{ $currentUser->name }}</h2>
@@ -35,6 +39,14 @@
                     </div>
                 </div>
 
+                <form class="account-avatar-form" method="POST" action="{{ url('/account/profile') }}" enctype="multipart/form-data">
+                    @csrf
+                    <label for="customer-avatar-upload">Ảnh đại diện</label>
+                    <input id="customer-avatar-upload" class="account-avatar-file" name="avatar" type="file" accept="image/*" required>
+                    <small class="account-field-hint">Chọn ảnh JPG, PNG hoặc WebP, tối đa 5 MB. Email không thể chỉnh sửa.</small>
+                    @error('avatar')<small class="account-field-error">{{ $message }}</small>@enderror
+                    <button class="role-button account-submit" type="submit">Cập nhật ảnh đại diện</button>
+                </form>
                 <dl class="account-facts">
                     <div><dt>Họ và tên</dt><dd>{{ $currentUser->name }}</dd></div>
                     <div><dt>Email đăng nhập</dt><dd>{{ $currentUser->email }}</dd></div>
@@ -42,7 +54,8 @@
                     <div><dt>Email xác thực</dt><dd>{{ $currentUser->email_verified_at ? 'Đã xác thực' : 'Chưa xác thực' }}</dd></div>
                     <div><dt>Ngày tạo tài khoản</dt><dd>{{ $currentUser->created_at?->format('d/m/Y') ?? '—' }}</dd></div>
                 </dl>
-                <p class="account-readonly-note">Email và thông tin hồ sơ do quản lý hệ thống cập nhật. Bạn có thể tự đổi mật khẩu tại đây.</p>
+                @if(session('status'))<p class="account-readonly-note" role="status" data-auto-dismiss>{{ session('status') }}</p>@endif
+                <p class="account-readonly-note">Bạn có thể tự cập nhật ảnh đại diện và đổi mật khẩu tại đây. Email không thể chỉnh sửa.</p>
             </section>
 
             <section class="role-card account-password-card">
@@ -75,6 +88,6 @@
         <footer class="role-footer">Helpdesk trường học · Quản lý tài khoản cá nhân</footer>
     </main>
 </div>
-<script src="../admin/assets/js/api-client.js?v=20261106-fast-actions1"></script>
+<script src="../admin/assets/js/api-client.js?v=20261110-report-toast-center1"></script>
 </body>
 </html>

@@ -6,9 +6,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Chi tiết phiếu {{ $ticket->ticket_number }} · Helpdesk</title>
-    <link rel="stylesheet" href="assets/css/staff.css?v=20261109-red-validation1">
+    <link rel="stylesheet" href="assets/css/staff.css?v=20261110-priority-labels1">
     <link rel="stylesheet" href="../admin/assets/css/ticket-status.css?v=20261104-status1">
-    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261104-3">
+    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261110-custom-select1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" crossorigin="anonymous">
 </head>
 <body class="staff-role-page role-page">
@@ -74,7 +74,7 @@
                         <div><dt>Danh mục lỗi</dt><dd><i style="--category-color:{{ $ticket->category?->color ?? '#64748b' }}"></i>{{ $ticket->category?->name ?? $ticket->equipment_label ?? 'Chưa phân loại' }}</dd></div>
                         <div><dt>Địa điểm</dt><dd>{{ $ticket->room?->building?->name ?? $ticket->building_label ?? '—' }} · {{ $ticket->room?->name ?? $ticket->room_label ?? '—' }}</dd></div>
                         <div><dt>Người báo</dt><dd>{{ $ticket->reporter?->name ?? $ticket->reporter_name ?? '—' }}</dd></div>
-                        <div><dt>Mức độ ảnh hưởng</dt><dd><span class="staff-ticket-priority priority-{{ $ticket->priority }}">{{ ['low' => 'Thấp', 'normal' => 'Bình thường', 'high' => 'Cao', 'urgent' => 'Khẩn cấp'][$ticket->priority] ?? 'Bình thường' }}</span></dd></div>
+                        <div><dt>Mức độ ưu tiên</dt><dd><span class="staff-ticket-priority priority-{{ $ticket->priority }}">{{ $ticket->priority_label }}</span></dd></div>
                     </dl>
                     @if($ticket->reportAttachments->isNotEmpty())
                         <div class="staff-ticket-attachments">

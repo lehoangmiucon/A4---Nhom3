@@ -45,5 +45,4 @@
     </main>
     <script src="assets/js/auth.js?v=20261109-six-digit-otp5"></script>
 </body>
-
 </html>

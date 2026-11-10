@@ -31,10 +31,12 @@
                 <h2>Đăng nhập</h2>
                 <p>Nhập thông tin tài khoản Helpdesk của bạn.</p>
                 @if(session('registration_success'))
-                    <div class="auth-registration-success" role="status" aria-live="polite">
-                        <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
-                        <div><strong>Đăng ký thành công!</strong><p>{{ session('registration_success') }}</p></div>
+                <div class="auth-registration-success" role="status" aria-live="polite">
+                    <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                    <div><strong>Đăng ký thành công!</strong>
+                        <p>{{ session('registration_success') }}</p>
                     </div>
+                </div>
                 @endif
                 <form class="role-form" action="#" method="post" data-api-endpoint="/login" data-success-message="&#272;&#259;ng nh&#7853;p th&#224;nh c&#244;ng.">
                     <div class="role-field"><label for="email">Email tài khoản</label><input id="email" name="email" type="email" autocomplete="username" value="{{ old('email', session('registration_email', '')) }}" placeholder="Nhập email của bạn" required></div>

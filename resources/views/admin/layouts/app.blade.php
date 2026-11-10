@@ -14,13 +14,13 @@
     </script>
     <title>@yield('title', 'Helpdesk quản trị')</title>
     <link rel="stylesheet" href="{{ url('/admin/assets/css/style.css?v=20261103-admin-layout1') }}">
-    <link rel="stylesheet" href="{{ url('/admin/assets/css/extra.css?v=20261110-teacher-metric1') }}">
+    <link rel="stylesheet" href="{{ url('/admin/assets/css/extra.css?v=20261110-priority-labels1') }}">
     @if(in_array($pagePath ?? '', ['pages/categories', 'pages/team', 'pages/ticket-review', 'pages/notifications'], true))
         <link rel="stylesheet" href="{{ url('/admin/assets/css/roles.css') }}">
     @endif
     <link rel="stylesheet" href="{{ url('/admin/assets/css/ticket-status.css?v=20261104-status2') }}">
     @if(($pagePath ?? '') === 'pages/notifications')
-        <link rel="stylesheet" href="{{ url('/admin/assets/css/notifications.css?v=20261104-grouped1') }}">
+        <link rel="stylesheet" href="{{ url('/admin/assets/css/notifications.css?v=20261110-read-all1') }}">
     @endif
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" crossorigin="anonymous">
     @stack('styles')
@@ -41,7 +41,7 @@
     @yield('scripts')
     <script src="{{ url('/admin/assets/js/image-lightbox.js?v=20261104-lightbox1') }}"></script>
     <script src="{{ url('/admin/assets/js/period-select.js?v=20261103-period-menu2') }}"></script>
-    <script src="{{ url('/admin/assets/js/notification-groups.js?v=20261104-popover1') }}"></script>
-    <script src="{{ url('/admin/assets/js/native-selects.js?v=20261109-select-refresh1') }}"></script>
+    <script src="{{ url('/admin/assets/js/notification-groups.js?v=20261110-read-all1') }}"></script>
+    <script src="{{ url('/admin/assets/js/native-selects.js?v=20261110-custom-select1') }}"></script>
 </body>
 </html>

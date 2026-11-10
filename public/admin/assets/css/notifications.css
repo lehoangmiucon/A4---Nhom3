@@ -10,3 +10,15 @@
 .notification-group-count{padding:5px 9px;border:1px solid #e1eaf2;border-radius:999px;background:#fff;color:#71849a;font-size:10px;font-weight:700;white-space:nowrap}
 .notification-group.is-unread .notification-group-count{border-color:#c8e0f3;background:#e8f4fd;color:#176fa8}
 @media(max-width:620px){.notification-group{grid-template-columns:36px minmax(0,1fr);gap:9px;padding:11px!important}.notification-group-count{grid-column:2;justify-self:start}.notification-group-copy strong{font-size:12px}.notification-group-copy small{font-size:10px}}
+
+.notification-page-actions,.sn-notification-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.notification-read-all-button{display:inline-flex;min-height:40px;align-items:center;justify-content:center;gap:8px;padding:0 14px;border:1px solid #c8e0f2;border-radius:10px;background:linear-gradient(180deg,#f7fbff,#edf6fd);color:#176fa8;font:700 12px 'Be Vietnam Pro',Arial,sans-serif;text-decoration:none;white-space:nowrap;cursor:pointer;transition:transform .15s,border-color .15s,background .15s,box-shadow .15s}
+.notification-read-all-button:hover:not(:disabled){transform:translateY(-1px);border-color:#8fc1e2;background:#e8f4fd;box-shadow:0 5px 13px #176fa812}
+.notification-read-all-button:focus-visible{outline:3px solid #1686df35;outline-offset:2px}
+.notification-read-all-button:disabled{opacity:.65;cursor:wait}
+.staff-role-page .notification-read-all-button{border-color:#c9e7e3;background:linear-gradient(180deg,#f7fcfb,#eaf8f6);color:#087e79}
+.staff-role-page .notification-read-all-button:hover:not(:disabled){border-color:#91d0c9;background:#e1f4f1;box-shadow:0 5px 13px #087e7912}
+.customer-notification-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.customer-notification-heading h2{margin:0}
+@media(max-width:620px){.notification-page-actions{justify-content:flex-start}.notification-read-all-button{min-height:38px;padding:0 11px;font-size:11px}.sn-notification-actions{align-items:flex-end;flex-direction:column;gap:6px}.sn-notification-actions .sn-total-pill{font-size:9px}.customer-notification-heading{align-items:flex-start;flex-direction:column}}
+.notification-read-all-button svg{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}

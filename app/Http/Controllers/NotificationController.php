@@ -41,4 +41,14 @@ class NotificationController extends Controller
             'updated' => $updated,
         ]);
     }
+
+    public function readAll(Request $request): JsonResponse
+    {
+        $updated = $request->user()->unreadNotifications()->update(['read_at' => now()]);
+
+        return response()->json([
+            'message' => 'Đã đánh dấu tất cả thông báo là đã đọc.',
+            'updated' => $updated,
+        ]);
+    }
 }

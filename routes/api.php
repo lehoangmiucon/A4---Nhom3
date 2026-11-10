@@ -26,6 +26,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/tickets/{ticket}/logs', [TicketController::class, 'logs']);
     Route::get('/tickets/{ticket}', [TicketController::class, 'show']);
     Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::patch('/notifications/read-all', [NotificationController::class, 'readAll']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'read']);
     Route::patch('/notifications/tickets/{ticketId}/read', [NotificationController::class, 'readTicket']);
 

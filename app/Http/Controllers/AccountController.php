@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AccountController extends Controller
@@ -15,18 +16,36 @@ class AccountController extends Controller
     public function updateProfile(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
+            'name' => ['sometimes', 'required', 'string', 'max:120'],
+            'avatar' => ['nullable', 'image', 'max:5120'],
         ]);
 
         $user = $request->user();
         $oldName = $user->name;
-        $user->name = trim($data['name']);
+        $changedFields = [];
+        if (array_key_exists('name', $data)) {
+            $user->name = trim($data['name']);
+            if ($oldName !== $user->name) {
+                $changedFields[] = 'name';
+            }
+        }
+        $oldAvatarPath = $user->avatar_path;
+        if ($request->hasFile('avatar')) {
+            $user->avatar_path = $request->file('avatar')->store('avatars', 'public');
+            $changedFields[] = 'avatar';
+        }
         $user->save();
+        if ($oldAvatarPath && $oldAvatarPath !== $user->avatar_path) {
+            Storage::disk('public')->delete($oldAvatarPath);
+        }
 
-        ActivityLog::record($request, 'account.profile_updated', $user, 'Người dùng cập nhật tên tài khoản.', [
-            'old_name' => $oldName,
-            'new_name' => $user->name,
-        ]);
+        if ($changedFields !== []) {
+            ActivityLog::record($request, 'account.profile_updated', $user, 'Người dùng cập nhật hồ sơ cá nhân.', [
+                'changed_fields' => $changedFields,
+                'old_name' => in_array('name', $changedFields, true) ? $oldName : null,
+                'new_name' => in_array('name', $changedFields, true) ? $user->name : null,
+            ]);
+        }
 
         return back()->with('status', 'Đã cập nhật thông tin cá nhân.');
     }

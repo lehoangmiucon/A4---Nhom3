@@ -19,6 +19,16 @@ class Ticket extends Model
         return ['resolved_at' => 'datetime', 'closed_at' => 'datetime'];
     }
 
+    public function getPriorityLabelAttribute(): string
+    {
+        return match ($this->priority) {
+            'low' => 'Thấp',
+            'high' => 'Cao',
+            'urgent' => 'Khẩn cấp',
+            default => 'Bình thường',
+        };
+    }
+
     public function reporter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reporter_id');

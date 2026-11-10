@@ -63,7 +63,7 @@ Phiếu sự cố · Helpdesk trường học
                                     <td><span class="issue-title">{{ $ticket->title }}</span><span class="issue-sub">{{ $ticket->equipment_label }}</span></td>
                                     <td>{{ $ticket->building_label }} · {{ $ticket->room_label }}</td>
                                     <td>{{ $ticket->reporter_name }}@if($ticket->reporter?->role === 'teacher')<span class="issue-sub teacher-report-marker"><i class="fa-solid fa-chalkboard-user" aria-hidden="true"></i> Giáo viên · ưu tiên cao</span>@endif</td>
-                                    <td><span class="status-badge {{ in_array($ticket->priority, ['urgent', 'high'], true) ? 'status-wait' : '' }}">{{ $ticket->priority }}</span></td>
+                                    <td><span class="status-badge priority-badge priority-{{ $ticket->priority }}">{{ $ticket->priority_label }}</span></td>
                                     <td>
                                         <span class="status-badge ticket-status ticket-status-{{ str_replace('_', '-', $ticket->status) }}">{{ $ticket->status === 'new' ? 'Chờ tiếp nhận' : ($statusLabels[$ticket->status] ?? $ticket->status) }}</span>
                                         @if(in_array($ticket->status, ['assigned', 'in_progress', 'resolved'], true))
@@ -94,5 +94,5 @@ Phiếu sự cố · Helpdesk trường học
 @endsection
 
 @section('scripts')
-<script src="../assets/js/incidents.js?v=20261110-teacher-metric1"></script>
+<script src="../assets/js/incidents.js?v=20261110-pagination1"></script>
 @endsection

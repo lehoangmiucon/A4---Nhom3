@@ -326,8 +326,8 @@
         <p id="users-feedback" class="api-feedback" role="status" aria-live="polite" hidden></p>
         <div class="student-detail-stats" aria-label="Thống kê phiếu">
             <div class="student-detail-stat"><span>Tổng phiếu</span><strong>{{ $student->reported_tickets_count }}</strong></div>
-            <div class="student-detail-stat"><span>Đang xử lý</span><strong>{{ $student->reportedTickets->whereIn('status', ['assigned', 'in_progress'])->count() }}</strong></div>
-            <div class="student-detail-stat"><span>Đã hoàn tất</span><strong>{{ $student->reportedTickets->whereIn('status', ['resolved', 'closed'])->count() }}</strong></div>
+            <div class="student-detail-stat"><span>Đang xử lý</span><strong>{{ $reportedTicketsInProgress }}</strong></div>
+            <div class="student-detail-stat"><span>Đã hoàn tất</span><strong>{{ $reportedTicketsResolved }}</strong></div>
         </div>
     </section>
 
@@ -336,9 +336,9 @@
             <h2 id="student-tickets-title">Phiếu sự cố đã gửi</h2>
             <span class="period-pill">{{ $student->reported_tickets_count }} phiếu</span>
         </div>
-        @if($student->reportedTickets->isNotEmpty())
+        @if($reportedTicketPage->isNotEmpty())
         <div class="student-ticket-list">
-            @foreach($student->reportedTickets as $ticket)
+            @foreach($reportedTicketPage as $ticket)
             <article class="student-ticket-item">
                 <div class="student-ticket-main">
                     <a class="ticket-code student-ticket-code" href="{{ url('/admin/pages/ticket-detail?ticket='.$ticket->id) }}">{{ $ticket->ticket_number }}</a>
@@ -353,6 +353,7 @@
             </article>
             @endforeach
         </div>
+        @include('shared.ticket-pagination', ['paginator' => $reportedTicketPage])
         @else
         <div class="student-empty">Người dùng này chưa gửi phiếu sự cố nào.</div>
         @endif

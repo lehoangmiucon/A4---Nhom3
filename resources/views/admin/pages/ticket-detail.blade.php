@@ -80,7 +80,7 @@ $currentSchedule = $ticket->schedules
             @endif
 
             @if(in_array($ticket->status, ['new', 'reopened', 'assigned'], true))
-            <form class="role-form assignment-form" action="#" method="post" data-api-endpoint="/api/admin/tickets/{id}/assign">
+            <form class="role-form assignment-form" action="#" method="post" data-api-endpoint="/api/admin/tickets/{id}/assign" data-current-staff-id="{{ $ticket->assigned_to_id ?? '' }}" data-current-staff-name="{{ $ticket->assignee?->name ?? '' }}" data-ticket-number="{{ $ticket->ticket_number }}">
                 <input type="hidden" name="schedule_id" value="{{ $currentSchedule?->id }}">
                 <p class="assignment-form-title">{{ $ticket->assignee ? 'Cập nhật phân công hoặc lịch xử lý' : 'Chọn nhân viên và lịch xử lý' }}</p>
                 <label class="form-item assignment-staff-field"><span><i class="fa-solid fa-user-gear" aria-hidden="true"></i> Nhân viên kỹ thuật</span><select name="staff_id" required>
@@ -199,7 +199,7 @@ $stateMessage = $ticket->assignee
             <div class="detail-facts ticket-issue-facts">
                 <div><small>Danh mục lỗi</small><strong>{{ $ticket->category?->name ?? $ticket->equipment_label }}</strong></div>
                 <div><small>Địa điểm</small><strong>{{ $ticket->room?->building?->name ?? $ticket->building_label }} · {{ $ticket->room?->name ?? $ticket->room_label }}</strong></div>
-                <div><small>Mức độ ưu tiên</small><strong><span class="status-badge status-wait">{{ $ticket->priority }}</span></strong></div>
+                <div><small>Mức độ ưu tiên</small><strong><span class="status-badge priority-badge priority-{{ $ticket->priority }}">{{ $ticket->priority_label }}</span></strong></div>
             </div>
         </article>
 
@@ -262,8 +262,22 @@ $stateMessage = $ticket->assignee
 @endsection
 
 @section('scripts')
-<script src="../assets/js/api-client.js?v=20261106-fast-actions1"></script>
+<script src="../assets/js/api-client.js?v=20261110-report-toast-center1"></script>
 <script>
+    const assignmentForm = document.querySelector('.assignment-form');
+    assignmentForm?.addEventListener('submit', (event) => {
+        const staffSelect = assignmentForm.querySelector('[name="staff_id"]');
+        const previousStaffId = assignmentForm.dataset.currentStaffId;
+        if (!previousStaffId || staffSelect?.value === previousStaffId) return;
+
+        const nextStaffName = staffSelect?.selectedOptions[0]?.textContent.trim() || 'nhân viên mới';
+        const message = `Phiếu ${assignmentForm.dataset.ticketNumber} hiện đang được phân công cho ${assignmentForm.dataset.currentStaffName}. Bạn có chắc muốn chuyển phiếu này sang ${nextStaffName}?`;
+        if (!window.confirm(message)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+
     const reworkForm = document.querySelector('.ticket-rework-form');
     const reworkNote = reworkForm?.querySelector('[name="note"]');
     const reworkError = reworkForm?.querySelector('#rework-note-error');
