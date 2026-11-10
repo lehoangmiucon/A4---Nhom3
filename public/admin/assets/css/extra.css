@@ -801,6 +801,8 @@ html,body{max-width:100%;overflow-x:clip}
 .helpdesk-select-error[hidden]{display:none!important}
 .filter-bar .helpdesk-select-control{width:auto;min-width:150px;flex:0 1 auto}
 .filter-bar .helpdesk-select-trigger{min-width:150px}
+.incident-filter-bar .helpdesk-select-control,.incident-filter-bar>.select-field{width:210px;min-width:210px;flex:0 0 210px}
+@media(max-width:620px){.incident-filter-bar .helpdesk-select-control,.incident-filter-bar>.select-field{width:100%;min-width:0;flex:1 1 100%}}
 .form-item>.helpdesk-select-control{width:100%}
 @media(max-width:700px){.ticket-evidence-comparison{grid-template-columns:1fr}.ticket-evidence-comparison .evidence-card{padding:16px}}
 @media(max-width:600px){.ticket-review-actions{padding:16px}.ticket-review-actions .button{width:100%;white-space:normal}.ticket-close-inline-form{width:100%}.ticket-close-inline-form .button{width:100%;white-space:normal}.ticket-close-inline-form .api-feedback{position:static;width:100%;margin-top:8px}.report-evidence-block{padding:13px}.repair-evidence-attachments a,.evidence-card-attachments a{width:calc((100% - 20px)/3);height:auto;aspect-ratio:1.08}.evidence-heading-icon{width:36px;height:36px}.evidence-heading small{font-size:11px}}
@@ -879,3 +881,10 @@ html,body{max-width:100%;overflow-x:clip}
   .ticket-detail-page .evidence-card-attachments{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 }
 .teacher-report-marker{display:block;margin-top:4px;color:#a65a08;font-weight:700}
+
+.metric-grid.dashboard-metric-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+.teacher-metric-card{border-color:#f0d7b9;background:linear-gradient(180deg,#fffaf3,#fff)}
+.teacher-metric-card .metric-top,.teacher-metric-card .metric-value{color:#9b4f16}
+.teacher-metric-card .metric-icon{background:#ffefd9;color:#b96116}
+@media(max-width:1450px){.metric-grid.dashboard-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:850px){.metric-grid.dashboard-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-metric-grid .teacher-metric-card{grid-column:1/-1}}

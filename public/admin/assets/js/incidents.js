@@ -4,7 +4,7 @@
   if (!filterBar || !tableBody) return;
 
   const searchInput = filterBar.querySelector('.search-field');
-  const [statusSelect, categorySelect, buildingSelect] = filterBar.querySelectorAll('.select-field');
+  const [statusSelect, categorySelect, buildingSelect, reporterRoleSelect, periodSelect] = filterBar.querySelectorAll('.select-field');
   const rows = [...tableBody.querySelectorAll('[data-incident-row]')];
   const originalEmptyRow = tableBody.querySelector('tr:not([data-incident-row]) td[colspan]')?.closest('tr');
   const resultCount = document.querySelector('.pagination span');
@@ -12,6 +12,15 @@
   const appBase = new URL(config.appUrl || '/', window.location.origin).pathname.replace(/\/+$/, '');
   let requestSequence = 0;
   let noResultsRow = null;
+
+  const initialFilters = new URLSearchParams(window.location.search);
+  [[reporterRoleSelect, 'reporter_role'], [periodSelect, 'period']].forEach(([select, key]) => {
+    const value = initialFilters.get(key);
+    if (select && value && [...select.options].some((option) => option.value === value)) {
+      select.value = value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
 
   if (rows.length) {
     noResultsRow = document.createElement('tr');
@@ -28,6 +37,8 @@
     if (statusSelect?.value) params.set('status', statusSelect.value);
     if (categorySelect?.value) params.set('category', categorySelect.value);
     if (buildingSelect?.value) params.set('building', buildingSelect.value);
+    if (reporterRoleSelect?.value) params.set('reporter_role', reporterRoleSelect.value);
+    if (periodSelect?.value) params.set('period', periodSelect.value);
 
     try {
       const response = await fetch(`${appBase}/api/admin/tickets/filter?${params.toString()}`, {
@@ -67,6 +78,7 @@
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(applyFilters, 250);
   });
-  [statusSelect, categorySelect, buildingSelect].forEach((select) => select?.addEventListener('change', applyFilters));
+  [statusSelect, categorySelect, buildingSelect, reporterRoleSelect, periodSelect]
+    .forEach((select) => select?.addEventListener('change', applyFilters));
   applyFilters();
 })();

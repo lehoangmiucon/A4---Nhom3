@@ -11,6 +11,7 @@ use App\Models\TicketLog;
 use App\Models\TicketSchedule;
 use App\Models\User;
 use App\Notifications\TicketActivity;
+use App\Support\PeriodRange;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -117,10 +118,19 @@ class TicketController extends Controller
             'status' => ['nullable', Rule::in(['new', 'assigned', 'in_progress', 'resolved', 'closed', 'reopened'])],
             'category' => ['nullable', 'string', 'max:180'],
             'building' => ['nullable', 'string', Rule::exists('buildings', 'code')],
+            'reporter_role' => ['nullable', Rule::in(['student', 'teacher', 'staff', 'admin'])],
+            'period' => ['nullable', Rule::in(['day', 'week', 'month', 'year'])],
         ]);
         $query = Ticket::query();
         if (!empty($filters['status'])) $query->where('status', $filters['status']);
         if (!empty($filters['category'])) $query->where('equipment_label', $filters['category']);
+        if (!empty($filters['reporter_role'])) {
+            $query->whereHas('reporter', fn ($reporter) => $reporter->where('role', $filters['reporter_role']));
+        }
+        if (!empty($filters['period'])) {
+            [$periodStart, $periodEnd] = PeriodRange::bounds($filters['period']);
+            $query->whereBetween('created_at', [$periodStart, $periodEnd]);
+        }
         if (!empty($filters['building'])) {
             $buildingCode = $filters['building'];
             $query->where(fn ($tickets) => $tickets

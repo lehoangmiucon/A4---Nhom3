@@ -79,6 +79,8 @@ class UiController extends Controller
             $data['dashboardTotal'] = (clone $periodTickets)->count();
             $data['dashboardTodayCount'] = $data['dashboardTotal'];
             $data['dashboardUnassignedCount'] = (clone $periodTickets)->whereIn('status', ['new', 'reopened'])->count();
+            $data['dashboardTeacherCount'] = (clone $periodTickets)
+                ->whereHas('reporter', fn ($reporter) => $reporter->where('role', 'teacher'))->count();
             $data['dashboardResolvedCount'] = $data['dashboardCounts']['resolved'] ?? 0;
             $data['dashboardInProgressCount'] = $data['dashboardCounts']['in_progress'] ?? 0;
             $data['weeklyTicketCount'] = $data['dashboardTotal'];
@@ -123,6 +125,8 @@ class UiController extends Controller
         $periodTickets = Ticket::whereBetween('created_at', [$periodStart, $periodEnd]);
         $counts = (clone $periodTickets)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
         $total = (clone $periodTickets)->count();
+        $teacherReports = (clone $periodTickets)
+            ->whereHas('reporter', fn ($reporter) => $reporter->where('role', 'teacher'))->count();
         $resolved = (clone $periodTickets)->whereNotNull('resolved_at')->get(['created_at', 'resolved_at']);
         $averageMinutes = $resolved->avg(fn($ticket) => $ticket->created_at->diffInMinutes($ticket->resolved_at));
         $categories = Category::query()
@@ -134,6 +138,7 @@ class UiController extends Controller
             'period' => $period,
             'period_title' => PeriodRange::title($period),
             'total' => $total,
+            'teacher_reports' => $teacherReports,
             'closed' => (int) ($counts['closed'] ?? 0),
             'resolved' => (int) ($counts['resolved'] ?? 0) + (int) ($counts['closed'] ?? 0),
             'average_hours' => number_format(($averageMinutes ?? 0) / 60, 1, ',', ''),

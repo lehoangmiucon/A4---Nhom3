@@ -14,7 +14,7 @@
     </script>
     <title>@yield('title', 'Helpdesk quản trị')</title>
     <link rel="stylesheet" href="{{ url('/admin/assets/css/style.css?v=20261103-admin-layout1') }}">
-    <link rel="stylesheet" href="{{ url('/admin/assets/css/extra.css?v=20261109-select-refresh1') }}">
+    <link rel="stylesheet" href="{{ url('/admin/assets/css/extra.css?v=20261110-teacher-metric1') }}">
     @if(in_array($pagePath ?? '', ['pages/categories', 'pages/team', 'pages/ticket-review', 'pages/notifications'], true))
         <link rel="stylesheet" href="{{ url('/admin/assets/css/roles.css') }}">
     @endif

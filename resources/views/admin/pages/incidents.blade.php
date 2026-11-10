@@ -21,12 +21,24 @@ Phiếu sự cố · Helpdesk trường học
                 @if($incidentFocus)
                 <div class="callout incident-focus-callout"><span class="incident-focus-icon"><i class="fa-solid fa-filter" aria-hidden="true"></i></span><div><strong>{{ $incidentFocusLabel }}</strong><small>Danh sách đã được lọc theo mục bạn chọn từ trang tổng quan.</small></div><a href="incidents">Xem tất cả phiếu <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div>
                 @endif
-                <section class="filter-bar"><input class="search-field" type="search" placeholder="Tìm mã phiếu, nội dung hoặc phòng học…" aria-label="Tìm phiếu sự cố"><select class="select-field" aria-label="Lọc trạng thái">
+                <section class="filter-bar incident-filter-bar"><input class="search-field" type="search" placeholder="Tìm phiếu, phòng hoặc người báo…" aria-label="Tìm phiếu sự cố"><select class="select-field" aria-label="Lọc trạng thái">
                         <option value="">Tất cả trạng thái</option>@foreach($statusLabels as $status => $label)<option value="{{ $status }}">{{ $label }}</option>@endforeach
-                    </select><select class="select-field" aria-label="L&#7885;c danh m&#7909;c l&#7895;i">
+                    </select><select class="select-field" id="incident-category-filter" aria-label="L&#7885;c danh m&#7909;c l&#7895;i">
                         <option value="">T&#7845;t c&#7843; danh m&#7909;c</option>@foreach($incidentEquipmentLabels as $label)<option value="{{ $label }}">{{ $label }}</option>@endforeach
                     </select><select class="select-field" aria-label="Lọc khu vực">
                         <option value="">Tất cả khu vực</option>@foreach($incidentBuildings as $buildingOption)<option value="{{ $buildingOption->code }}">{{ $buildingOption->name }}</option>@endforeach
+                    </select><select class="select-field" aria-label="Lọc theo loại tài khoản người báo">
+                        <option value="">Tất cả tài khoản</option>
+                        <option value="student">Sinh viên</option>
+                        <option value="teacher">Giáo viên</option>
+                        <option value="staff">Nhân viên</option>
+                        <option value="admin">Quản lý</option>
+                    </select><select class="select-field" aria-label="Lọc theo thời gian tạo phiếu">
+                        <option value="">Tất cả thời gian</option>
+                        <option value="day">Hôm nay</option>
+                        <option value="week">Tuần này</option>
+                        <option value="month">Tháng này</option>
+                        <option value="year">Năm nay</option>
                     </select></section>
                 <section class="panel table-panel">
                     <div class="table-wrap">
@@ -82,5 +94,5 @@ Phiếu sự cố · Helpdesk trường học
 @endsection
 
 @section('scripts')
-<script src="../assets/js/incidents.js?v=20261105-functional-filters1"></script>
+<script src="../assets/js/incidents.js?v=20261110-teacher-metric1"></script>
 @endsection

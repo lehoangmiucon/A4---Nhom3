@@ -46,7 +46,7 @@ Tổng quan · Helpdesk trường học
                         </form>
                     </section>
                     <section
-                        class="metric-grid"
+                        class="metric-grid dashboard-metric-grid"
                         aria-label="Tổng hợp phiếu sự cố"
                     >
                         <a class="metric-card metric-card-link" href="pages/incidents?focus=today" aria-label="Xem các phiếu sự cố được gửi hôm nay">
@@ -99,6 +99,17 @@ Tổng quan · Helpdesk trường học
                             </div>
                             <div class="metric-progress">
                                 <i style="width: {{ $dashboardTotal ? round($dashboardInProgressCount / $dashboardTotal * 100) : 0 }}%; background: #7049c6"></i>
+                            </div>
+                        </a>
+                        <a class="metric-card metric-card-link teacher-metric-card" href="pages/incidents?reporter_role=teacher&amp;period={{ $dashboardPeriod }}" aria-label="Xem báo cáo giáo viên {{ $dashboardPeriodTitle }}">
+                            <div class="metric-top">
+                                <span>Báo cáo giáo viên</span>
+                                <span class="metric-icon"><i class="fa-solid fa-chalkboard-user" aria-hidden="true"></i></span>
+                            </div>
+                            <div class="metric-value">{{ $dashboardTeacherCount }}</div>
+                            <div class="metric-note">Phiếu ưu tiên cao từ giáo viên {{ $dashboardPeriodTitle }}</div>
+                            <div class="metric-progress">
+                                <i style="width: {{ $dashboardTotal ? round($dashboardTeacherCount / $dashboardTotal * 100) : 0 }}%; background: #c46b1a"></i>
                             </div>
                         </a>
                     </section>
