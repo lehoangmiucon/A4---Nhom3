@@ -8,6 +8,7 @@ use App\Models\Room;
 use App\Models\Ticket;
 use App\Models\TicketSchedule;
 use App\Models\User;
+use App\Support\PeriodRange;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class UiController extends Controller
         $allowedRoles = match ($section) {
             'admin' => ['admin'],
             'staff' => ['admin', 'staff'],
-            'customer' => ['admin', 'staff', 'student'],
+            'customer' => ['admin', 'staff', 'student', 'teacher'],
             default => [],
         };
         abort_unless(in_array($request->user()->role, $allowedRoles, true), 403);
@@ -66,30 +67,13 @@ class UiController extends Controller
             $data['notificationPreviewGroups'] = $this->groupNotifications($recentNotifications)->take(5);
         }
         if ($section === 'admin' && $path === 'index') {
-            $period = $request->query('period', 'month');
-            $periodOptions = [
-                'day' => 'Ngày',
-                'month' => 'Tháng',
-                'year' => 'Năm',
-            ];
-            if (! array_key_exists($period, $periodOptions)) {
-                $period = 'month';
-            }
-
-            $periodStart = match ($period) {
-                'day' => now()->startOfDay(),
-                'year' => now()->startOfYear(),
-                default => now()->startOfMonth(),
-            };
-            $periodEnd = match ($period) {
-                'day' => now()->endOfDay(),
-                'year' => now()->endOfYear(),
-                default => now()->endOfMonth(),
-            };
+            $period = PeriodRange::normalize($request->query('period', 'month'));
+            $periodOptions = PeriodRange::OPTIONS;
+            [$periodStart, $periodEnd] = PeriodRange::bounds($period);
 
             $data['dashboardPeriod'] = $period;
             $data['dashboardPeriodOptions'] = $periodOptions;
-            $data['dashboardPeriodTitle'] = ['day' => 'hôm nay', 'month' => 'tháng này', 'year' => 'năm nay'][$period];
+            $data['dashboardPeriodTitle'] = PeriodRange::title($period);
             $periodTickets = Ticket::whereBetween('created_at', [$periodStart, $periodEnd]);
             $data['dashboardCounts'] = (clone $periodTickets)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
             $data['dashboardTotal'] = (clone $periodTickets)->count();
@@ -108,18 +92,55 @@ class UiController extends Controller
                 ->withCount('rooms')->orderBy('code')->get();
         }
         if ($section === 'admin' && $path === 'pages/reports') {
-            $data['reportCounts'] = Ticket::selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
-            $data['totalTickets'] = Ticket::count();
-            $data['resolvedTickets'] = Ticket::whereIn('status', ['resolved', 'closed'])->count();
-            $data['equipmentBreakdown'] = Category::query()->withCount('tickets')
-                ->whereHas('tickets')->orderByDesc('tickets_count')->take(5)->get();
-            $resolved = Ticket::whereNotNull('resolved_at')->get(['created_at', 'resolved_at']);
+            $period = PeriodRange::normalize($request->query('period', 'month'));
+            [$periodStart, $periodEnd] = PeriodRange::bounds($period);
+            $data['reportPeriod'] = $period;
+            $data['reportPeriodOptions'] = PeriodRange::OPTIONS;
+            $data['reportPeriodTitle'] = PeriodRange::title($period);
+            $periodTickets = Ticket::whereBetween('created_at', [$periodStart, $periodEnd]);
+            $data['reportCounts'] = (clone $periodTickets)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
+            $data['totalTickets'] = (clone $periodTickets)->count();
+            $data['resolvedTickets'] = (clone $periodTickets)->whereIn('status', ['resolved', 'closed'])->count();
+            $data['equipmentBreakdown'] = Category::query()
+                ->withCount(['tickets as tickets_count' => fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd])])
+                ->whereHas('tickets', fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
+                ->orderByDesc('tickets_count')->take(5)->get();
+            $resolved = (clone $periodTickets)->whereNotNull('resolved_at')->get(['created_at', 'resolved_at']);
             $averageMinutes = $resolved->avg(fn($ticket) => $ticket->created_at->diffInMinutes($ticket->resolved_at));
             $data['averageResolutionHours'] = number_format(($averageMinutes ?? 0) / 60, 1, ',', '');
         }
         $this->addPageData($request, $section, $path, $data);
 
         return response()->view($view, $data);
+    }
+
+    public function reportSummary(Request $request)
+    {
+        abort_unless($request->user()?->role === 'admin', 403);
+
+        $period = PeriodRange::normalize($request->query('period', 'month'));
+        [$periodStart, $periodEnd] = PeriodRange::bounds($period);
+        $periodTickets = Ticket::whereBetween('created_at', [$periodStart, $periodEnd]);
+        $counts = (clone $periodTickets)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
+        $total = (clone $periodTickets)->count();
+        $resolved = (clone $periodTickets)->whereNotNull('resolved_at')->get(['created_at', 'resolved_at']);
+        $averageMinutes = $resolved->avg(fn($ticket) => $ticket->created_at->diffInMinutes($ticket->resolved_at));
+        $categories = Category::query()
+            ->withCount(['tickets as tickets_count' => fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd])])
+            ->whereHas('tickets', fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
+            ->orderByDesc('tickets_count')->take(5)->get(['id', 'name', 'color']);
+
+        return response()->json([
+            'period' => $period,
+            'period_title' => PeriodRange::title($period),
+            'total' => $total,
+            'closed' => (int) ($counts['closed'] ?? 0),
+            'resolved' => (int) ($counts['resolved'] ?? 0) + (int) ($counts['closed'] ?? 0),
+            'average_hours' => number_format(($averageMinutes ?? 0) / 60, 1, ',', ''),
+            'counts' => $counts,
+            'categories' => $categories,
+            'max_category_count' => (int) ($categories->max('tickets_count') ?? 0),
+        ]);
     }
 
     private function addPageData(Request $request, string $section, string $path, array &$data): void
@@ -138,7 +159,7 @@ class UiController extends Controller
             if (! is_string($focus) || ! array_key_exists($focus, $focusLabels)) {
                 $focus = null;
             }
-            $ticketQuery = Ticket::with(['room.building', 'assignee', 'schedules']);
+            $ticketQuery = Ticket::with(['room.building', 'assignee', 'schedules', 'reporter:id,name,role']);
             match ($focus) {
                 'today' => $ticketQuery->whereDate('created_at', today()),
                 'unassigned' => $ticketQuery->whereIn('status', ['new', 'reopened']),
@@ -234,14 +255,14 @@ class UiController extends Controller
             $data['categories'] = Category::orderBy('name')->get();
         }
         if ($section === 'admin' && $path === 'pages/users') {
-            $data['users'] = User::where('role', 'student')->withCount('reportedTickets')->orderBy('name')->get();
+            $data['users'] = User::whereIn('role', ['student', 'teacher'])->withCount('reportedTickets')->orderBy('name')->get();
             $data['monthlyTicketCount'] = Ticket::whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
-                ->whereHas('reporter', fn($query) => $query->where('role', 'student'))
+                ->whereHas('reporter', fn($query) => $query->whereIn('role', ['student', 'teacher']))
                 ->count();
         }
         if ($section === 'admin' && $path === 'pages/user-detail') {
-            $data['student'] = User::where('role', 'student')
+            $data['student'] = User::whereIn('role', ['student', 'teacher'])
                 ->with(['reportedTickets' => fn($query) => $query->with(['room.building', 'category', 'assignee'])->latest()])
                 ->withCount('reportedTickets')
                 ->findOrFail($request->integer('user'));

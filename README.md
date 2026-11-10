@@ -19,6 +19,7 @@ php artisan key:generate
 5. Chạy `php artisan storage:link` để truy cập ảnh minh chứng.
 6. Trỏ document root của Apache vào thư mục `public`, hoặc dùng `php artisan serve`.
 7. Đăng ký tài khoản, xác thực OTP rồi cấp quyền admin cho tài khoản đầu tiên bằng `php artisan helpdesk:make-admin email@domain.test`.
+8. Mở thêm một cửa sổ PowerShell và chạy `php artisan schedule:work` để scheduler tự dọn tài khoản chưa xác thực sau 24 giờ khi đang phát triển local.
 
 Repository chứa mã nguồn và migration; `.env`, `vendor`, cache, database cục bộ và ảnh do người dùng tải lên không được đưa lên Git. GitHub Pages chỉ phục vụ trang tĩnh, không chạy được backend Laravel/PHP của dự án.
 

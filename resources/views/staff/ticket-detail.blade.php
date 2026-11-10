@@ -6,7 +6,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Chi tiết phiếu {{ $ticket->ticket_number }} · Helpdesk</title>
-    <link rel="stylesheet" href="assets/css/staff.css?v=20261106-file-picker1">
+    <link rel="stylesheet" href="assets/css/staff.css?v=20261109-red-validation1">
     <link rel="stylesheet" href="../admin/assets/css/ticket-status.css?v=20261104-status1">
     <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261104-3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" crossorigin="anonymous">
@@ -113,8 +113,8 @@
                         @else
                             <p class="staff-ticket-next-step"><span aria-hidden="true">i</span><span>Thêm ảnh minh chứng sau sửa chữa rồi bấm “Lưu tiến độ” để gửi quản lý xác nhận hoàn thành.</span></p>
                         @endif
-                        <form class="role-form" action="#" method="post" enctype="multipart/form-data" data-api-endpoint="/api/staff/tickets/{id}/status" data-success-message="Đã gửi cập nhật xử lý.">
-                            <div class="role-field"><label for="progress">Ghi chú tiến độ <span aria-hidden="true">*</span></label><textarea id="progress" name="note" required placeholder="Mô tả các bước đã thực hiện..."></textarea></div>
+                        <form class="role-form" action="#" method="post" enctype="multipart/form-data" data-api-endpoint="/api/staff/tickets/{id}/status" data-custom-validation="staff-progress" data-success-message="Đã gửi cập nhật xử lý.">
+                            <div class="role-field"><label for="progress">Ghi chú tiến độ <span aria-hidden="true">*</span></label><textarea id="progress" name="note" maxlength="3000" aria-describedby="progress-error" placeholder="Mô tả các bước đã thực hiện..."></textarea><p class="staff-inline-validation" id="progress-error" data-note-error role="alert" hidden></p></div>
                             <div class="role-field staff-repair-upload">
                                 <label for="evidence"><i class="fa-regular fa-images" aria-hidden="true"></i> Ảnh minh chứng sau sửa chữa</label>
                                 <input id="evidence" name="attachments[]" multiple type="file" accept="image/*" aria-describedby="repair-upload-help">

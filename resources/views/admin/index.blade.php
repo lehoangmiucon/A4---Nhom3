@@ -38,7 +38,7 @@ Tổng quan · Helpdesk trường học
                         </div>
                         <form class="period-filter dashboard-period-filter" method="GET">
                             <label for="dashboard-period">Xem thống kê theo</label>
-                            <select class="period-select" id="dashboard-period" name="period" onchange="this.form.submit()">
+                            <select class="period-select" id="dashboard-period" name="period">
                                 @foreach($dashboardPeriodOptions as $periodValue => $periodLabel)
                                     <option value="{{ $periodValue }}" @selected($dashboardPeriod === $periodValue)>{{ $periodLabel }}</option>
                                 @endforeach
@@ -243,4 +243,5 @@ Tổng quan · Helpdesk trường học
 
 @section('scripts')
 <script src="assets/js/api-client.js?v=20261106-fast-actions1"></script>
+<script src="{{ url('/admin/assets/js/dashboard-period.js?v=20261109-week-ajax1') }}"></script>
 @endsection

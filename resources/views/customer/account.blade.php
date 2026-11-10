@@ -38,7 +38,7 @@
                 <dl class="account-facts">
                     <div><dt>Họ và tên</dt><dd>{{ $currentUser->name }}</dd></div>
                     <div><dt>Email đăng nhập</dt><dd>{{ $currentUser->email }}</dd></div>
-                    <div><dt>Vai trò</dt><dd>{{ ['admin' => 'Quản lý', 'staff' => 'Nhân viên kỹ thuật', 'student' => 'Sinh viên'][$currentUser->role] ?? 'Người dùng' }}</dd></div>
+                    <div><dt>Vai trò</dt><dd>{{ ['admin' => 'Quản lý', 'staff' => 'Nhân viên kỹ thuật', 'student' => 'Sinh viên', 'teacher' => 'Giáo viên'][$currentUser->role] ?? 'Người dùng' }}</dd></div>
                     <div><dt>Email xác thực</dt><dd>{{ $currentUser->email_verified_at ? 'Đã xác thực' : 'Chưa xác thực' }}</dd></div>
                     <div><dt>Ngày tạo tài khoản</dt><dd>{{ $currentUser->created_at?->format('d/m/Y') ?? '—' }}</dd></div>
                 </dl>

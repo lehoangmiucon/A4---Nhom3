@@ -511,3 +511,7 @@ body:has(.staff-ticket-detail) .image-lightbox__close{position:absolute;top:16px
 .staff-ticket-update-card .staff-repair-upload input[type=file]::file-selector-button:hover{background:#edf6ff;border-color:#9dc8e8}
 .staff-ticket-update-card .staff-repair-upload input[type=file]:focus-visible{outline:0;border-color:#3395d5;box-shadow:0 0 0 3px #1686df20}
 .staff-repair-upload .staff-ticket-help{font-size:12px;line-height:1.6}
+.staff-ticket-update-card [name="note"][aria-invalid="true"]{border-color:#dc4c55!important;box-shadow:0 0 0 3px #dc4c551c!important;background:#fffafa!important}
+.staff-inline-validation:not([hidden]){display:flex;align-items:flex-start;gap:8px;margin:1px 0 0;padding:10px 12px;border:1px solid #f2b9bd;border-radius:9px;background:#fff1f2;color:#b4232c;font-size:12px;font-weight:650;line-height:1.5;animation:staff-validation-in .18s ease-out}
+.staff-inline-validation:not([hidden])::before{content:"\f06a";flex:none;margin-top:1px;font-family:"Font Awesome 7 Free";font-weight:900}
+@keyframes staff-validation-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}

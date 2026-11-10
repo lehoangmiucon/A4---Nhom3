@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\ActivityLog;
+use App\Mail\EmailVerificationOtp;
+use App\Services\PurgeExpiredUnverifiedAccounts;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -10,77 +13,116 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class AuthController extends Controller
 {
-    public function register(Request $request): JsonResponse
+    public function register(Request $request, PurgeExpiredUnverifiedAccounts $purger): JsonResponse
     {
+        $purger->handle();
+        $email = $request->input('email');
+        if (is_string($email)) {
+            $request->merge(['email' => Str::lower(trim($email))]);
+        }
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['bail', 'required', 'email', 'max:255', 'ends_with:@ut.edu.vn', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'email.ends_with' => 'Vui lòng sử dụng email do trường cấp có đuôi @ut.edu.vn.',
         ]);
 
         $data['email'] = Str::lower($data['email']);
-        $user = User::create([...$data, 'role' => 'student']);
-        $code = (string) random_int(100000, 999999);
-        DB::table('email_otps')->insert([
-            'email' => Str::lower($data['email']),
-            'code_hash' => Hash::make($code),
-            'expires_at' => now()->addMinutes(10),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        Mail::raw("Mã xác thực Helpdesk của bạn là {$code}. Mã có hiệu lực trong 10 phút.", function ($message) use ($data) {
-            $message->to($data['email'])->subject('Mã xác thực tài khoản Helpdesk');
-        });
+        try {
+            $user = DB::transaction(function () use ($data) {
+                $user = User::create([...$data, 'role' => 'student']);
+                $this->sendEmailOtp($user);
+                return $user;
+            });
+        } catch (TransportExceptionInterface $exception) {
+            throw ValidationException::withMessages(['email' => 'Chưa thể gửi email xác thực. Vui lòng thử đăng ký lại sau ít phút.']);
+        }
 
         return response()->json(['message' => 'Đăng ký thành công. Vui lòng nhập mã OTP gửi tới email.', 'email' => $user->email], 201);
     }
 
-    public function verifyOtp(Request $request): JsonResponse
+    public function verifyOtp(Request $request, PurgeExpiredUnverifiedAccounts $purger): JsonResponse
     {
         $data = $request->validate(['email' => ['required', 'email'], 'otp' => ['required', 'digits:6']]);
-        $otp = DB::table('email_otps')->where('email', Str::lower($data['email']))
+        $email = Str::lower($data['email']);
+        $purger->handle();
+        if (! User::where('email', $email)->exists()) {
+            throw ValidationException::withMessages(['otp' => 'Không tìm thấy tài khoản chưa xác thực. Nếu tài khoản đã quá hạn 24 giờ, vui lòng đăng ký lại.']);
+        }
+        $otp = DB::table('email_otps')->where('email', $email)->where('purpose', 'email_verification')
             ->whereNull('verified_at')->latest('id')->first();
 
-        if (!$otp || now()->greaterThan($otp->expires_at) || !Hash::check($data['otp'], $otp->code_hash)) {
-            throw ValidationException::withMessages(['otp' => 'Mã OTP không đúng hoặc đã hết hạn.']);
+        if ($otp && now()->greaterThanOrEqualTo($otp->expires_at)) {
+            throw ValidationException::withMessages(['otp' => 'Mã OTP đã hết hạn. Bấm “Gửi lại mã OTP” để nhận mã mới.']);
+        }
+        if (!$otp || !Hash::check($data['otp'], $otp->code_hash)) {
+            throw ValidationException::withMessages(['otp' => 'Mã OTP không đúng hoặc đã được sử dụng.']);
         }
 
-        User::where('email', Str::lower($data['email']))->update(['email_verified_at' => now()]);
+        User::where('email', $email)->update(['email_verified_at' => now()]);
         DB::table('email_otps')->where('id', $otp->id)->update(['verified_at' => now(), 'updated_at' => now()]);
 
-        return response()->json(['message' => 'Email đã được xác thực. Bạn có thể đăng nhập.']);
+        if ($request->hasSession()) {
+            $request->session()->flash('registration_success', 'Email đã được xác thực. Bạn có thể đăng nhập ngay.');
+            $request->session()->flash('registration_email', $email);
+        }
+
+        return response()->json(['message' => 'Đăng ký thành công! Email đã được xác thực. Bạn có thể đăng nhập ngay.']);
     }
 
-    public function resendOtp(Request $request): JsonResponse
+    public function resendOtp(Request $request, PurgeExpiredUnverifiedAccounts $purger): JsonResponse
     {
         $data = $request->validate(['email' => ['required', 'email']]);
+        $purger->handle();
         $user = User::where('email', Str::lower($data['email']))->whereNull('email_verified_at')->first();
-        if (!$user) return response()->json(['message' => 'Nếu tài khoản chưa xác thực, mã mới sẽ được gửi tới email.']);
+        if (!$user) return response()->json(['message' => 'Nếu tài khoản chưa xác thực và chưa quá 24 giờ, mã mới sẽ được gửi tới email. Nếu đã quá 24 giờ, vui lòng đăng ký lại.']);
 
-        $code = (string) random_int(100000, 999999);
-        DB::table('email_otps')->where('email', $user->email)->whereNull('verified_at')->update(['verified_at' => now(), 'updated_at' => now()]);
-        DB::table('email_otps')->insert([
-            'email' => $user->email,
-            'code_hash' => Hash::make($code),
-            'expires_at' => now()->addMinutes(10),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        Mail::raw("Mã xác thực Helpdesk của bạn là {$code}. Mã có hiệu lực trong 10 phút.", function ($message) use ($user) {
-            $message->to($user->email)->subject('Mã xác thực tài khoản Helpdesk');
-        });
+        $latestOtp = DB::table('email_otps')->where('email', $user->email)->where('purpose', 'email_verification')->latest('id')->first();
+        if ($latestOtp) {
+            $availableAt = \Illuminate\Support\Carbon::parse($latestOtp->created_at)->addSeconds(config('auth.email_otp_resend_seconds', 60));
+            if (now()->lessThan($availableAt)) {
+                $seconds = (int) ceil(now()->diffInSeconds($availableAt));
+                throw ValidationException::withMessages(['email' => "Vui lòng chờ {$seconds} giây trước khi gửi lại mã OTP."]);
+            }
+        }
+
+        try {
+            DB::transaction(fn () => $this->sendEmailOtp($user));
+        } catch (TransportExceptionInterface $exception) {
+            throw ValidationException::withMessages(['email' => 'Chưa thể gửi lại mã OTP. Vui lòng thử lại sau ít phút.']);
+        }
         return response()->json(['message' => 'Đã gửi mã OTP mới nếu email thuộc tài khoản chưa xác thực.']);
     }
 
-    public function login(Request $request): JsonResponse
+    private function sendEmailOtp(User $user): void
+    {
+        $code = (string) random_int(100000, 999999);
+        $expiresMinutes = (int) config('auth.email_otp_expire_minutes', 5);
+        DB::table('email_otps')->where('email', $user->email)->where('purpose', 'email_verification')->whereNull('verified_at')->update(['verified_at' => now(), 'updated_at' => now()]);
+        DB::table('email_otps')->insert([
+            'email' => $user->email,
+            'purpose' => 'email_verification',
+            'code_hash' => Hash::make($code),
+            'expires_at' => now()->addMinutes($expiresMinutes),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        Mail::to($user->email)->send(new EmailVerificationOtp($user->name, $code, $expiresMinutes));
+    }
+
+    public function login(Request $request, PurgeExpiredUnverifiedAccounts $purger): JsonResponse
     {
         $credentials = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
+        $purger->handle();
         if (!Auth::attempt($credentials)) {
             throw ValidationException::withMessages(['email' => 'Email hoặc mật khẩu không chính xác.']);
         }
@@ -104,8 +146,9 @@ class AuthController extends Controller
         return response()->json(['message' => 'Đăng nhập thành công.', 'user' => $user->only('id', 'name', 'email', 'role'), 'redirect' => $redirect]);
     }
 
-    public function tokenLogin(Request $request): JsonResponse
+    public function tokenLogin(Request $request, PurgeExpiredUnverifiedAccounts $purger): JsonResponse
     {
+        $purger->handle();
         $data = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
@@ -158,7 +201,7 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
         ]);
 
         $user = $request->user();
@@ -170,7 +213,115 @@ class AuthController extends Controller
 
         $user->password = $data['password'];
         $user->save();
+        $token = $user->currentAccessToken();
+        if ($token instanceof PersonalAccessToken) {
+            $user->tokens()->where('id', '!=', $token->getKey())->delete();
+        } else {
+            $user->tokens()->delete();
+        }
+        if (config('session.driver') === 'database' && \Illuminate\Support\Facades\Schema::hasTable('sessions')) {
+            $sessions = DB::table('sessions')->where('user_id', $user->id);
+            if ($request->hasSession()) $sessions->where('id', '!=', $request->session()->getId());
+            $sessions->delete();
+        }
 
         return response()->json(['message' => 'Đổi mật khẩu thành công.']);
+    }
+
+    public function sendPasswordResetOtp(Request $request): JsonResponse
+    {
+        $data = $request->validate(['email' => ['required', 'email', 'max:255']]);
+        $email = Str::lower(trim($data['email']));
+        $user = User::where('email', $email)->whereNotNull('email_verified_at')->where('is_deleted', false)->first();
+        $message = 'Nếu email thuộc tài khoản đã xác thực, mã đặt lại mật khẩu sẽ được gửi đến hộp thư.';
+        if (! $user) return response()->json(['message' => $message]);
+
+        $latestOtp = DB::table('email_otps')->where('email', $email)->where('purpose', 'password_reset')->latest('id')->first();
+        if ($latestOtp) {
+            $availableAt = \Illuminate\Support\Carbon::parse($latestOtp->created_at)
+                ->addSeconds((int) config('auth.email_otp_resend_seconds', 60));
+            if (now()->lessThan($availableAt)) {
+                return response()->json(['message' => $message]);
+            }
+        }
+
+        $code = (string) random_int(100000, 999999);
+        $expiresMinutes = (int) config('auth.email_otp_expire_minutes', 5);
+        try {
+            DB::transaction(function () use ($user, $code, $expiresMinutes) {
+                DB::table('email_otps')->where('email', $user->email)->where('purpose', 'password_reset')
+                    ->whereNull('verified_at')->update(['verified_at' => now(), 'updated_at' => now()]);
+                DB::table('email_otps')->insert([
+                    'email' => $user->email,
+                    'purpose' => 'password_reset',
+                    'code_hash' => Hash::make($code),
+                    'expires_at' => now()->addMinutes($expiresMinutes),
+                    'verified_at' => null,
+                    'attempts' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                Mail::to($user->email)->send(new EmailVerificationOtp($user->name, $code, $expiresMinutes, true));
+            });
+        } catch (TransportExceptionInterface $exception) {
+            return response()->json(['message' => $message]);
+        }
+
+        RateLimiter::clear('password-reset:'.hash('sha256', $email));
+        return response()->json(['message' => $message]);
+    }
+
+    public function resetPasswordWithOtp(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+            'otp' => ['required', 'digits:6'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+        $email = Str::lower(trim($data['email']));
+        $attemptKey = 'password-reset:'.hash('sha256', $email);
+        if (RateLimiter::tooManyAttempts($attemptKey, 5)) {
+            throw ValidationException::withMessages(['otp' => 'Bạn đã nhập sai mã quá nhiều lần. Hãy yêu cầu mã mới rồi thử lại.']);
+        }
+
+        $user = User::where('email', $email)->whereNotNull('email_verified_at')->where('is_deleted', false)->first();
+        $otp = DB::table('email_otps')->where('email', $email)->where('purpose', 'password_reset')
+            ->whereNull('verified_at')->latest('id')->first();
+        if (! $user || ! $otp || now()->greaterThanOrEqualTo($otp->expires_at)) {
+            throw ValidationException::withMessages(['otp' => 'Mã OTP không hợp lệ hoặc đã hết hạn. Hãy yêu cầu mã mới.']);
+        }
+        if ((int) $otp->attempts >= 5 || ! Hash::check($data['otp'], $otp->code_hash)) {
+            DB::table('email_otps')->where('id', $otp->id)->increment('attempts');
+            RateLimiter::hit($attemptKey, 600);
+            throw ValidationException::withMessages(['otp' => 'Mã OTP không đúng hoặc đã hết lượt thử.']);
+        }
+
+        DB::transaction(function () use ($user, $otp, $data, $email) {
+            $lockedOtp = DB::table('email_otps')->where('id', $otp->id)->lockForUpdate()->first();
+            if (! $lockedOtp || $lockedOtp->verified_at || (int) $lockedOtp->attempts >= 5
+                || now()->greaterThanOrEqualTo($lockedOtp->expires_at)
+                || ! Hash::check($data['otp'], $lockedOtp->code_hash)) {
+                throw ValidationException::withMessages(['otp' => 'Mã OTP không hợp lệ hoặc đã hết hạn. Hãy yêu cầu mã mới.']);
+            }
+            $lockedUser = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $lockedUser->password = $data['password'];
+            $lockedUser->save();
+            DB::table('email_otps')->where('id', $lockedOtp->id)->update(['verified_at' => now(), 'updated_at' => now()]);
+            DB::table('email_otps')->where('email', $email)->where('purpose', 'password_reset')->whereNull('verified_at')
+                ->update(['verified_at' => now(), 'updated_at' => now()]);
+            $lockedUser->tokens()->delete();
+            if (config('session.driver') === 'database' && \Illuminate\Support\Facades\Schema::hasTable('sessions')) {
+                DB::table('sessions')->where('user_id', $lockedUser->id)->delete();
+            }
+        });
+
+        RateLimiter::clear($attemptKey);
+        ActivityLog::record($request, 'account.password_reset', $user, 'Người dùng đặt lại mật khẩu bằng OTP.');
+        Auth::logout();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+        return response()->json(['message' => 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới.']);
     }
 }

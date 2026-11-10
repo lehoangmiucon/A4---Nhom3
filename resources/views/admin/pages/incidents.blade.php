@@ -46,12 +46,12 @@ Phiếu sự cố · Helpdesk trường học
                             <tbody>
                                 @forelse($tickets as $ticket)
                                 @php($currentSchedule = $ticket->schedules->sortByDesc('starts_at')->first())
-                                <tr data-incident-row data-ticket-status="{{ $ticket->status }}" data-ticket-category="{{ $ticket->equipment_label }}" data-ticket-building="{{ $ticket->room?->building?->code }}" data-ticket-building-name="{{ $ticket->room?->building?->name ?? $ticket->building_label }}" data-ticket-phone="{{ $ticket->reporter_phone }}" data-ticket-search="{{ $ticket->ticket_number }} {{ $ticket->title }} {{ $ticket->description }} {{ $ticket->equipment_label }} {{ $ticket->room?->name ?? $ticket->room_label }} {{ $ticket->room?->building?->name ?? $ticket->building_label }} {{ $ticket->reporter_name }} {{ $ticket->reporter_email }} {{ $ticket->reporter_phone }}">
+                                <tr data-incident-row data-ticket-status="{{ $ticket->status }}" data-ticket-category="{{ $ticket->equipment_label }}" data-ticket-building="{{ $ticket->room?->building?->code }}" data-ticket-building-name="{{ $ticket->room?->building?->name ?? $ticket->building_label }}" data-ticket-phone="{{ $ticket->reporter_phone }}" data-ticket-search="{{ $ticket->ticket_number }} {{ $ticket->title }} {{ $ticket->description }} {{ $ticket->equipment_label }} {{ $ticket->room?->name ?? $ticket->room_label }} {{ $ticket->room?->building?->name ?? $ticket->building_label }} {{ $ticket->reporter_name }} {{ $ticket->reporter_email }} {{ $ticket->reporter_phone }} {{ $ticket->reporter?->role }}">
                                     <td><a class="ticket-code" href="ticket-detail?ticket={{ $ticket->id }}">{{ $ticket->ticket_number }}</a></td>
                                     <td><span class="issue-title">{{ $ticket->title }}</span><span class="issue-sub">{{ $ticket->equipment_label }}</span></td>
                                     <td>{{ $ticket->building_label }} · {{ $ticket->room_label }}</td>
-                                    <td>{{ $ticket->reporter_name }}</td>
-                                    <td>{{ $ticket->priority }}</td>
+                                    <td>{{ $ticket->reporter_name }}@if($ticket->reporter?->role === 'teacher')<span class="issue-sub teacher-report-marker"><i class="fa-solid fa-chalkboard-user" aria-hidden="true"></i> Giáo viên · ưu tiên cao</span>@endif</td>
+                                    <td><span class="status-badge {{ in_array($ticket->priority, ['urgent', 'high'], true) ? 'status-wait' : '' }}">{{ $ticket->priority }}</span></td>
                                     <td>
                                         <span class="status-badge ticket-status ticket-status-{{ str_replace('_', '-', $ticket->status) }}">{{ $ticket->status === 'new' ? 'Chờ tiếp nhận' : ($statusLabels[$ticket->status] ?? $ticket->status) }}</span>
                                         @if(in_array($ticket->status, ['assigned', 'in_progress', 'resolved'], true))

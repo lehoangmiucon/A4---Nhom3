@@ -159,9 +159,17 @@ class UserController extends Controller
     public function updateRole(Request $request, User $user): JsonResponse
     {
         abort_if($user->is($request->user()), 422, 'Không thể tự đổi vai trò tài khoản đang đăng nhập.');
-        $data = $request->validate(['role' => ['required', Rule::in(['admin', 'staff', 'student'])]]);
+        $data = $request->validate(['role' => ['required', Rule::in(['admin', 'staff', 'student', 'teacher'])]]);
         $previousRole = $user->role;
-        $user->update(['role' => $data['role']]);
+        DB::transaction(function () use ($user, $data): void {
+            $user->update(['role' => $data['role']]);
+
+            if ($data['role'] === 'teacher') {
+                $user->reportedTickets()
+                    ->whereIn('priority', ['low', 'normal'])
+                    ->update(['priority' => 'high']);
+            }
+        });
         ActivityLog::record($request, 'user.role_updated', $user, 'Changed a user role.', [
             'from_role' => $previousRole,
             'to_role' => $user->role,

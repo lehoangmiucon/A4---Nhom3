@@ -39,13 +39,44 @@
     const email = new URLSearchParams(window.location.search).get('email');
     const emailInput = document.querySelector('input[name="email"]');
     if (email && emailInput && !emailInput.value) emailInput.value = email;
+
+    document.querySelectorAll('form[data-custom-validation="staff-progress"]').forEach((form) => {
+      form.noValidate = true;
+      const note = form.querySelector('[name="note"]');
+      const error = form.querySelector('[data-note-error]');
+      note?.addEventListener('input', () => {
+        if (note.value.trim()) {
+          note.removeAttribute('aria-invalid');
+          if (error) error.hidden = true;
+        }
+      });
+    });
   });
 
   document.addEventListener('submit', async (event) => {
     const form = event.target.closest('form[data-api-endpoint]');
     if (!form) return;
     event.preventDefault();
-    if (!form.reportValidity()) return;
+    if (form.dataset.customValidation === 'staff-progress') {
+      const note = form.querySelector('[name="note"]');
+      const error = form.querySelector('[data-note-error]');
+      if (!note?.value.trim()) {
+        const selectedImages = form.querySelector('[name="attachments[]"]')?.files?.length || 0;
+        if (error) {
+          error.textContent = selectedImages
+            ? `Bạn đã chọn ${selectedImages} ảnh minh chứng. Vui lòng nhập ghi chú tiến độ trước khi lưu.`
+            : 'Vui lòng nhập ghi chú tiến độ trước khi lưu.';
+          error.hidden = false;
+        }
+        note?.setAttribute('aria-invalid', 'true');
+        note?.focus();
+        return;
+      }
+      note.removeAttribute('aria-invalid');
+      if (error) error.hidden = true;
+    } else if (!form.reportValidity()) {
+      return;
+    }
     if (!apiEnabled) {
       showFeedback(form, 'API chưa được bật.', 'error');
       return;

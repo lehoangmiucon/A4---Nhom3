@@ -6,11 +6,14 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UiController;
 use Illuminate\Support\Facades\Route;
 
 // Sanctum accepts stateful website sessions and Bearer tokens from mobile clients.
 Route::post('/auth/login', [AuthController::class, 'tokenLogin'])->middleware('throttle:10,1');
 Route::post('/auth/logout', [AuthController::class, 'tokenLogout'])->middleware('auth:sanctum');
+Route::post('/auth/password/forgot', [AuthController::class, 'sendPasswordResetOtp'])->middleware('throttle:5,1');
+Route::post('/auth/password/reset', [AuthController::class, 'resetPasswordWithOtp'])->middleware('throttle:10,1');
 Route::get('/rooms', [TicketController::class, 'rooms']);
 Route::get('/rooms/{code}', [TicketController::class, 'room']);
 Route::get('/categories', [CategoryController::class, 'options']);
@@ -27,6 +30,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::patch('/notifications/tickets/{ticketId}/read', [NotificationController::class, 'readTicket']);
 
     Route::prefix('admin')->middleware('role:admin')->group(function () {
+        Route::get('/reports/summary', [UiController::class, 'reportSummary']);
         Route::get('/team/filter', [UserController::class, 'filterTeam']);
         Route::get('/schedules/filter', [TicketController::class, 'filterSchedules']);
         Route::get('/users', [UserController::class, 'index']);

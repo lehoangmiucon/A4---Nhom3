@@ -1,5 +1,6 @@
 (() => {
-  document.querySelectorAll('.period-select').forEach((select) => {
+  const initializePeriodSelects = () => document.querySelectorAll('.period-select').forEach((select) => {
+    if (select.classList.contains('period-select-native')) return;
     const wrapper = select.closest('.period-filter');
     if (!wrapper || !select.options.length) return;
 
@@ -90,4 +91,7 @@
       if (!wrapper.contains(event.target)) close();
     });
   });
+
+  window.HelpdeskPeriodSelectInit = initializePeriodSelects;
+  initializePeriodSelects();
 })();

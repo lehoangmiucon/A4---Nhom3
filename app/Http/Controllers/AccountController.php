@@ -6,6 +6,8 @@ use App\Models\ActivityLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class AccountController extends Controller
@@ -48,6 +50,9 @@ class AccountController extends Controller
         $user->password = $data['password'];
         $user->save();
         $user->tokens()->delete();
+        if (config('session.driver') === 'database' && Schema::hasTable('sessions')) {
+            DB::table('sessions')->where('user_id', $user->id)->where('id', '!=', $request->session()->getId())->delete();
+        }
 
         ActivityLog::record($request, 'account.password_updated', $user, 'Người dùng đổi mật khẩu.');
 

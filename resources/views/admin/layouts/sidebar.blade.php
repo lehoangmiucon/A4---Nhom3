@@ -28,7 +28,7 @@
             <i class="fa-solid fa-building nav-icon-fa" aria-hidden="true"></i><span>Địa điểm &amp; thiết bị</span>
         </a>
         <a class="nav-link {{ $isCurrent(['pages/users']) ? 'active' : '' }}" href="{{ url('/admin/pages/users') }}">
-            <i class="fa-solid fa-user nav-icon-fa" aria-hidden="true"></i><span>Người báo sự cố</span>
+            <i class="fa-solid fa-users nav-icon-fa" aria-hidden="true"></i><span>Danh sách người dùng</span>
         </a>
         <details class="nav-group" {{ $teamOpen ? 'open' : '' }}>
             <summary class="nav-link group-link">

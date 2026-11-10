@@ -189,6 +189,7 @@ thead th{font-size:12px}tbody td,.table-panel tbody td{font-size:14px}.status-ba
 @media(max-width:850px){.sidebar{z-index:20}.nav-scrim{z-index:19}}
 
 .dashboard-period-row{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:-9px 0 18px;padding:14px 17px;border:1px solid #e0e9f2;border-radius:13px;background:linear-gradient(110deg,#fff,#f7fbff);box-shadow:0 4px 14px #193b5b08}
+.page-content[aria-busy="true"]{opacity:.62;pointer-events:none;transition:opacity .15s ease}
 .dashboard-period-row>div{min-width:0}
 .dashboard-period-row .eyebrow{margin:0 0 3px;color:#347eae}
 .dashboard-period-row p{margin:0;color:#73869b;font-size:12px}
@@ -748,6 +749,59 @@ html,body{max-width:100%;overflow-x:clip}
 .ticket-review-actions textarea{width:100%;min-height:76px;padding:10px 12px;border:1px solid #dce6ef;border-radius:9px;background:#fff;color:#344b63;font:inherit;font-size:13px;resize:vertical}
 .ticket-review-actions .button{min-height:42px;justify-content:center;gap:8px}
 .ticket-review-actions .ticket-rework-form{margin-top:13px;padding-top:13px;border-top:1px solid #e5edf2}
+.ticket-rework-form textarea.is-invalid{border-color:#e36a70!important;background:#fff7f7;box-shadow:0 0 0 3px #e36a7020}
+.ticket-rework-form .field-validation-error{display:flex;align-items:center;gap:7px;margin-top:7px;color:#c33f48;font-size:12px;font-weight:650;line-height:1.5}
+.ticket-rework-form .field-validation-error[hidden]{display:none}
+.ticket-rework-form .field-validation-error i{font-size:13px}
+
+/* Consistent appearance for native selects across admin forms and filters. */
+.main-area select:not([multiple]):not(.period-select-native):not(.modal-custom-select-native):not(.staff-filter-native){
+  min-height:42px;
+  padding:9px 40px 9px 12px;
+  border:1px solid #d7e3ee;
+  border-radius:10px;
+  appearance:none;
+  -webkit-appearance:none;
+  background-color:#fff;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23758ba0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  background-size:15px;
+  color:#294761;
+  font-family:'Be Vietnam Pro',Arial,sans-serif;
+  cursor:pointer;
+  transition:border-color .16s ease,box-shadow .16s ease,background-color .16s ease
+}
+.main-area select:not([multiple]):not(.period-select-native):not(.modal-custom-select-native):not(.staff-filter-native):hover{border-color:#aec8dc;background-color:#fbfdff}
+.main-area select:not([multiple]):not(.period-select-native):not(.modal-custom-select-native):not(.staff-filter-native):focus{outline:0;border-color:#4d9bd0;box-shadow:0 0 0 3px #1686df1c}
+.main-area select:not([multiple]):not(.period-select-native):not(.modal-custom-select-native):not(.staff-filter-native):disabled{border-color:#e1e8ee;background-color:#f3f6f8;color:#9aa9b6;cursor:not-allowed;opacity:1}
+.main-area select:not([multiple]):not(.period-select-native):not(.modal-custom-select-native):not(.staff-filter-native) option{padding:9px 12px;background:#fff;color:#294761;font-family:'Be Vietnam Pro',Arial,sans-serif}
+.main-area select:not([multiple]):not(.period-select-native):not(.modal-custom-select-native):not(.staff-filter-native) option:checked{background:linear-gradient(#eaf4fd,#eaf4fd);color:#126db2;font-weight:600}
+.main-area select:not([multiple]):not(.period-select-native):not(.modal-custom-select-native):not(.staff-filter-native) optgroup{background:#f4f8fb;color:#71859a;font-weight:700}
+.helpdesk-select-control{position:relative;display:block;width:100%;min-width:0}
+.helpdesk-select-control>select.helpdesk-select-native{position:absolute!important;inset:auto auto 0 0!important;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;border:0!important;opacity:0!important;pointer-events:none!important}
+.helpdesk-select-trigger{display:flex;width:100%;min-width:0;min-height:42px;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border:1px solid #d7e3ee;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfdff);color:#294761;text-align:left;font:500 13px 'Be Vietnam Pro',Arial,sans-serif;cursor:pointer;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}
+.helpdesk-select-trigger:hover,.helpdesk-select-control.is-open .helpdesk-select-trigger{border-color:#83b8dc;background:#fff;box-shadow:0 0 0 3px #1686df12}
+.helpdesk-select-trigger:focus-visible{outline:0;border-color:#4d9bd0;box-shadow:0 0 0 3px #1686df20}
+.helpdesk-select-trigger:disabled{border-color:#e1e8ee;background:#f3f6f8;color:#9aa9b6;cursor:not-allowed;box-shadow:none}
+.helpdesk-select-trigger>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.helpdesk-select-trigger>i{flex:none;color:#71879c;font-size:11px;transition:transform .16s ease}
+.helpdesk-select-control.is-open .helpdesk-select-trigger>i{transform:rotate(180deg)}
+.helpdesk-select-trigger.is-placeholder>span{color:#8498aa}
+.helpdesk-select-menu{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:1000;display:grid;max-height:min(280px,42vh);gap:3px;overflow:auto;padding:6px;border:1px solid #dce7f0;border-radius:11px;background:#fff;box-shadow:0 14px 34px #173a581f;scrollbar-width:thin;scrollbar-color:#cbd9e6 transparent}
+.helpdesk-select-menu[hidden]{display:none!important}
+.helpdesk-select-option{display:flex;width:100%;min-height:38px;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border:0;border-radius:8px;background:#fff;color:#405970;text-align:left;font:500 12px 'Be Vietnam Pro',Arial,sans-serif;cursor:pointer;transition:background .13s ease,color .13s ease}
+.helpdesk-select-option>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.helpdesk-select-option>i{flex:none;color:#1686df;font-size:11px;opacity:0}
+.helpdesk-select-option:hover,.helpdesk-select-option:focus-visible,.helpdesk-select-option.is-selected{outline:0;background:#edf6fd;color:#176da7}
+.helpdesk-select-option.is-selected{font-weight:700}
+.helpdesk-select-option.is-selected>i{opacity:1}
+.helpdesk-select-option:disabled{color:#aab7c3;cursor:not-allowed}
+.helpdesk-select-error{display:flex;align-items:center;gap:6px;margin-top:6px;color:#c33f48;font-size:11px;font-weight:650;line-height:1.45}
+.helpdesk-select-error[hidden]{display:none!important}
+.filter-bar .helpdesk-select-control{width:auto;min-width:150px;flex:0 1 auto}
+.filter-bar .helpdesk-select-trigger{min-width:150px}
+.form-item>.helpdesk-select-control{width:100%}
 @media(max-width:700px){.ticket-evidence-comparison{grid-template-columns:1fr}.ticket-evidence-comparison .evidence-card{padding:16px}}
 @media(max-width:600px){.ticket-review-actions{padding:16px}.ticket-review-actions .button{width:100%;white-space:normal}.ticket-close-inline-form{width:100%}.ticket-close-inline-form .button{width:100%;white-space:normal}.ticket-close-inline-form .api-feedback{position:static;width:100%;margin-top:8px}.report-evidence-block{padding:13px}.repair-evidence-attachments a,.evidence-card-attachments a{width:calc((100% - 20px)/3);height:auto;aspect-ratio:1.08}.evidence-heading-icon{width:36px;height:36px}.evidence-heading small{font-size:11px}}
 
@@ -799,7 +853,8 @@ html,body{max-width:100%;overflow-x:clip}
 .ticket-detail-page .assignment-form-actions>small{display:flex;align-items:center;gap:7px;color:#7b8ea0;font-size:12px;line-height:1.6}
 .ticket-detail-page .assignment-form-actions .button{min-height:44px;padding:11px 18px;border-radius:10px;gap:8px;white-space:nowrap}
 .ticket-detail-page .evidence-card{display:flex;flex-direction:column;gap:0;border-radius:15px;box-shadow:0 4px 18px #18355004}
-.ticket-detail-page .evidence-card .evidence-heading{align-items:flex-start;gap:12px;margin-bottom:18px}
+.ticket-detail-page .ticket-evidence-comparison{grid-column:auto;margin:0 0 16px}
+.ticket-detail-page .evidence-card .evidence-heading{align-items:flex-start;gap:12px;margin-bottom:12px}
 .ticket-detail-page .evidence-card .evidence-heading-icon{width:40px;height:40px;border-radius:12px}
 .ticket-detail-page .evidence-card .section-heading{margin:3px 0 0;font-size:15px}
 .ticket-detail-page .evidence-card .evidence-heading small{margin-top:5px;font-size:12px}
@@ -808,7 +863,7 @@ html,body{max-width:100%;overflow-x:clip}
 .ticket-detail-page .evidence-card-attachments a:hover{transform:translateY(-2px);box-shadow:0 5px 15px #193e5918}
 .ticket-detail-page .evidence-card-attachments a:focus-visible{outline:3px solid #1686df55;outline-offset:3px}
 .ticket-detail-page .evidence-card-attachments img{display:block;width:100%;height:100%;object-fit:cover}
-.ticket-detail-page .evidence-empty{flex:1;min-height:112px;padding:18px;border-color:#dce8f1;border-radius:11px;background:#ffffffb3;color:#7b8ea0;font-size:12px}
+.ticket-detail-page .evidence-empty{flex:none;min-height:56px;padding:13px 15px;border-color:#dce8f1;border-radius:11px;background:#ffffffb3;color:#718398;font-size:12px}
 @media(max-width:850px){
   .ticket-detail-page .assignment-current{grid-template-columns:44px minmax(0,1fr) auto}
   .ticket-detail-page .assignment-schedule{grid-column:2/-1;padding:10px 0 0;border:0;border-top:1px solid #e3edf5}
@@ -823,3 +878,4 @@ html,body{max-width:100%;overflow-x:clip}
   .ticket-detail-page .assignment-form-actions .button{width:100%;white-space:normal}
   .ticket-detail-page .evidence-card-attachments{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 }
+.teacher-report-marker{display:block;margin-top:4px;color:#a65a08;font-weight:700}

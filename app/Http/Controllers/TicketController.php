@@ -35,7 +35,7 @@ class TicketController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        abort_unless(in_array($request->user()?->role, ['admin', 'staff', 'student'], true), 403, 'Vui lòng đăng nhập bằng tài khoản sinh viên để gửi sự cố.');
+        abort_unless(in_array($request->user()?->role, ['admin', 'staff', 'student', 'teacher'], true), 403, 'Vui lòng đăng nhập bằng tài khoản trường để gửi sự cố.');
         $data = $request->validate([
             'reporter' => ['nullable', 'string', 'max:120'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -74,7 +74,7 @@ class TicketController extends Controller
                 'equipment_label' => $category->name,
                 'title' => $data['title'],
                 'description' => $data['description'],
-                'priority' => $this->priority($data['priority'] ?? 'normal'),
+                'priority' => $request->user()->role === 'teacher' ? 'high' : $this->priority($data['priority'] ?? 'normal'),
                 'status' => 'new',
             ]);
             TicketLog::create(['ticket_id' => $ticket->id, 'user_id' => $request->user()->id, 'to_status' => 'new', 'note' => 'Người báo sự cố đã gửi báo cáo.']);
@@ -89,7 +89,15 @@ class TicketController extends Controller
             'status' => $ticket->status,
         ]);
 
-        $payload = ['ticket_id' => $ticket->id, 'ticket_number' => $ticket->ticket_number, 'title' => $ticket->title, 'status' => 'new', 'message' => 'Có phiếu sự cố mới cần tiếp nhận.'];
+        $payload = [
+            'ticket_id' => $ticket->id,
+            'ticket_number' => $ticket->ticket_number,
+            'title' => $ticket->title,
+            'status' => 'new',
+            'message' => $request->user()->role === 'teacher'
+                ? 'Có báo cáo ưu tiên cao từ giáo viên cần được tiếp nhận.'
+                : 'Có phiếu sự cố mới cần tiếp nhận.',
+        ];
         Notification::send(User::where('role', 'admin')->get(), new TicketActivity($payload));
         return response()->json(['message' => 'Đã gửi báo cáo. Phiếu đang chờ quản lý tiếp nhận.', 'data' => $ticket], 201);
     }
@@ -158,7 +166,7 @@ class TicketController extends Controller
 
     public function updateReport(Request $request, Ticket $ticket): JsonResponse
     {
-        abort_unless($request->user()?->role === 'student' && (int) $ticket->reporter_id === (int) $request->user()->id, 403, 'Bạn không có quyền sửa phiếu này.');
+        abort_unless(in_array($request->user()?->role, ['student', 'teacher'], true) && (int) $ticket->reporter_id === (int) $request->user()->id, 403, 'Bạn không có quyền sửa phiếu này.');
         abort_unless($ticket->status === 'new', 422, 'Chỉ có thể sửa phiếu khi đang chờ tiếp nhận.');
 
         $data = $request->validate([
@@ -196,7 +204,7 @@ class TicketController extends Controller
                 'equipment_label' => $category->name,
                 'title' => $data['title'],
                 'description' => $data['description'],
-                'priority' => $this->priority($data['priority'] ?? 'normal'),
+                'priority' => $request->user()->role === 'teacher' ? 'high' : $this->priority($data['priority'] ?? 'normal'),
             ]);
 
             if ($request->hasFile('attachments') || $request->boolean('remove_attachments')) {
@@ -226,10 +234,10 @@ class TicketController extends Controller
     {
         abort_unless($this->canView($request->user(), $ticket), 403, 'Bạn không có quyền xem phiếu này.');
         $relations = ['room.building:id,code,name', 'assignee:id,name', 'reporter:id,name,email', 'category:id,name,color', 'reportAttachments', 'logs.user:id,name'];
-        if ($request->user()->role !== 'student') $relations[] = 'repairAttachments';
+        if (! in_array($request->user()->role, ['student', 'teacher'], true)) $relations[] = 'repairAttachments';
         $ticket->load($relations);
         $data = $ticket->toArray();
-        $data['attachments'] = $request->user()->role === 'student'
+        $data['attachments'] = in_array($request->user()->role, ['student', 'teacher'], true)
             ? $ticket->reportAttachments->values()->toArray()
             : $ticket->reportAttachments->concat($ticket->repairAttachments)->values()->toArray();
         $data['assigned_staff'] = $ticket->assignee;
@@ -538,9 +546,20 @@ class TicketController extends Controller
     {
         abort_unless(in_array($ticket->status, ['resolved', 'closed'], true), 422, 'Chỉ có thể yêu cầu xử lý lại phiếu đã hoàn thành.');
         $data = $request->validate(['note' => ['required', 'string', 'max:2000']]);
-        $this->transition($request, $ticket, 'reopened', $data['note']);
+        $oldRepairPaths = [];
+        DB::transaction(function () use ($request, $ticket, $data, &$oldRepairPaths) {
+            $lockedTicket = Ticket::whereKey($ticket->id)->lockForUpdate()->firstOrFail();
+            abort_unless(in_array($lockedTicket->status, ['resolved', 'closed'], true), 422, 'Phiếu đã được cập nhật. Hãy tải lại trang trước khi thao tác.');
+
+            $oldRepairPaths = $lockedTicket->repairAttachments()->lockForUpdate()->pluck('path')->all();
+            $this->transition($request, $lockedTicket, 'reopened', $data['note']);
+            $lockedTicket->repairAttachments()->delete();
+        });
+        if ($oldRepairPaths !== []) {
+            Storage::disk('public')->delete($oldRepairPaths);
+        }
         $this->notifyPeople($ticket, ['ticket_id' => $ticket->id, 'ticket_number' => $ticket->ticket_number, 'title' => $ticket->title, 'status' => 'reopened', 'message' => 'Quản lý yêu cầu tiếp tục xử lý phiếu.']);
-        return response()->json(['message' => 'Đã yêu cầu xử lý lại.', 'data' => $ticket->fresh()]);
+        return response()->json(['message' => 'Đã yêu cầu xử lý lại. Ảnh sửa chữa cũ đã được xóa để nhân viên gửi kết quả mới.', 'data' => $ticket->fresh()]);
     }
 
     private function transition(Request $request, Ticket $ticket, string $status, ?string $note): void
@@ -561,7 +580,7 @@ class TicketController extends Controller
             $reason = $ticket->logs()->where('to_status', 'reopened')->latest()->value('note');
             if ($reason) {
                 $payload['note'] = $reason;
-                $payload['message'] = 'Phiếu được quản lý mở lại. Lý do cần xử lý: '.$reason;
+                $payload['message'] = 'Phiếu được quản lý mở lại. Lý do cần xử lý: '.$reason.' Ảnh minh chứng sửa chữa cũ đã được xóa; vui lòng gửi ảnh mới sau khi xử lý.';
             }
         }
         Notification::send(User::whereIn('id', array_filter([$ticket->reporter_id, $ticket->assigned_to_id]))->get(), new TicketActivity($payload));
