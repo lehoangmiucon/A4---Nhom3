@@ -235,10 +235,14 @@ a{color:inherit}
 .student-tickets .card-lead{margin:15px 0 0!important;padding-top:13px;border-top:1px solid #edf2f6}
 .student-tickets .api-feedback:not([hidden]){margin-bottom:12px}
 .ticket-category-filter{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 16px;padding:12px 14px;border:1px solid #e2ebf3;border-radius:12px;background:#f8fbfe}
-.ticket-category-filter>label{display:grid;gap:6px;color:#5c748c;font-size:11px;font-weight:700}
-.ticket-category-filter>div{display:flex;flex:1;align-items:center;gap:8px;min-width:0;max-width:540px}
-.ticket-category-filter>div>.helpdesk-select-control{flex:1 1 240px;min-width:220px}
-.ticket-category-filter select{min-width:220px;height:40px;padding:0 12px;border:1px solid #d5e3ef;border-radius:9px;background:#fff;color:#294966;font:inherit}
+.ticket-category-filter>.ticket-search-field{position:relative;display:block;flex:1;min-width:0}
+.ticket-search-field>svg{position:absolute;left:13px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:#8299af;pointer-events:none}
+.ticket-search-field>input{box-sizing:border-box;width:100%;min-width:0;min-height:44px;padding:10px 34px 10px 40px;border:1px solid #d5e3ef;border-radius:11px;background:#fff;color:#294966;font:500 13px "Be Vietnam Pro",Arial,sans-serif;outline:none}
+.ticket-search-field>input::placeholder{color:#879aab}
+.ticket-search-field>input:focus{border-color:#1686df;box-shadow:0 0 0 3px #1686df1c}
+.ticket-category-filter>div{display:flex;flex:0 0 auto;align-items:center;gap:8px;min-width:0}
+.ticket-category-filter>div>.helpdesk-select-control{width:230px;flex:0 0 230px;min-width:0}
+.ticket-category-filter select{width:230px;min-width:0;height:44px;padding:0 12px;border:1px solid #d5e3ef;border-radius:9px;background:#fff;color:#294966;font:inherit}
 .ticket-category-filter>div>button,.ticket-category-filter>div>a{display:inline-flex;flex:none;min-height:44px;align-items:center;justify-content:center;padding:0 16px;border:1px solid #cfe0ef;border-radius:10px;background:#fff;color:#1769aa;font:700 12px "Be Vietnam Pro",Arial,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap}
 .ticket-category-filter>div>button{border-color:#1683c6;background:#1683c6;color:#fff}
 .ticket-category-filter>div>button:hover{background:#096ca9}
@@ -246,6 +250,7 @@ a{color:inherit}
 .ticket-category-filter .helpdesk-select-option{min-width:0;min-height:42px;padding:10px 12px;border:1px solid transparent}
 .ticket-category-filter .helpdesk-select-option>span{white-space:normal;overflow-wrap:anywhere;text-overflow:clip;line-height:1.5}
 .ticket-category-filter .helpdesk-select-option.is-selected{border-color:#c9e2f5}
+@media(max-width:850px){.ticket-category-filter{flex-wrap:wrap;gap:10px}.ticket-category-filter>.ticket-search-field{flex-basis:100%}.ticket-category-filter>div{width:100%}.ticket-category-filter>div>.helpdesk-select-control{width:auto;flex:1 1 230px}}
 .student-tickets .role-table{min-width:920px}
 @media(max-width:850px){.student-dashboard .role-welcome{min-height:170px}.student-dashboard .role-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.role-main.student-dashboard,.role-main.student-tickets{margin-top:18px}.student-dashboard .role-welcome{min-height:0;padding:22px 19px}.student-dashboard .role-welcome h1{font-size:27px}.student-dashboard .role-welcome::after{right:-105px;top:-52px;width:180px;height:180px}.student-dashboard .role-stats{gap:9px}.student-dashboard .role-stat{min-height:105px;padding:14px 14px 14px 17px}.student-dashboard .role-stat>strong{margin-top:8px;font-size:26px}.student-dashboard .role-card,.student-tickets .role-card{padding:15px}.student-dashboard .role-table,.student-tickets .role-table{min-width:700px}.student-tickets .role-welcome{margin-bottom:13px}}

@@ -308,6 +308,23 @@ class UiController extends Controller
             } else {
                 $selectedCategoryId = '';
             }
+            $searchInput = $request->query('q');
+            $ticketSearch = is_string($searchInput) ? trim($searchInput) : '';
+            if ($ticketSearch !== '') {
+                $searchPattern = '%' . $ticketSearch . '%';
+                $ticketQuery->where(function ($query) use ($searchPattern) {
+                    $query->where('ticket_number', 'like', $searchPattern)
+                        ->orWhere('title', 'like', $searchPattern)
+                        ->orWhere('description', 'like', $searchPattern)
+                        ->orWhere('room_label', 'like', $searchPattern)
+                        ->orWhere('building_label', 'like', $searchPattern)
+                        ->orWhere('equipment_label', 'like', $searchPattern)
+                        ->orWhereHas('room', fn($room) => $room->where('name', 'like', $searchPattern)->orWhere('code', 'like', $searchPattern))
+                        ->orWhereHas('room.building', fn($building) => $building->where('name', 'like', $searchPattern))
+                        ->orWhereHas('category', fn($category) => $category->where('name', 'like', $searchPattern));
+                });
+            }
+            $data['ticketSearch'] = $ticketSearch;
             $data['selectedCategoryId'] = (string) $selectedCategoryId;
             $data['tickets'] = $ticketQuery->latest()->paginate(15)->withQueryString();
         }
