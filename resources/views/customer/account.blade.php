@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="assets/css/customer.css?v=20261103-responsive1">
     <link rel="stylesheet" href="assets/css/account.css?v=20261110-avatar-picker1">
     <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261110-custom-select1">
+@include('shared.password-visibility-assets')
 </head>
 <body class="customer-role-page role-page account-page">
 <div class="role-shell">

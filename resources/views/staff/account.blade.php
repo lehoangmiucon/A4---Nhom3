@@ -7,6 +7,7 @@
     <title>Tài khoản nhân viên · Helpdesk</title>
     <link rel="stylesheet" href="assets/css/staff.css?v=20261110-account-avatar-picker1">
     <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261110-custom-select1">
+@include('shared.password-visibility-assets')
 </head>
 <body class="staff-role-page role-page">
 <div class="role-shell">

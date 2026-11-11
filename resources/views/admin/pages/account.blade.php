@@ -3,6 +3,7 @@
 @section('title', 'Thông tin tài khoản · Helpdesk')
 
 @section('content')
+@include('shared.password-visibility-assets')
 @php
     $roleLabels = ['admin' => 'Quản trị viên', 'staff' => 'Nhân viên kỹ thuật', 'student' => 'Sinh viên'];
 @endphp

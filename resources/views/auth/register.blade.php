@@ -15,6 +15,7 @@
     <title>Đăng ký sinh viên · Helpdesk</title>
     <link rel="stylesheet" href="assets/css/auth.css?v=20261109-six-digit-otp5">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" crossorigin="anonymous">
+@include('shared.password-visibility-assets')
 </head>
 
 <body class="role-page">
