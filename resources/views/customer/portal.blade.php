@@ -42,7 +42,7 @@
                 <span class="required-note"><b>*</b> Thông tin bắt buộc</span>
             </div>
 
-            <form class="report-form" action="#" method="post" enctype="multipart/form-data" data-api-endpoint="/api/tickets" data-success-redirect="/customer/tickets" data-feedback-variant="warning" data-feedback-position="center">
+            <form class="report-form" action="#" method="post" enctype="multipart/form-data" data-api-endpoint="/api/tickets" data-success-redirect="/customer/tickets" data-feedback-variant="success" data-feedback-position="top">
                 <div class="report-fields">
                     <div class="report-field report-field-wide">
                         <label for="phone">Số điện thoại liên hệ <span>(không bắt buộc)</span></label>

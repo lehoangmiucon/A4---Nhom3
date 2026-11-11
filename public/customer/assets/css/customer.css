@@ -234,6 +234,14 @@ a{color:inherit}
 .student-tickets .role-table td:last-child{color:#71859a;font-size:11px}
 .student-tickets .card-lead{margin:15px 0 0!important;padding-top:13px;border-top:1px solid #edf2f6}
 .student-tickets .api-feedback:not([hidden]){margin-bottom:12px}
+.ticket-category-filter{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:0 0 16px;padding:12px 14px;border:1px solid #e2ebf3;border-radius:12px;background:#f8fbfe}
+.ticket-category-filter>label{display:grid;gap:6px;color:#5c748c;font-size:11px;font-weight:700}
+.ticket-category-filter>div{display:flex;align-items:center;gap:8px}
+.ticket-category-filter select{min-width:220px;height:40px;padding:0 12px;border:1px solid #d5e3ef;border-radius:9px;background:#fff;color:#294966;font:inherit}
+.ticket-category-filter button,.ticket-category-filter a{display:inline-flex;min-height:40px;align-items:center;justify-content:center;padding:0 14px;border:1px solid #cfe0ef;border-radius:9px;background:#fff;color:#1769aa;font:700 11px "Be Vietnam Pro",Arial,sans-serif;text-decoration:none;cursor:pointer}
+.ticket-category-filter button{border-color:#1683c6;background:#1683c6;color:#fff}
+.ticket-category-filter button:hover{background:#096ca9}
+.student-tickets .role-table{min-width:920px}
 @media(max-width:850px){.student-dashboard .role-welcome{min-height:170px}.student-dashboard .role-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.role-main.student-dashboard,.role-main.student-tickets{margin-top:18px}.student-dashboard .role-welcome{min-height:0;padding:22px 19px}.student-dashboard .role-welcome h1{font-size:27px}.student-dashboard .role-welcome::after{right:-105px;top:-52px;width:180px;height:180px}.student-dashboard .role-stats{gap:9px}.student-dashboard .role-stat{min-height:105px;padding:14px 14px 14px 17px}.student-dashboard .role-stat>strong{margin-top:8px;font-size:26px}.student-dashboard .role-card,.student-tickets .role-card{padding:15px}.student-dashboard .role-table,.student-tickets .role-table{min-width:700px}.student-tickets .role-welcome{margin-bottom:13px}}
 
@@ -247,6 +255,8 @@ a{color:inherit}
     .role-table-wrap{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
     .role-card,.role-welcome{min-width:0}
 }
+
+@media(max-width:600px){.ticket-category-filter{align-items:stretch;flex-direction:column}.ticket-category-filter>div{flex-wrap:wrap}.ticket-category-filter select{min-width:0;flex:1}}
 @media(max-width:600px){
     .role-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 10px;padding:10px 12px}
     .role-brand{grid-column:1;grid-row:1;min-width:0}

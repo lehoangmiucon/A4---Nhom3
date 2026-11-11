@@ -300,7 +300,16 @@ class UiController extends Controller
             $data['categories'] = Category::orderBy('name')->get(['id', 'name', 'color']);
         }
         if ($section === 'customer' && $path === 'tickets') {
-            $data['tickets'] = Ticket::with('room.building')->where('reporter_id', $user->id)->latest()->paginate(15)->withQueryString();
+            $data['categories'] = Category::orderBy('name')->get(['id', 'name', 'color']);
+            $selectedCategoryId = $request->query('category_id');
+            $ticketQuery = Ticket::with(['room.building', 'category'])->where('reporter_id', $user->id);
+            if (is_scalar($selectedCategoryId) && ctype_digit((string) $selectedCategoryId)) {
+                $ticketQuery->where('category_id', (int) $selectedCategoryId);
+            } else {
+                $selectedCategoryId = '';
+            }
+            $data['selectedCategoryId'] = (string) $selectedCategoryId;
+            $data['tickets'] = $ticketQuery->latest()->paginate(15)->withQueryString();
         }
         if ($section === 'customer' && $path === 'notifications') {
             $data['notifications'] = $user->notifications()->latest()->get();
@@ -317,6 +326,7 @@ class UiController extends Controller
             $data['recentTickets'] = Ticket::with('room.building')->where('reporter_id', $user->id)->latest()->take(5)->get();
         }
         if ($section === 'staff' && $path === 'index') {
+            $data['categories'] = Category::orderBy('name')->get(['id', 'name', 'color']);
             $scheduleQuery = fn($query) => $query->orderBy('starts_at');
             if ($user->role === 'staff') {
                 $scheduleQuery = fn($query) => $query->where('staff_id', $user->id)->orderBy('starts_at');

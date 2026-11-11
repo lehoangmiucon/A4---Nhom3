@@ -58,14 +58,19 @@
     const toast = document.createElement('div');
     toast.setAttribute('role', 'status');
     toast.dataset.autoDismiss = 'true';
-    toast.textContent = notice.message;
     const isWarning = notice.variant === 'warning';
-    const isCentered = notice.position === 'center';
+    const icon = document.createElement('span');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = '\u2713';
+    Object.assign(icon.style, {
+      display: 'inline-grid', width: '24px', height: '24px', flex: '0 0 24px', placeItems: 'center',
+      borderRadius: '50%', background: isWarning ? '#ffe4e6' : '#d1fae5', color: isWarning ? '#b42332' : '#087354', fontSize: '15px', fontWeight: '800',
+    });
+    toast.append(icon, document.createTextNode(notice.message));
     Object.assign(toast.style, {
-      position: 'fixed', top: isCentered ? '50%' : '96px', left: isCentered ? '50%' : 'auto',
-      right: isCentered ? 'auto' : '20px', transform: isCentered ? 'translate(-50%, -50%)' : 'none',
-      zIndex: '10000', width: isCentered ? 'min(560px, calc(100vw - 36px))' : 'auto',
-      maxWidth: 'calc(100vw - 36px)', padding: '16px 22px', borderRadius: '12px', textAlign: isCentered ? 'center' : 'left',
+      position: 'fixed', top: '96px', left: '50%', right: 'auto', transform: 'translateX(-50%)',
+      zIndex: '10000', width: 'min(560px, calc(100vw - 36px))', display: 'flex', alignItems: 'center', gap: '10px',
+      maxWidth: 'calc(100vw - 36px)', padding: '14px 18px', borderRadius: '12px', textAlign: 'left',
       background: isWarning ? '#fff1f2' : '#ecfdf5', color: isWarning ? '#b42332' : '#087354',
       border: `1px solid ${isWarning ? '#fecdd3' : '#a7e5cc'}`,
       boxShadow: '0 8px 28px #10233f20', fontSize: '14px', fontWeight: '600',
