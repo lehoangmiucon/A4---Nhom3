@@ -84,7 +84,7 @@ class UiController extends Controller
             $data['dashboardResolvedCount'] = $data['dashboardCounts']['resolved'] ?? 0;
             $data['dashboardInProgressCount'] = $data['dashboardCounts']['in_progress'] ?? 0;
             $data['weeklyTicketCount'] = $data['dashboardTotal'];
-            $data['recentTickets'] = Ticket::with(['room.building', 'assignee'])
+            $data['recentTickets'] = Ticket::with(['room.building', 'assignee', 'category'])
                 ->whereBetween('created_at', [$periodStart, $periodEnd])->latest()->take(6)->get();
             $data['equipmentBreakdown'] = Category::query()
                 ->withCount(['tickets as tickets_count' => fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd])])
@@ -164,7 +164,7 @@ class UiController extends Controller
             if (! is_string($focus) || ! array_key_exists($focus, $focusLabels)) {
                 $focus = null;
             }
-            $ticketQuery = Ticket::with(['room.building', 'assignee', 'schedules', 'reporter:id,name,role']);
+            $ticketQuery = Ticket::with(['room.building', 'assignee', 'schedules', 'reporter:id,name,role', 'category']);
             match ($focus) {
                 'today' => $ticketQuery->whereDate('created_at', today()),
                 'unassigned' => $ticketQuery->whereIn('status', ['new', 'reopened']),

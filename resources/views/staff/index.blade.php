@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="../admin/assets/css/ticket-status.css?v=20261104-status1">
     <link rel="stylesheet" href="assets/css/dashboard-refresh.css?v=20261111-categoryfilter1">
     <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261110-pagination1">
+    <link rel="stylesheet" href="{{ url('/shared/css/ticket-category.css?v=20261111-color1') }}">
 </head>
 <body class="staff-role-page role-page staff-dashboard-page">
 <div class="role-shell">
@@ -69,7 +70,7 @@
                             </div>
                             <h3><a href="ticket-detail?ticket={{ $ticket->id }}">{{ $ticket->title }}</a></h3>
                             <div class="staff-ticket-meta">
-                                <span class="staff-category-tag"><i></i>{{ $ticket->category?->name ?? 'Chưa phân loại' }}</span>
+                                @include('shared.ticket-category-badge', ['category' => $ticket->category, 'label' => $ticket->category?->name])
                                 <span>{{ $ticket->room?->building?->name }} · {{ $ticket->room?->name }}</span>
                             </div>
                             <div class="staff-ticket-bottom">

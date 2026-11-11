@@ -24,6 +24,7 @@
     @endif
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" crossorigin="anonymous">
     @stack('styles')
+    <link rel="stylesheet" href="{{ url('/shared/css/ticket-category.css?v=20261111-color1') }}">
 </head>
 <body>
     <input class="nav-toggle" type="checkbox" id="nav-toggle" aria-hidden="true">
