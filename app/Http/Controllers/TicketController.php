@@ -144,7 +144,7 @@ class TicketController extends Controller
         if (!empty($filters['status'])) $query->where('status', $filters['status']);
         if (!empty($filters['category'])) $query->where('equipment_label', $filters['category']);
         if (!empty($filters['reporter_role'])) {
-            $query->whereHas('reporter', fn ($reporter) => $reporter->where('role', $filters['reporter_role']));
+            $query->whereHas('reporter', fn($reporter) => $reporter->where('role', $filters['reporter_role']));
         }
         if (!empty($filters['period'])) {
             [$periodStart, $periodEnd] = PeriodRange::bounds($filters['period']);
@@ -152,15 +152,15 @@ class TicketController extends Controller
         }
         if (!empty($filters['building'])) {
             $buildingCode = $filters['building'];
-            $query->where(fn ($tickets) => $tickets
-                ->whereHas('room.building', fn ($building) => $building->where('code', $buildingCode))
+            $query->where(fn($tickets) => $tickets
+                ->whereHas('room.building', fn($building) => $building->where('code', $buildingCode))
                 ->orWhere('building_label', $buildingCode)
-                ->orWhereHas('room.building', fn ($building) => $building->where('name', Building::where('code', $buildingCode)->value('name'))));
+                ->orWhereHas('room.building', fn($building) => $building->where('name', Building::where('code', $buildingCode)->value('name'))));
         }
         if (!empty($filters['search'])) {
             $search = trim($filters['search']);
             $digits = preg_replace('/\D+/', '', $search);
-            $query->where(fn ($tickets) => $tickets
+            $query->where(fn($tickets) => $tickets
                 ->where('ticket_number', 'like', "%{$search}%")
                 ->orWhere('title', 'like', "%{$search}%")
                 ->orWhere('description', 'like', "%{$search}%")
@@ -170,9 +170,9 @@ class TicketController extends Controller
                 ->orWhere('reporter_name', 'like', "%{$search}%")
                 ->orWhere('reporter_email', 'like', "%{$search}%")
                 ->orWhere('reporter_phone', 'like', "%{$search}%")
-                ->when($digits !== '', fn ($tickets) => $tickets->orWhereRaw("REPLACE(REPLACE(REPLACE(reporter_phone, ' ', ''), '-', ''), '(', '') LIKE ?", ["%{$digits}%"]))
-                ->orWhereHas('room', fn ($rooms) => $rooms->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"))
-                ->orWhereHas('room.building', fn ($buildings) => $buildings->where('name', 'like', "%{$search}%")));
+                ->when($digits !== '', fn($tickets) => $tickets->orWhereRaw("REPLACE(REPLACE(REPLACE(reporter_phone, ' ', ''), '-', ''), '(', '') LIKE ?", ["%{$digits}%"]))
+                ->orWhereHas('room', fn($rooms) => $rooms->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"))
+                ->orWhereHas('room.building', fn($buildings) => $buildings->where('name', 'like', "%{$search}%")));
         }
         $ids = $query->latest()->pluck('id');
         return response()->json(['data' => ['ids' => $ids, 'count' => $ids->count()]]);
@@ -186,9 +186,9 @@ class TicketController extends Controller
             'status' => ['nullable', Rule::in(['assigned', 'in_progress', 'resolved', 'closed', 'reopened', 'new'])],
         ]);
         $query = TicketSchedule::query()->where('status', '!=', 'cancelled');
-        if (!empty($filters['staff'])) $query->whereHas('staff', fn ($staff) => $staff->where('name', $filters['staff']));
-        if (!empty($filters['category'])) $query->whereHas('ticket', fn ($ticket) => $ticket->where('category_id', $filters['category']));
-        if (!empty($filters['status'])) $query->whereHas('ticket', fn ($ticket) => $ticket->where('status', $filters['status']));
+        if (!empty($filters['staff'])) $query->whereHas('staff', fn($staff) => $staff->where('name', $filters['staff']));
+        if (!empty($filters['category'])) $query->whereHas('ticket', fn($ticket) => $ticket->where('category_id', $filters['category']));
+        if (!empty($filters['status'])) $query->whereHas('ticket', fn($ticket) => $ticket->where('status', $filters['status']));
         $ids = $query->pluck('id');
         return response()->json(['data' => ['ids' => $ids, 'count' => $ids->count()]]);
     }
@@ -213,8 +213,8 @@ class TicketController extends Controller
         ]);
 
         $room = Room::with('building')->whereKey($data['room_id'])
-            ->where(fn ($query) => $query->where('qr_code', $data['room_code'])->orWhere('code', $data['room_code']))
-            ->whereHas('building', fn ($query) => $query->where('code', $data['building_code']))
+            ->where(fn($query) => $query->where('qr_code', $data['room_code'])->orWhere('code', $data['room_code']))
+            ->whereHas('building', fn($query) => $query->where('code', $data['building_code']))
             ->first();
         if (! $room) throw ValidationException::withMessages(['room_code' => 'Phòng học không khớp với tòa nhà đã chọn.']);
         $category = \App\Models\Category::findOrFail($data['category_id']);
@@ -611,7 +611,7 @@ class TicketController extends Controller
             $reason = $ticket->logs()->where('to_status', 'reopened')->latest()->value('note');
             if ($reason) {
                 $payload['note'] = $reason;
-                $payload['message'] = 'Phiếu được quản lý mở lại. Lý do cần xử lý: '.$reason.' Ảnh minh chứng sửa chữa cũ đã được xóa; vui lòng gửi ảnh mới sau khi xử lý.';
+                $payload['message'] = 'Phiếu được quản lý mở lại. Lý do cần xử lý: ' . $reason . ' Ảnh minh chứng sửa chữa cũ đã được xóa; vui lòng gửi ảnh mới sau khi xử lý.';
             }
         }
         Notification::send(User::whereIn('id', array_filter([$ticket->reporter_id, $ticket->assigned_to_id]))->get(), new TicketActivity($payload));

@@ -1,181 +1,1003 @@
 /* Dashboard refresh: presentation only; assignment, schedule and ticket flow are unchanged. */
-.staff-dashboard-page{--dash-navy:#123b70;--dash-blue:#1769d2;--dash-teal:#087e87}
-.staff-dashboard-page .role-topbar{min-height:72px;padding-top:10px;padding-bottom:10px;background:#123b70;border:0;box-shadow:0 5px 18px #0c2e5924}
-.staff-dashboard-page .role-brand,.staff-dashboard-page .role-nav a{color:#eaf3ff}
-.staff-dashboard-page .role-nav a:hover,.staff-dashboard-page .role-nav a.current{background:#2364b4;color:#fff}
-.staff-dashboard-page .role-account{border-color:#ffffff28;background:#ffffff12}
-.staff-dashboard-page .role-account-profile:hover,.staff-dashboard-page .role-account-profile.is-current{background:#ffffff12}
-.staff-dashboard-page .role-account-details strong{color:#fff}
-.staff-dashboard-page .role-account-details small{color:#c8d9ed}
-.staff-dashboard-page .role-account-icon{background:#e4f0ff;color:#1769d2}
-.staff-dashboard-page .role-logout{border-color:#ffffff35;background:#ffffff12;color:#fff}
-.staff-dashboard-page .role-logout:hover{border-color:#ffc9c4;background:#fff5f4;color:#bd4137}
-.staff-dashboard-page .role-main.staff-dashboard{width:min(1300px,calc(100% - 48px));margin:30px auto 48px}
-.staff-hero{position:relative;isolation:isolate;overflow:hidden;display:flex;min-height:155px;align-items:center;justify-content:space-between;gap:24px;margin-bottom:20px;padding:27px 32px;border:1px solid #d8e5f2;border-radius:19px;background:linear-gradient(112deg,#fff 0%,#f5faff 62%,#e8f2ff 100%);box-shadow:0 12px 32px #183d660d}
-.staff-hero::after{position:absolute;z-index:-1;right:13%;top:-96px;width:220px;height:220px;border:1px solid #c8def5;border-radius:50%;box-shadow:0 0 0 25px #deebfa80,0 0 0 52px #e7f0fa80;content:""}
-.staff-hero h1{margin:6px 0;color:#15385f;font-size:clamp(28px,3vw,37px);line-height:1.2;letter-spacing:-.9px}
-.staff-hero p{margin:0;color:#617994;font-size:15px;line-height:1.6}
-.staff-hero .role-button{position:relative;z-index:1}
-.staff-dashboard .role-stats{gap:13px;margin-bottom:19px}
-.staff-dashboard .role-stat{min-height:112px;padding:17px 18px 14px 22px;border-color:#e0e9f2;border-radius:15px;box-shadow:0 7px 22px #193b5b09}
-.staff-dashboard .role-stat::before{width:5px;height:100%;border-radius:5px 0 0 5px}
-.staff-dashboard .role-stat>span{font-size:12px;color:#617994}
-.staff-dashboard .role-stat>strong{margin-top:4px;font-size:29px}
-.staff-dashboard .role-stat>small{display:block;margin-top:2px;color:#8798ab;font-size:10px}
-.staff-dashboard-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(340px,.85fr);gap:18px;align-items:start}
-.staff-ticket-panel,.staff-calendar-panel{min-width:0;padding:21px;border-color:#e0e9f2;border-radius:17px;box-shadow:0 7px 22px #193b5b09}
-.staff-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
-.staff-panel-heading h2{margin:4px 0 0;font-size:20px}
-.staff-panel-heading .role-kicker{font-size:10px}
-.staff-count-pill,.staff-selected-day-heading>span{padding:6px 10px;border-radius:99px;background:#eef4fa;color:#55718e;font-size:11px;font-weight:700;white-space:nowrap}
-.staff-ticket-tabs{display:flex;gap:5px;margin:10px -2px 15px;padding:5px;border-bottom:1px solid #e8eef5;overflow-x:auto;scrollbar-width:thin}
-.staff-ticket-tabs button{display:inline-flex;flex:none;align-items:center;gap:7px;padding:9px 11px;border:0;border-radius:9px 9px 0 0;background:transparent;color:#637991;font:600 12px "Be Vietnam Pro",Arial,sans-serif;cursor:pointer;white-space:nowrap}
-.staff-ticket-tabs button span{display:inline-grid;min-width:21px;height:21px;place-items:center;border-radius:99px;background:#f0f4f8;color:#657d95;font-size:10px}
-.staff-ticket-tabs button:hover{background:#f4f8fc;color:#1769d2}
-.staff-ticket-tabs button.is-active{background:#eaf3ff;color:#1769d2;box-shadow:inset 0 -2px #1769d2}
-.staff-ticket-tabs button.is-active span{background:#d7e8ff;color:#155db5}
-.staff-category-filter{display:flex;align-items:center;gap:12px;margin:0 0 14px;color:#5c748c;font-size:11px;font-weight:700}
-.staff-category-filter select{min-width:210px;height:38px;padding:0 12px;border:1px solid #d6e3ee;border-radius:9px;background:#fff;color:#294966;font:600 11px "Be Vietnam Pro",Arial,sans-serif}
-.staff-ticket-list{display:grid;gap:11px}
-.staff-ticket-item{padding:15px 16px;border:1px solid #e1e9f1;border-left:4px solid var(--category-color,#94a3b8);border-radius:13px;background:#fff;transition:transform .16s,box-shadow .16s,border-color .16s}
-.staff-ticket-item:hover{transform:translateY(-1px);box-shadow:0 8px 20px #193b5b10}
-.staff-ticket-item[hidden]{display:none}
-.staff-ticket-item-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.staff-ticket-number{color:#1475bd;font-size:12px;font-weight:800;text-decoration:none}
-.staff-ticket-item h3{margin:8px 0;color:#203d5c;font-size:16px;line-height:1.4}
-.staff-ticket-item h3 a{color:inherit;text-decoration:none}
-.staff-ticket-item h3 a:hover{color:#1769d2}
-.staff-ticket-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;color:#73869b;font-size:12px}
-.staff-category-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:99px;background:#f3f6f9;color:#536d87;font-size:11px}
-.staff-category-tag i,.staff-calendar-legend i{width:8px;height:8px;border-radius:50%;background:var(--category-color,#94a3b8)}
-.staff-ticket-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:11px;padding-top:10px;border-top:1px solid #edf1f5;color:#7589a0;font-size:11px}
-.staff-ticket-bottom a{color:#1769d2;font-weight:700;text-decoration:none;white-space:nowrap}
-.staff-filter-empty[hidden]{display:none}
-.staff-filter-empty{padding:24px;border:1px dashed #dce6ef;border-radius:12px;background:#f9fbfd;color:#7a8da1;text-align:center}
-.staff-calendar-panel .staff-panel-heading{margin-bottom:13px}
-.staff-today-link{padding:7px 10px;border:1px solid #dbe7f3;border-radius:9px;color:#1769d2;font-size:11px;font-weight:700;text-decoration:none}
-.staff-today-link:hover{background:#f2f7fd}
-.staff-calendar-toolbar{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;gap:9px;margin:0 0 12px}
-.staff-calendar-toolbar>a{display:grid;width:34px;height:34px;place-items:center;border:1px solid #dce7f1;border-radius:10px;background:#fff;color:#1769d2;font-size:23px;line-height:1;text-decoration:none}
-.staff-calendar-toolbar>a:hover{background:#f2f7fd}
-.staff-calendar-toolbar>strong{text-align:center;color:#294966;font-size:14px;text-transform:capitalize}
-.staff-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
-.staff-calendar-weekday{padding:6px 0;color:#7b8da1;text-align:center;font-size:10px;font-weight:800}
-.staff-calendar-day{position:relative;display:flex;min-width:0;min-height:55px;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding:6px 2px;border:1px solid #e7edf4;border-radius:9px;background:#fff;color:#405870;text-decoration:none;transition:border-color .15s,background .15s,transform .15s}
-.staff-calendar-day:hover{transform:translateY(-1px);border-color:#9fc3ef;background:#f3f8ff}
-.staff-calendar-day.is-outside{border-color:transparent;background:#fafbfd;color:#b4bfcb}
-.staff-calendar-day.is-today{border-color:#1769d2;background:#edf5ff;color:#155db5;font-weight:800}
-.staff-calendar-day.is-selected{box-shadow:0 0 0 2px #1769d226;border-color:#1769d2}
-.staff-calendar-date{font-size:12px;line-height:1.25}
-.staff-calendar-dots{display:flex;align-items:center;justify-content:center;gap:3px;min-height:7px}
-.staff-calendar-dots i{width:6px;height:6px;border-radius:50%;background:var(--category-color,#94a3b8)}
-.staff-calendar-day>small{color:#71849a;font-size:9px;line-height:1}
-.staff-calendar-legend{display:flex;min-height:30px;flex-wrap:wrap;gap:7px 12px;margin-top:11px;padding:0 0 12px;border-bottom:1px solid #edf1f5}
-.staff-calendar-legend>span{display:inline-flex;align-items:center;gap:5px;color:#697f95;font-size:10px}
-.staff-calendar-legend .staff-no-events{color:#8797a8}
-.staff-selected-day{margin-top:14px}
-.staff-selected-day-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
-.staff-selected-day-heading h3{margin:0;color:#284865;font-size:14px}
-.staff-day-event{display:grid;grid-template-columns:54px minmax(0,1fr);gap:10px;margin-top:8px;padding:11px;border:1px solid #e5ebf2;border-left:4px solid var(--category-color,#94a3b8);border-radius:11px;background:#f9fbfd;text-decoration:none}
-.staff-day-event time{color:#1769d2;font-size:13px;font-weight:800}
-.staff-day-event strong,.staff-day-event small{display:block}
-.staff-day-event strong{color:#294966;font-size:12px;line-height:1.4}
-.staff-day-event small{margin-top:3px;color:#7d8fa3;font-size:10px;line-height:1.5}
-.staff-no-day-events{margin:0;padding:15px 12px;border:1px dashed #e0e8f0;border-radius:10px;color:#8293a6;font-size:12px;text-align:center}
-.staff-dashboard-page .role-footer{font-size:12px}
+.staff-dashboard-page {
+    --dash-navy: #123b70;
+    --dash-blue: #1769d2;
+    --dash-teal: #087e87;
+}
+.staff-dashboard-page .role-topbar {
+    min-height: 72px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background: #123b70;
+    border: 0;
+    box-shadow: 0 5px 18px #0c2e5924;
+}
+.staff-dashboard-page .role-brand,
+.staff-dashboard-page .role-nav a {
+    color: #eaf3ff;
+}
+.staff-dashboard-page .role-nav a:hover,
+.staff-dashboard-page .role-nav a.current {
+    background: #2364b4;
+    color: #fff;
+}
+.staff-dashboard-page .role-account {
+    border-color: #ffffff28;
+    background: #ffffff12;
+}
+.staff-dashboard-page .role-account-profile:hover,
+.staff-dashboard-page .role-account-profile.is-current {
+    background: #ffffff12;
+}
+.staff-dashboard-page .role-account-details strong {
+    color: #fff;
+}
+.staff-dashboard-page .role-account-details small {
+    color: #c8d9ed;
+}
+.staff-dashboard-page .role-account-icon {
+    background: #e4f0ff;
+    color: #1769d2;
+}
+.staff-dashboard-page .role-logout {
+    border-color: #ffffff35;
+    background: #ffffff12;
+    color: #fff;
+}
+.staff-dashboard-page .role-logout:hover {
+    border-color: #ffc9c4;
+    background: #fff5f4;
+    color: #bd4137;
+}
+.staff-dashboard-page .role-main.staff-dashboard {
+    width: min(1300px, calc(100% - 48px));
+    margin: 30px auto 48px;
+}
+.staff-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    min-height: 155px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 20px;
+    padding: 27px 32px;
+    border: 1px solid #d8e5f2;
+    border-radius: 19px;
+    background: linear-gradient(112deg, #fff 0%, #f5faff 62%, #e8f2ff 100%);
+    box-shadow: 0 12px 32px #183d660d;
+}
+.staff-hero::after {
+    position: absolute;
+    z-index: -1;
+    right: 13%;
+    top: -96px;
+    width: 220px;
+    height: 220px;
+    border: 1px solid #c8def5;
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 25px #deebfa80,
+        0 0 0 52px #e7f0fa80;
+    content: "";
+}
+.staff-hero h1 {
+    margin: 6px 0;
+    color: #15385f;
+    font-size: clamp(28px, 3vw, 37px);
+    line-height: 1.2;
+    letter-spacing: -0.9px;
+}
+.staff-hero p {
+    margin: 0;
+    color: #617994;
+    font-size: 15px;
+    line-height: 1.6;
+}
+.staff-hero .role-button {
+    position: relative;
+    z-index: 1;
+}
+.staff-dashboard .role-stats {
+    gap: 13px;
+    margin-bottom: 19px;
+}
+.staff-dashboard .role-stat {
+    min-height: 112px;
+    padding: 17px 18px 14px 22px;
+    border-color: #e0e9f2;
+    border-radius: 15px;
+    box-shadow: 0 7px 22px #193b5b09;
+}
+.staff-dashboard .role-stat::before {
+    width: 5px;
+    height: 100%;
+    border-radius: 5px 0 0 5px;
+}
+.staff-dashboard .role-stat > span {
+    font-size: 12px;
+    color: #617994;
+}
+.staff-dashboard .role-stat > strong {
+    margin-top: 4px;
+    font-size: 29px;
+}
+.staff-dashboard .role-stat > small {
+    display: block;
+    margin-top: 2px;
+    color: #8798ab;
+    font-size: 10px;
+}
+.staff-dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.85fr);
+    gap: 18px;
+    align-items: start;
+}
+.staff-ticket-panel,
+.staff-calendar-panel {
+    min-width: 0;
+    padding: 21px;
+    border-color: #e0e9f2;
+    border-radius: 17px;
+    box-shadow: 0 7px 22px #193b5b09;
+}
+.staff-panel-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 12px;
+}
+.staff-panel-heading h2 {
+    margin: 4px 0 0;
+    font-size: 20px;
+}
+.staff-panel-heading .role-kicker {
+    font-size: 10px;
+}
+.staff-count-pill,
+.staff-selected-day-heading > span {
+    padding: 6px 10px;
+    border-radius: 99px;
+    background: #eef4fa;
+    color: #55718e;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.staff-ticket-tabs {
+    display: flex;
+    gap: 5px;
+    margin: 10px -2px 15px;
+    padding: 5px;
+    border-bottom: 1px solid #e8eef5;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+.staff-ticket-tabs button {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 11px;
+    border: 0;
+    border-radius: 9px 9px 0 0;
+    background: transparent;
+    color: #637991;
+    font:
+        600 12px "Be Vietnam Pro",
+        Arial,
+        sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.staff-ticket-tabs button span {
+    display: inline-grid;
+    min-width: 21px;
+    height: 21px;
+    place-items: center;
+    border-radius: 99px;
+    background: #f0f4f8;
+    color: #657d95;
+    font-size: 10px;
+}
+.staff-ticket-tabs button:hover {
+    background: #f4f8fc;
+    color: #1769d2;
+}
+.staff-ticket-tabs button.is-active {
+    background: #eaf3ff;
+    color: #1769d2;
+    box-shadow: inset 0 -2px #1769d2;
+}
+.staff-ticket-tabs button.is-active span {
+    background: #d7e8ff;
+    color: #155db5;
+}
+.staff-category-filter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 14px;
+    color: #5c748c;
+    font-size: 11px;
+    font-weight: 700;
+}
+.staff-category-filter select {
+    min-width: 210px;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid #d6e3ee;
+    border-radius: 9px;
+    background: #fff;
+    color: #294966;
+    font:
+        600 11px "Be Vietnam Pro",
+        Arial,
+        sans-serif;
+}
+.staff-ticket-list {
+    display: grid;
+    gap: 11px;
+}
+.staff-ticket-item {
+    padding: 15px 16px;
+    border: 1px solid #e1e9f1;
+    border-left: 4px solid var(--category-color, #94a3b8);
+    border-radius: 13px;
+    background: #fff;
+    transition:
+        transform 0.16s,
+        box-shadow 0.16s,
+        border-color 0.16s;
+}
+.staff-ticket-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px #193b5b10;
+}
+.staff-ticket-item[hidden] {
+    display: none;
+}
+.staff-ticket-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.staff-ticket-number {
+    color: #1475bd;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+}
+.staff-ticket-item h3 {
+    margin: 8px 0;
+    color: #203d5c;
+    font-size: 16px;
+    line-height: 1.4;
+}
+.staff-ticket-item h3 a {
+    color: inherit;
+    text-decoration: none;
+}
+.staff-ticket-item h3 a:hover {
+    color: #1769d2;
+}
+.staff-ticket-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    color: #73869b;
+    font-size: 12px;
+}
+.staff-category-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 99px;
+    background: #f3f6f9;
+    color: #536d87;
+    font-size: 11px;
+}
+.staff-category-tag i,
+.staff-calendar-legend i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--category-color, #94a3b8);
+}
+.staff-ticket-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 11px;
+    padding-top: 10px;
+    border-top: 1px solid #edf1f5;
+    color: #7589a0;
+    font-size: 11px;
+}
+.staff-ticket-bottom a {
+    color: #1769d2;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.staff-filter-empty[hidden] {
+    display: none;
+}
+.staff-filter-empty {
+    padding: 24px;
+    border: 1px dashed #dce6ef;
+    border-radius: 12px;
+    background: #f9fbfd;
+    color: #7a8da1;
+    text-align: center;
+}
+.staff-calendar-panel .staff-panel-heading {
+    margin-bottom: 13px;
+}
+.staff-today-link {
+    padding: 7px 10px;
+    border: 1px solid #dbe7f3;
+    border-radius: 9px;
+    color: #1769d2;
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+}
+.staff-today-link:hover {
+    background: #f2f7fd;
+}
+.staff-calendar-toolbar {
+    display: grid;
+    grid-template-columns: 36px 1fr 36px;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 12px;
+}
+.staff-calendar-toolbar > a {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid #dce7f1;
+    border-radius: 10px;
+    background: #fff;
+    color: #1769d2;
+    font-size: 23px;
+    line-height: 1;
+    text-decoration: none;
+}
+.staff-calendar-toolbar > a:hover {
+    background: #f2f7fd;
+}
+.staff-calendar-toolbar > strong {
+    text-align: center;
+    color: #294966;
+    font-size: 14px;
+    text-transform: capitalize;
+}
+.staff-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 5px;
+}
+.staff-calendar-weekday {
+    padding: 6px 0;
+    color: #7b8da1;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 800;
+}
+.staff-calendar-day {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    min-height: 55px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 6px 2px;
+    border: 1px solid #e7edf4;
+    border-radius: 9px;
+    background: #fff;
+    color: #405870;
+    text-decoration: none;
+    transition:
+        border-color 0.15s,
+        background 0.15s,
+        transform 0.15s;
+}
+.staff-calendar-day:hover {
+    transform: translateY(-1px);
+    border-color: #9fc3ef;
+    background: #f3f8ff;
+}
+.staff-calendar-day.is-outside {
+    border-color: transparent;
+    background: #fafbfd;
+    color: #b4bfcb;
+}
+.staff-calendar-day.is-today {
+    border-color: #1769d2;
+    background: #edf5ff;
+    color: #155db5;
+    font-weight: 800;
+}
+.staff-calendar-day.is-selected {
+    box-shadow: 0 0 0 2px #1769d226;
+    border-color: #1769d2;
+}
+.staff-calendar-date {
+    font-size: 12px;
+    line-height: 1.25;
+}
+.staff-calendar-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 7px;
+}
+.staff-calendar-dots i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--category-color, #94a3b8);
+}
+.staff-calendar-day > small {
+    color: #71849a;
+    font-size: 9px;
+    line-height: 1;
+}
+.staff-calendar-legend {
+    display: flex;
+    min-height: 30px;
+    flex-wrap: wrap;
+    gap: 7px 12px;
+    margin-top: 11px;
+    padding: 0 0 12px;
+    border-bottom: 1px solid #edf1f5;
+}
+.staff-calendar-legend > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #697f95;
+    font-size: 10px;
+}
+.staff-calendar-legend .staff-no-events {
+    color: #8797a8;
+}
+.staff-selected-day {
+    margin-top: 14px;
+}
+.staff-selected-day-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 9px;
+}
+.staff-selected-day-heading h3 {
+    margin: 0;
+    color: #284865;
+    font-size: 14px;
+}
+.staff-day-event {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+    padding: 11px;
+    border: 1px solid #e5ebf2;
+    border-left: 4px solid var(--category-color, #94a3b8);
+    border-radius: 11px;
+    background: #f9fbfd;
+    text-decoration: none;
+}
+.staff-day-event time {
+    color: #1769d2;
+    font-size: 13px;
+    font-weight: 800;
+}
+.staff-day-event strong,
+.staff-day-event small {
+    display: block;
+}
+.staff-day-event strong {
+    color: #294966;
+    font-size: 12px;
+    line-height: 1.4;
+}
+.staff-day-event small {
+    margin-top: 3px;
+    color: #7d8fa3;
+    font-size: 10px;
+    line-height: 1.5;
+}
+.staff-no-day-events {
+    margin: 0;
+    padding: 15px 12px;
+    border: 1px dashed #e0e8f0;
+    border-radius: 10px;
+    color: #8293a6;
+    font-size: 12px;
+    text-align: center;
+}
+.staff-dashboard-page .role-footer {
+    font-size: 12px;
+}
 /* Make the staff calendar easier to scan without changing its data or workflow. */
-.staff-dashboard-page .staff-calendar-panel{position:relative;overflow:hidden;border-color:#c9def4;background:linear-gradient(180deg,#fff 0%,#f8fbff 100%);box-shadow:0 12px 30px #123b7014}
-.staff-dashboard-page .staff-calendar-panel::before{position:absolute;top:0;right:0;left:0;height:4px;background:linear-gradient(90deg,#1769d2,#39a0ee);content:""}
-.staff-dashboard-page .staff-calendar-panel .staff-panel-heading{padding-top:3px;margin-bottom:16px}
-.staff-dashboard-page .staff-calendar-panel .staff-panel-heading .role-kicker{color:#1769d2;letter-spacing:.09em}
-.staff-dashboard-page .staff-calendar-panel .staff-panel-heading h2{color:#15385f;font-size:21px}
-.staff-dashboard-page .staff-today-link{border-color:#1769d2;background:#1769d2;color:#fff;box-shadow:0 4px 12px #1769d226}
-.staff-dashboard-page .staff-today-link:hover{border-color:#1059b8;background:#1059b8}
-.staff-dashboard-page .staff-calendar-toolbar{margin-bottom:14px}
-.staff-dashboard-page .staff-calendar-toolbar>a{border-color:#d3e2f2;background:#fff;box-shadow:0 2px 6px #123b700a}
-.staff-dashboard-page .staff-calendar-toolbar>a:hover{border-color:#1769d2;background:#edf5ff}
-.staff-dashboard-page .staff-calendar-toolbar>strong{color:#15385f;font-size:16px}
-.staff-dashboard-page .staff-calendar-grid{gap:6px}
-.staff-dashboard-page .staff-calendar-weekday{padding:7px 0;color:#58728d;font-size:11px}
-.staff-dashboard-page .staff-calendar-day{min-height:62px;gap:5px;padding:8px 2px;border-color:#dce7f2;border-radius:11px;box-shadow:0 2px 5px #123b7008}
-.staff-dashboard-page .staff-calendar-day:hover{z-index:1;transform:translateY(-2px);border-color:#7fb3eb;background:#f1f7ff;box-shadow:0 6px 14px #1769d21a}
-.staff-dashboard-page .staff-calendar-day.has-schedules{border-color:#b9d6f6;background:linear-gradient(180deg,#f2f8ff,#eaf3ff);color:#174f91;box-shadow:inset 0 0 0 1px #fff,0 2px 7px #1769d214}
-.staff-dashboard-page .staff-calendar-day.has-schedules:hover{border-color:#1769d2;background:#e4f0ff}
-.staff-dashboard-page .staff-calendar-day.is-outside.has-schedules{border-color:#e0eaf5;background:#f6f9fd;color:#9bacc0;box-shadow:none}
-.staff-dashboard-page .staff-calendar-day.is-today{border:2px solid #1769d2;background:#e7f2ff;color:#1257a5;box-shadow:0 0 0 3px #1769d21a}
-.staff-dashboard-page .staff-calendar-day.is-selected{z-index:1;border-color:#125dbb;background:linear-gradient(145deg,#1769d2,#0f57b5);color:#fff;box-shadow:0 0 0 3px #1769d226,0 7px 16px #1769d233}
-.staff-dashboard-page .staff-calendar-day.is-selected .staff-calendar-date{color:#fff}
-.staff-dashboard-page .staff-calendar-day.is-selected .staff-calendar-dots i{box-shadow:0 0 0 2px #ffffffd9}
-.staff-dashboard-page .staff-calendar-day.is-selected>small{border:1px solid #ffffff55;background:#ffffff24;color:#fff}
-.staff-dashboard-page .staff-calendar-date{font-size:13px;font-weight:700}
-.staff-dashboard-page .staff-calendar-dots{gap:4px;min-height:8px}
-.staff-dashboard-page .staff-calendar-dots i{width:7px;height:7px;box-shadow:0 0 0 1px #fff}
-.staff-dashboard-page .staff-calendar-day>small{min-width:17px;padding:3px 5px;border-radius:99px;background:#dcecff;color:#175ba7;font-size:10px;font-weight:800;text-align:center}
-.staff-dashboard-page .staff-calendar-legend{gap:7px;margin-top:13px;padding-bottom:14px}
-.staff-dashboard-page .staff-calendar-legend>span:not(.staff-no-events){gap:6px;padding:5px 8px;border:1px solid #e1eaf4;border-radius:99px;background:#fff;color:#526b84;font-size:10px;box-shadow:0 2px 5px #123b7008}
-.staff-dashboard-page .staff-calendar-legend i{width:8px;height:8px;box-shadow:0 0 0 2px color-mix(in srgb,var(--category-color,#94a3b8) 16%,white)}
-.staff-dashboard-page .staff-selected-day{margin-top:15px;padding-top:13px;border-top:1px solid #dce8f4}
-.staff-dashboard-page .staff-selected-day-heading{margin-bottom:10px}
-.staff-dashboard-page .staff-selected-day-heading h3{color:#15385f;font-size:15px}
-.staff-dashboard-page .staff-selected-day-heading>span{background:#e8f2ff;color:#175ba7;font-size:12px}
-.staff-dashboard-page .staff-day-event{grid-template-columns:58px minmax(0,1fr);gap:11px;margin-top:9px;padding:12px;border-color:#dce7f2;border-left:4px solid var(--category-color,#94a3b8);border-radius:12px;background:#fff;box-shadow:0 3px 9px #123b700a;transition:transform .15s,border-color .15s,box-shadow .15s}
-.staff-dashboard-page .staff-day-event:hover{transform:translateY(-1px);border-color:var(--category-color,#1769d2);box-shadow:0 7px 16px #123b7017}
-.staff-dashboard-page .staff-day-event time{display:grid;min-height:31px;place-items:center;align-self:start;border:1px solid #d9e8f8;border-radius:8px;background:#eef6ff;color:#145eb8;font-size:13px}
-.staff-dashboard-page .staff-day-event strong{color:#183d65;font-size:13px}
-.staff-dashboard-page .staff-day-event small{font-size:11px}
-.staff-dashboard-page .staff-no-day-events{border-color:#d6e4f2;background:#fff;font-size:13px}
-@media(max-width:980px){.staff-dashboard-grid{grid-template-columns:minmax(0,1fr)}.staff-calendar-panel{order:-1}}
-@media(max-width:650px){
- .staff-dashboard-page .role-topbar{align-items:center;gap:8px;padding:10px 14px}
- .staff-dashboard-page .role-brand{font-size:17px}
- .staff-dashboard-page .role-nav{justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;max-width:100%;padding:2px 0;scrollbar-width:none}
- .staff-dashboard-page .role-nav::-webkit-scrollbar{display:none}
- .staff-dashboard-page .role-nav a{flex:none;padding:8px 10px;font-size:12px}
- .staff-dashboard-page .role-account{align-self:stretch;margin-left:auto;gap:7px;padding:4px}
- .staff-dashboard-page .role-account-details small{display:none!important}
- .staff-dashboard-page .role-account-details strong{max-width:90px;font-size:11px}
- .staff-dashboard-page .role-account-icon{width:30px;height:30px;flex-basis:30px}
- .staff-dashboard-page .role-logout{min-height:30px;padding:0 8px;font-size:10px}
- .staff-dashboard-page .role-main.staff-dashboard{width:calc(100% - 28px);margin:18px auto 30px}
- .staff-hero{min-height:0;align-items:flex-start;flex-direction:column;gap:15px;margin-bottom:14px;padding:21px 18px}
- .staff-hero::after{right:-80px;top:-70px;width:160px;height:160px;opacity:.55}
- .staff-hero .role-button{width:100%}
- .staff-dashboard .role-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:13px}
- .staff-dashboard .role-stat{min-height:96px;padding:13px 11px 12px 15px}
- .staff-dashboard .role-stat>span{font-size:11px;line-height:1.4}
- .staff-dashboard .role-stat>strong{font-size:25px}
- .staff-dashboard .role-stat>small{font-size:9px}
- .staff-dashboard-grid{gap:12px}
- .staff-ticket-panel,.staff-calendar-panel{padding:15px}
- .staff-panel-heading h2{font-size:18px}
- .staff-ticket-tabs{margin-right:-5px;margin-left:-5px}
- .staff-ticket-tabs button{padding:8px;font-size:11px}
- .staff-category-filter{align-items:stretch;flex-direction:column;gap:6px}
- .staff-category-filter select{width:100%;min-width:0}
- .staff-ticket-item{padding:12px}
- .staff-ticket-item h3{font-size:15px}
- .staff-ticket-meta{font-size:11px}
- .staff-calendar-grid{gap:4px}
- .staff-calendar-day{min-height:46px;padding:5px 1px}
- .staff-dashboard-page .staff-calendar-day{min-height:54px;border-radius:9px}
- .staff-dashboard-page .staff-calendar-grid{gap:4px}
- .staff-dashboard-page .staff-calendar-day>small{min-width:15px;padding:2px 4px;font-size:9px}
- .staff-dashboard-page .staff-calendar-dots{gap:3px}
- .staff-dashboard-page .staff-calendar-dots i{width:6px;height:6px}
- .staff-dashboard-page .staff-calendar-legend>span:not(.staff-no-events){padding:4px 6px;font-size:9px}
- .staff-dashboard-page .staff-day-event{grid-template-columns:50px minmax(0,1fr);padding:10px}
- .staff-calendar-toolbar{grid-template-columns:32px minmax(0,1fr) 32px}
- .staff-calendar-toolbar>a{width:31px;height:31px}
- .staff-calendar-toolbar>strong{font-size:13px}
- .staff-calendar-weekday{font-size:9px}
- .staff-day-event{grid-template-columns:46px minmax(0,1fr);padding:9px}
+.staff-dashboard-page .staff-calendar-panel {
+    position: relative;
+    overflow: hidden;
+    border-color: #c9def4;
+    background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+    box-shadow: 0 12px 30px #123b7014;
+}
+.staff-dashboard-page .staff-calendar-panel::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #1769d2, #39a0ee);
+    content: "";
+}
+.staff-dashboard-page .staff-calendar-panel .staff-panel-heading {
+    padding-top: 3px;
+    margin-bottom: 16px;
+}
+.staff-dashboard-page .staff-calendar-panel .staff-panel-heading .role-kicker {
+    color: #1769d2;
+    letter-spacing: 0.09em;
+}
+.staff-dashboard-page .staff-calendar-panel .staff-panel-heading h2 {
+    color: #15385f;
+    font-size: 21px;
+}
+.staff-dashboard-page .staff-today-link {
+    border-color: #1769d2;
+    background: #1769d2;
+    color: #fff;
+    box-shadow: 0 4px 12px #1769d226;
+}
+.staff-dashboard-page .staff-today-link:hover {
+    border-color: #1059b8;
+    background: #1059b8;
+}
+.staff-dashboard-page .staff-calendar-toolbar {
+    margin-bottom: 14px;
+}
+.staff-dashboard-page .staff-calendar-toolbar > a {
+    border-color: #d3e2f2;
+    background: #fff;
+    box-shadow: 0 2px 6px #123b700a;
+}
+.staff-dashboard-page .staff-calendar-toolbar > a:hover {
+    border-color: #1769d2;
+    background: #edf5ff;
+}
+.staff-dashboard-page .staff-calendar-toolbar > strong {
+    color: #15385f;
+    font-size: 16px;
+}
+.staff-dashboard-page .staff-calendar-grid {
+    gap: 6px;
+}
+.staff-dashboard-page .staff-calendar-weekday {
+    padding: 7px 0;
+    color: #58728d;
+    font-size: 11px;
+}
+.staff-dashboard-page .staff-calendar-day {
+    min-height: 62px;
+    gap: 5px;
+    padding: 8px 2px;
+    border-color: #dce7f2;
+    border-radius: 11px;
+    box-shadow: 0 2px 5px #123b7008;
+}
+.staff-dashboard-page .staff-calendar-day:hover {
+    z-index: 1;
+    transform: translateY(-2px);
+    border-color: #7fb3eb;
+    background: #f1f7ff;
+    box-shadow: 0 6px 14px #1769d21a;
+}
+.staff-dashboard-page .staff-calendar-day.has-schedules {
+    border-color: #b9d6f6;
+    background: linear-gradient(180deg, #f2f8ff, #eaf3ff);
+    color: #174f91;
+    box-shadow:
+        inset 0 0 0 1px #fff,
+        0 2px 7px #1769d214;
+}
+.staff-dashboard-page .staff-calendar-day.has-schedules:hover {
+    border-color: #1769d2;
+    background: #e4f0ff;
+}
+.staff-dashboard-page .staff-calendar-day.is-outside.has-schedules {
+    border-color: #e0eaf5;
+    background: #f6f9fd;
+    color: #9bacc0;
+    box-shadow: none;
+}
+.staff-dashboard-page .staff-calendar-day.is-today {
+    border: 2px solid #1769d2;
+    background: #e7f2ff;
+    color: #1257a5;
+    box-shadow: 0 0 0 3px #1769d21a;
+}
+.staff-dashboard-page .staff-calendar-day.is-selected {
+    z-index: 1;
+    border-color: #125dbb;
+    background: linear-gradient(145deg, #1769d2, #0f57b5);
+    color: #fff;
+    box-shadow:
+        0 0 0 3px #1769d226,
+        0 7px 16px #1769d233;
+}
+.staff-dashboard-page .staff-calendar-day.is-selected .staff-calendar-date {
+    color: #fff;
+}
+.staff-dashboard-page .staff-calendar-day.is-selected .staff-calendar-dots i {
+    box-shadow: 0 0 0 2px #ffffffd9;
+}
+.staff-dashboard-page .staff-calendar-day.is-selected > small {
+    border: 1px solid #ffffff55;
+    background: #ffffff24;
+    color: #fff;
+}
+.staff-dashboard-page .staff-calendar-date {
+    font-size: 13px;
+    font-weight: 700;
+}
+.staff-dashboard-page .staff-calendar-dots {
+    gap: 4px;
+    min-height: 8px;
+}
+.staff-dashboard-page .staff-calendar-dots i {
+    width: 7px;
+    height: 7px;
+    box-shadow: 0 0 0 1px #fff;
+}
+.staff-dashboard-page .staff-calendar-day > small {
+    min-width: 17px;
+    padding: 3px 5px;
+    border-radius: 99px;
+    background: #dcecff;
+    color: #175ba7;
+    font-size: 10px;
+    font-weight: 800;
+    text-align: center;
+}
+.staff-dashboard-page .staff-calendar-legend {
+    gap: 7px;
+    margin-top: 13px;
+    padding-bottom: 14px;
+}
+.staff-dashboard-page .staff-calendar-legend > span:not(.staff-no-events) {
+    gap: 6px;
+    padding: 5px 8px;
+    border: 1px solid #e1eaf4;
+    border-radius: 99px;
+    background: #fff;
+    color: #526b84;
+    font-size: 10px;
+    box-shadow: 0 2px 5px #123b7008;
+}
+.staff-dashboard-page .staff-calendar-legend i {
+    width: 8px;
+    height: 8px;
+    box-shadow: 0 0 0 2px
+        color-mix(in srgb, var(--category-color, #94a3b8) 16%, white);
+}
+.staff-dashboard-page .staff-selected-day {
+    margin-top: 15px;
+    padding-top: 13px;
+    border-top: 1px solid #dce8f4;
+}
+.staff-dashboard-page .staff-selected-day-heading {
+    margin-bottom: 10px;
+}
+.staff-dashboard-page .staff-selected-day-heading h3 {
+    color: #15385f;
+    font-size: 15px;
+}
+.staff-dashboard-page .staff-selected-day-heading > span {
+    background: #e8f2ff;
+    color: #175ba7;
+    font-size: 12px;
+}
+.staff-dashboard-page .staff-day-event {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 11px;
+    margin-top: 9px;
+    padding: 12px;
+    border-color: #dce7f2;
+    border-left: 4px solid var(--category-color, #94a3b8);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 3px 9px #123b700a;
+    transition:
+        transform 0.15s,
+        border-color 0.15s,
+        box-shadow 0.15s;
+}
+.staff-dashboard-page .staff-day-event:hover {
+    transform: translateY(-1px);
+    border-color: var(--category-color, #1769d2);
+    box-shadow: 0 7px 16px #123b7017;
+}
+.staff-dashboard-page .staff-day-event time {
+    display: grid;
+    min-height: 31px;
+    place-items: center;
+    align-self: start;
+    border: 1px solid #d9e8f8;
+    border-radius: 8px;
+    background: #eef6ff;
+    color: #145eb8;
+    font-size: 13px;
+}
+.staff-dashboard-page .staff-day-event strong {
+    color: #183d65;
+    font-size: 13px;
+}
+.staff-dashboard-page .staff-day-event small {
+    font-size: 11px;
+}
+.staff-dashboard-page .staff-no-day-events {
+    border-color: #d6e4f2;
+    background: #fff;
+    font-size: 13px;
+}
+@media (max-width: 980px) {
+    .staff-dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .staff-calendar-panel {
+        order: -1;
+    }
+}
+@media (max-width: 650px) {
+    .staff-dashboard-page .role-topbar {
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+    }
+    .staff-dashboard-page .role-brand {
+        font-size: 17px;
+    }
+    .staff-dashboard-page .role-nav {
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        max-width: 100%;
+        padding: 2px 0;
+        scrollbar-width: none;
+    }
+    .staff-dashboard-page .role-nav::-webkit-scrollbar {
+        display: none;
+    }
+    .staff-dashboard-page .role-nav a {
+        flex: none;
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+    .staff-dashboard-page .role-account {
+        align-self: stretch;
+        margin-left: auto;
+        gap: 7px;
+        padding: 4px;
+    }
+    .staff-dashboard-page .role-account-details small {
+        display: none !important;
+    }
+    .staff-dashboard-page .role-account-details strong {
+        max-width: 90px;
+        font-size: 11px;
+    }
+    .staff-dashboard-page .role-account-icon {
+        width: 30px;
+        height: 30px;
+        flex-basis: 30px;
+    }
+    .staff-dashboard-page .role-logout {
+        min-height: 30px;
+        padding: 0 8px;
+        font-size: 10px;
+    }
+    .staff-dashboard-page .role-main.staff-dashboard {
+        width: calc(100% - 28px);
+        margin: 18px auto 30px;
+    }
+    .staff-hero {
+        min-height: 0;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 14px;
+        padding: 21px 18px;
+    }
+    .staff-hero::after {
+        right: -80px;
+        top: -70px;
+        width: 160px;
+        height: 160px;
+        opacity: 0.55;
+    }
+    .staff-hero .role-button {
+        width: 100%;
+    }
+    .staff-dashboard .role-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+        margin-bottom: 13px;
+    }
+    .staff-dashboard .role-stat {
+        min-height: 96px;
+        padding: 13px 11px 12px 15px;
+    }
+    .staff-dashboard .role-stat > span {
+        font-size: 11px;
+        line-height: 1.4;
+    }
+    .staff-dashboard .role-stat > strong {
+        font-size: 25px;
+    }
+    .staff-dashboard .role-stat > small {
+        font-size: 9px;
+    }
+    .staff-dashboard-grid {
+        gap: 12px;
+    }
+    .staff-ticket-panel,
+    .staff-calendar-panel {
+        padding: 15px;
+    }
+    .staff-panel-heading h2 {
+        font-size: 18px;
+    }
+    .staff-ticket-tabs {
+        margin-right: -5px;
+        margin-left: -5px;
+    }
+    .staff-ticket-tabs button {
+        padding: 8px;
+        font-size: 11px;
+    }
+    .staff-category-filter {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .staff-category-filter select {
+        width: 100%;
+        min-width: 0;
+    }
+    .staff-ticket-item {
+        padding: 12px;
+    }
+    .staff-ticket-item h3 {
+        font-size: 15px;
+    }
+    .staff-ticket-meta {
+        font-size: 11px;
+    }
+    .staff-calendar-grid {
+        gap: 4px;
+    }
+    .staff-calendar-day {
+        min-height: 46px;
+        padding: 5px 1px;
+    }
+    .staff-dashboard-page .staff-calendar-day {
+        min-height: 54px;
+        border-radius: 9px;
+    }
+    .staff-dashboard-page .staff-calendar-grid {
+        gap: 4px;
+    }
+    .staff-dashboard-page .staff-calendar-day > small {
+        min-width: 15px;
+        padding: 2px 4px;
+        font-size: 9px;
+    }
+    .staff-dashboard-page .staff-calendar-dots {
+        gap: 3px;
+    }
+    .staff-dashboard-page .staff-calendar-dots i {
+        width: 6px;
+        height: 6px;
+    }
+    .staff-dashboard-page .staff-calendar-legend > span:not(.staff-no-events) {
+        padding: 4px 6px;
+        font-size: 9px;
+    }
+    .staff-dashboard-page .staff-day-event {
+        grid-template-columns: 50px minmax(0, 1fr);
+        padding: 10px;
+    }
+    .staff-calendar-toolbar {
+        grid-template-columns: 32px minmax(0, 1fr) 32px;
+    }
+    .staff-calendar-toolbar > a {
+        width: 31px;
+        height: 31px;
+    }
+    .staff-calendar-toolbar > strong {
+        font-size: 13px;
+    }
+    .staff-calendar-weekday {
+        font-size: 9px;
+    }
+    .staff-day-event {
+        grid-template-columns: 46px minmax(0, 1fr);
+        padding: 9px;
+    }
 }
 
-.staff-calendar-period{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:-3px 0 12px;padding:4px;border:1px solid #e1eaf3;border-radius:11px;background:#f2f6fb}
-.staff-calendar-period a{display:flex;min-height:34px;align-items:center;justify-content:center;gap:7px;border-radius:8px;color:#647b93;font-size:11px;font-weight:700;text-decoration:none;transition:background .15s,color .15s,box-shadow .15s}
-.staff-calendar-period a:hover{background:#fff;color:#1769d2}
-.staff-calendar-period a.is-active{background:#fff;box-shadow:0 2px 8px #123b7014;color:#1769d2}
-.staff-calendar-toolbar>a{font-size:13px!important}
-.staff-calendar-grid.is-week-view .staff-calendar-day{min-height:70px}
-.staff-today-link{display:inline-flex;align-items:center;gap:6px}
-@media(max-width:520px){.staff-calendar-period a{font-size:10px}.staff-calendar-grid.is-week-view .staff-calendar-day{min-height:58px}}
+.staff-calendar-period {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin: -3px 0 12px;
+    padding: 4px;
+    border: 1px solid #e1eaf3;
+    border-radius: 11px;
+    background: #f2f6fb;
+}
+.staff-calendar-period a {
+    display: flex;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border-radius: 8px;
+    color: #647b93;
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+    transition:
+        background 0.15s,
+        color 0.15s,
+        box-shadow 0.15s;
+}
+.staff-calendar-period a:hover {
+    background: #fff;
+    color: #1769d2;
+}
+.staff-calendar-period a.is-active {
+    background: #fff;
+    box-shadow: 0 2px 8px #123b7014;
+    color: #1769d2;
+}
+.staff-calendar-toolbar > a {
+    font-size: 13px !important;
+}
+.staff-calendar-grid.is-week-view .staff-calendar-day {
+    min-height: 70px;
+}
+.staff-today-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+@media (max-width: 520px) {
+    .staff-calendar-period a {
+        font-size: 10px;
+    }
+    .staff-calendar-grid.is-week-view .staff-calendar-day {
+        min-height: 58px;
+    }
+}

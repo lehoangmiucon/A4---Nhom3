@@ -32,16 +32,16 @@ class UserController extends Controller
             };
         }
         if (!empty($filters['category'])) {
-            $query->whereHas('categories', fn ($categories) => $categories->whereKey($filters['category']));
+            $query->whereHas('categories', fn($categories) => $categories->whereKey($filters['category']));
         }
         if (!empty($filters['search'])) {
             $search = trim($filters['search']);
             $digits = preg_replace('/\D+/', '', $search);
-            $query->where(fn ($users) => $users
+            $query->where(fn($users) => $users
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%")
                 ->orWhere('phone', 'like', "%{$search}%")
-                ->when($digits !== '', fn ($users) => $users->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', '') LIKE ?", ["%{$digits}%"])));
+                ->when($digits !== '', fn($users) => $users->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', '') LIKE ?", ["%{$digits}%"])));
         }
         $ids = $query->orderBy('name')->pluck('id');
         return response()->json(['data' => ['ids' => $ids, 'count' => $ids->count()]]);

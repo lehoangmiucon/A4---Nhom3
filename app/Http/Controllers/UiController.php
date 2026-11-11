@@ -21,7 +21,7 @@ class UiController extends Controller
         $path = trim($path ?: 'index', '/');
         if (str_ends_with($path, '.html')) {
             $cleanPath = substr($path, 0, -5);
-            return redirect(url('/'.$section.'/'.$cleanPath).($request->getQueryString() ? '?'.$request->getQueryString() : ''), 301);
+            return redirect(url('/' . $section . '/' . $cleanPath) . ($request->getQueryString() ? '?' . $request->getQueryString() : ''), 301);
         }
         if (!$request->user()) return redirect(url('/auth/login'));
         abort_if($request->user()->is_deleted, 403, 'Tai khoan da bi khoa.');
@@ -80,7 +80,7 @@ class UiController extends Controller
             $data['dashboardTodayCount'] = $data['dashboardTotal'];
             $data['dashboardUnassignedCount'] = (clone $periodTickets)->whereIn('status', ['new', 'reopened'])->count();
             $data['dashboardTeacherCount'] = (clone $periodTickets)
-                ->whereHas('reporter', fn ($reporter) => $reporter->where('role', 'teacher'))->count();
+                ->whereHas('reporter', fn($reporter) => $reporter->where('role', 'teacher'))->count();
             $data['dashboardResolvedCount'] = $data['dashboardCounts']['resolved'] ?? 0;
             $data['dashboardInProgressCount'] = $data['dashboardCounts']['in_progress'] ?? 0;
             $data['weeklyTicketCount'] = $data['dashboardTotal'];
@@ -126,7 +126,7 @@ class UiController extends Controller
         $counts = (clone $periodTickets)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
         $total = (clone $periodTickets)->count();
         $teacherReports = (clone $periodTickets)
-            ->whereHas('reporter', fn ($reporter) => $reporter->where('role', 'teacher'))->count();
+            ->whereHas('reporter', fn($reporter) => $reporter->where('role', 'teacher'))->count();
         $resolved = (clone $periodTickets)->whereNotNull('resolved_at')->get(['created_at', 'resolved_at']);
         $averageMinutes = $resolved->avg(fn($ticket) => $ticket->created_at->diffInMinutes($ticket->resolved_at));
         $categories = Category::query()
@@ -222,7 +222,7 @@ class UiController extends Controller
         }
         if ($section === 'admin' && $path === 'pages/schedule') {
             $data['schedules'] = TicketSchedule::with(['ticket.room.building', 'ticket.category', 'staff'])->where('status', '!=', 'cancelled')->orderBy('starts_at')->get();
-            $data['scheduleEvents'] = $data['schedules']->map(fn ($schedule) => [
+            $data['scheduleEvents'] = $data['schedules']->map(fn($schedule) => [
                 'id' => $schedule->id,
                 'ticket_id' => $schedule->ticket_id,
                 'ticket_number' => $schedule->ticket->ticket_number,
@@ -472,7 +472,7 @@ class UiController extends Controller
         return $notifications
             ->groupBy(function ($notification) {
                 $ticketId = $notification->data['ticket_id'] ?? null;
-                return $ticketId ? 'ticket:'.$ticketId : 'notification:'.$notification->id;
+                return $ticketId ? 'ticket:' . $ticketId : 'notification:' . $notification->id;
             })
             ->map(function (Collection $items) {
                 $latest = $items->first();
@@ -483,10 +483,10 @@ class UiController extends Controller
                     'ticket_id' => $ticketId,
                     'count' => $items->count(),
                     'unread_count' => $items->whereNull('read_at')->count(),
-                    'count_label' => $items->count().' cập nhật'.($items->whereNull('read_at')->count() ? ' | '.$items->whereNull('read_at')->count().' chưa đọc' : ''),
+                    'count_label' => $items->count() . ' cập nhật' . ($items->whereNull('read_at')->count() ? ' | ' . $items->whereNull('read_at')->count() . ' chưa đọc' : ''),
                     'read_url' => $ticketId
-                        ? url('/api/notifications/tickets/'.$ticketId.'/read')
-                        : url('/api/notifications/'.$latest->id.'/read'),
+                        ? url('/api/notifications/tickets/' . $ticketId . '/read')
+                        : url('/api/notifications/' . $latest->id . '/read'),
                 ];
             })
             ->values();

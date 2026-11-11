@@ -96,7 +96,7 @@ class AuthController extends Controller
         }
 
         try {
-            DB::transaction(fn () => $this->sendEmailOtp($user));
+            DB::transaction(fn() => $this->sendEmailOtp($user));
         } catch (TransportExceptionInterface $exception) {
             throw ValidationException::withMessages(['email' => 'Chưa thể gửi lại mã OTP. Vui lòng thử lại sau ít phút.']);
         }
@@ -267,7 +267,7 @@ class AuthController extends Controller
             return response()->json(['message' => $message]);
         }
 
-        RateLimiter::clear('password-reset:'.hash('sha256', $email));
+        RateLimiter::clear('password-reset:' . hash('sha256', $email));
         return response()->json(['message' => $message]);
     }
 
@@ -279,7 +279,7 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
         $email = Str::lower(trim($data['email']));
-        $attemptKey = 'password-reset:'.hash('sha256', $email);
+        $attemptKey = 'password-reset:' . hash('sha256', $email);
         if (RateLimiter::tooManyAttempts($attemptKey, 5)) {
             throw ValidationException::withMessages(['otp' => 'Bạn đã nhập sai mã quá nhiều lần. Hãy yêu cầu mã mới rồi thử lại.']);
         }
@@ -298,9 +298,11 @@ class AuthController extends Controller
 
         DB::transaction(function () use ($user, $otp, $data, $email) {
             $lockedOtp = DB::table('email_otps')->where('id', $otp->id)->lockForUpdate()->first();
-            if (! $lockedOtp || $lockedOtp->verified_at || (int) $lockedOtp->attempts >= 5
+            if (
+                ! $lockedOtp || $lockedOtp->verified_at || (int) $lockedOtp->attempts >= 5
                 || now()->greaterThanOrEqualTo($lockedOtp->expires_at)
-                || ! Hash::check($data['otp'], $lockedOtp->code_hash)) {
+                || ! Hash::check($data['otp'], $lockedOtp->code_hash)
+            ) {
                 throw ValidationException::withMessages(['otp' => 'Mã OTP không hợp lệ hoặc đã hết hạn. Hãy yêu cầu mã mới.']);
             }
             $lockedUser = User::whereKey($user->id)->lockForUpdate()->firstOrFail();

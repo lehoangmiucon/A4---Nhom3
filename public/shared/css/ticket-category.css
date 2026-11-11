@@ -7,12 +7,24 @@
     max-width: 100%;
     padding: 4px 9px;
     border: 1px solid #dce5ef;
-    border-color: color-mix(in srgb, var(--ticket-category-color, #64748b) 24%, white);
+    border-color: color-mix(
+        in srgb,
+        var(--ticket-category-color, #64748b) 24%,
+        white
+    );
     border-radius: 8px;
     background: #f1f5f9;
-    background: color-mix(in srgb, var(--ticket-category-color, #64748b) 10%, white);
+    background: color-mix(
+        in srgb,
+        var(--ticket-category-color, #64748b) 10%,
+        white
+    );
     color: #40566d;
-    color: color-mix(in srgb, var(--ticket-category-color, #64748b) 35%, #17324d);
+    color: color-mix(
+        in srgb,
+        var(--ticket-category-color, #64748b) 35%,
+        #17324d
+    );
     font-size: 11px;
     font-weight: 600;
     line-height: 1.4;
@@ -21,7 +33,7 @@
 }
 
 .ticket-category-badge::before {
-    content: '';
+    content: "";
     flex: 0 0 6px;
     width: 6px;
     height: 6px;
