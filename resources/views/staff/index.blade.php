@@ -51,7 +51,7 @@
                     <select id="staff-category-filter">
                         <option value="">Tất cả danh mục</option>
                         @foreach($categories as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            <option value="{{ $category->id }}" data-color="{{ $category->color }}">{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </label>

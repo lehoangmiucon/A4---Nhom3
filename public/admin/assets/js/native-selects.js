@@ -12,6 +12,19 @@
     return explicit.replace(/\s+/g, ' ').trim() || 'lựa chọn';
   };
 
+  const setOptionLabel = (element, option) => {
+    element.textContent = option?.textContent.trim() || 'Chọn…';
+    const color = option?.dataset.color || '';
+    if (!/^#[0-9a-fA-F]{6}$/.test(color)) return;
+    const dot = document.createElement('i');
+    dot.setAttribute('aria-hidden', 'true');
+    Object.assign(dot.style, {
+      display: 'inline-block', width: '8px', height: '8px', marginRight: '8px',
+      borderRadius: '50%', backgroundColor: color, verticalAlign: 'middle',
+    });
+    element.prepend(dot);
+  };
+
   function enhance(select) {
     if (skip(select) || !select.options.length || select.hidden) return;
 
@@ -39,7 +52,9 @@
     trigger.disabled = select.disabled;
     const value = document.createElement('span');
     const arrow = document.createElement('i');
-    arrow.className = 'fa-solid fa-chevron-down';
+    arrow.className = 'helpdesk-select-arrow';
+    arrow.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+    Object.assign(arrow.style, { display: 'inline-flex', width: '14px', height: '14px' });
     arrow.setAttribute('aria-hidden', 'true');
     trigger.append(value, arrow);
 
@@ -69,7 +84,7 @@
     }
     function sync() {
       const selected = select.selectedOptions[0];
-      value.textContent = selected?.textContent.trim() || 'Chọn…';
+      setOptionLabel(value, selected);
       trigger.disabled = select.disabled;
       trigger.classList.toggle('is-placeholder', !select.value);
       optionButtons.forEach((button, index) => {
@@ -89,9 +104,11 @@
         item.disabled = option.disabled || option.hidden;
         item.hidden = option.hidden;
         const text = document.createElement('span');
-        text.textContent = option.textContent.trim();
+        setOptionLabel(text, option);
         const check = document.createElement('i');
-        check.className = 'fa-solid fa-check';
+        check.className = 'helpdesk-select-check';
+        check.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg>';
+        Object.assign(check.style, { display: 'inline-flex', width: '14px', height: '14px' });
         check.setAttribute('aria-hidden', 'true');
         item.append(text, check);
         item.addEventListener('click', () => {
@@ -152,7 +169,7 @@
     });
     select.addEventListener('input', sync);
     select.form?.addEventListener('reset', () => window.setTimeout(sync, 0));
-    new MutationObserver(rebuild).observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'hidden', 'label', 'value'] });
+    new MutationObserver(rebuild).observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'hidden', 'label', 'value', 'data-color'] });
     rebuild();
   }
 

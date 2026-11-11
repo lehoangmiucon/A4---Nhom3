@@ -43,6 +43,6 @@
     <script src="{{ url('/admin/assets/js/image-lightbox.js?v=20261104-lightbox1') }}"></script>
     <script src="{{ url('/admin/assets/js/period-select.js?v=20261103-period-menu2') }}"></script>
     <script src="{{ url('/admin/assets/js/notification-groups.js?v=20261110-read-all1') }}"></script>
-    <script src="{{ url('/admin/assets/js/native-selects.js?v=20261110-custom-select1') }}"></script>
+    <script src="{{ url('/admin/assets/js/native-selects.js?v=20261111-categorymenu2') }}"></script>
 </body>
 </html>
