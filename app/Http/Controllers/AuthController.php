@@ -55,22 +55,52 @@ class AuthController extends Controller
     {
         $data = $request->validate(['email' => ['required', 'email'], 'otp' => ['required', 'digits:6']]);
         $email = Str::lower($data['email']);
+        $key = 'verify-email:' . hash('sha256', $email);
         $purger->handle();
-        if (! User::where('email', $email)->exists()) {
-            throw ValidationException::withMessages(['otp' => 'Không tìm thấy tài khoản chưa xác thực. Nếu tài khoản đã quá hạn 24 giờ, vui lòng đăng ký lại.']);
-        }
-        $otp = DB::table('email_otps')->where('email', $email)->where('purpose', 'email_verification')
-            ->whereNull('verified_at')->latest('id')->first();
 
-        if ($otp && now()->greaterThanOrEqualTo($otp->expires_at)) {
-            throw ValidationException::withMessages(['otp' => 'Mã OTP đã hết hạn. Bấm “Gửi lại mã OTP” để nhận mã mới.']);
-        }
-        if (!$otp || !Hash::check($data['otp'], $otp->code_hash)) {
-            throw ValidationException::withMessages(['otp' => 'Mã OTP không đúng hoặc đã được sử dụng.']);
-        }
+        $error = DB::transaction(function () use ($data, $email, $key): ?string {
+            // Serialize verification and resend requests for the same account.
+            $user = User::where('email', $email)->lockForUpdate()->first();
+            if (!$user || $user->email_verified_at) {
+                return 'Không tìm thấy tài khoản chưa xác thực. Nếu tài khoản đã quá hạn 24 giờ, vui lòng đăng ký lại.';
+            }
 
-        User::where('email', $email)->update(['email_verified_at' => now()]);
-        DB::table('email_otps')->where('id', $otp->id)->update(['verified_at' => now(), 'updated_at' => now()]);
+            if (RateLimiter::tooManyAttempts($key, 5)) {
+                $seconds = RateLimiter::availableIn($key);
+                return "Bạn đã thử xác thực quá nhiều lần. Vui lòng thử lại sau {$seconds} giây hoặc bấm “Gửi lại mã OTP” để nhận mã mới.";
+            }
+
+            RateLimiter::hit($key, 600);
+            $otp = DB::table('email_otps')->where('email', $email)->where('purpose', 'email_verification')
+                ->whereNull('verified_at')->latest('id')->lockForUpdate()->first();
+
+            if (!$otp) {
+                return 'Mã OTP không đúng hoặc đã được sử dụng.';
+            }
+
+            $lockedMessage = 'Mã OTP đã bị khóa do nhập sai 5 lần. Bấm “Gửi lại mã OTP” để nhận mã mới.';
+            if ((int) $otp->attempts >= 5) {
+                return $lockedMessage;
+            }
+            if (now()->greaterThanOrEqualTo($otp->expires_at)) {
+                return 'Mã OTP đã hết hạn. Bấm “Gửi lại mã OTP” để nhận mã mới.';
+            }
+            if (!Hash::check($data['otp'], $otp->code_hash)) {
+                DB::table('email_otps')->where('id', $otp->id)->increment('attempts', 1, ['updated_at' => now()]);
+                $remaining = 5 - ((int) $otp->attempts + 1);
+                return $remaining > 0 ? "Mã OTP không đúng. Bạn còn {$remaining} lần thử." : $lockedMessage;
+            }
+
+            $user->forceFill(['email_verified_at' => now()])->save();
+            DB::table('email_otps')->where('id', $otp->id)->update(['verified_at' => now(), 'updated_at' => now()]);
+            RateLimiter::clear($key);
+            return null;
+        });
+
+        // Throw after commit so a failed OTP does not roll back its attempt count.
+        if ($error !== null) {
+            throw ValidationException::withMessages(['otp' => $error]);
+        }
 
         if ($request->hasSession()) {
             $request->session()->flash('registration_success', 'Email đã được xác thực. Bạn có thể đăng nhập ngay.');
@@ -83,24 +113,33 @@ class AuthController extends Controller
     public function resendOtp(Request $request, PurgeExpiredUnverifiedAccounts $purger): JsonResponse
     {
         $data = $request->validate(['email' => ['required', 'email']]);
+        $email = Str::lower($data['email']);
         $purger->handle();
-        $user = User::where('email', Str::lower($data['email']))->whereNull('email_verified_at')->first();
-        if (!$user) return response()->json(['message' => 'Nếu tài khoản chưa xác thực và chưa quá 24 giờ, mã mới sẽ được gửi tới email. Nếu đã quá 24 giờ, vui lòng đăng ký lại.']);
-
-        $latestOtp = DB::table('email_otps')->where('email', $user->email)->where('purpose', 'email_verification')->latest('id')->first();
-        if ($latestOtp) {
-            $availableAt = \Illuminate\Support\Carbon::parse($latestOtp->created_at)->addSeconds(config('auth.email_otp_resend_seconds', 60));
-            if (now()->lessThan($availableAt)) {
-                $seconds = (int) ceil(now()->diffInSeconds($availableAt));
-                throw ValidationException::withMessages(['email' => "Vui lòng chờ {$seconds} giây trước khi gửi lại mã OTP."]);
-            }
-        }
 
         try {
-            DB::transaction(fn() => $this->sendEmailOtp($user));
+            $sent = DB::transaction(function () use ($email): bool {
+                $user = User::where('email', $email)->lockForUpdate()->first();
+                if (!$user || $user->email_verified_at) {
+                    return false;
+                }
+
+                $latestOtp = DB::table('email_otps')->where('email', $email)->where('purpose', 'email_verification')->latest('id')->first();
+                if ($latestOtp) {
+                    $availableAt = \Illuminate\Support\Carbon::parse($latestOtp->created_at)->addSeconds(config('auth.email_otp_resend_seconds', 60));
+                    if (now()->lessThan($availableAt)) {
+                        $seconds = (int) ceil(now()->diffInSeconds($availableAt));
+                        throw ValidationException::withMessages(['email' => "Vui lòng chờ {$seconds} giây trước khi gửi lại mã OTP."]);
+                    }
+                }
+
+                $this->sendEmailOtp($user);
+                RateLimiter::clear('verify-email:' . hash('sha256', $email));
+                return true;
+            });
         } catch (TransportExceptionInterface $exception) {
             throw ValidationException::withMessages(['email' => 'Chưa thể gửi lại mã OTP. Vui lòng thử lại sau ít phút.']);
         }
+        if (!$sent) return response()->json(['message' => 'Nếu tài khoản chưa xác thực và chưa quá 24 giờ, mã mới sẽ được gửi tới email. Nếu đã quá 24 giờ, vui lòng đăng ký lại.']);
         return response()->json(['message' => 'Đã gửi mã OTP mới nếu email thuộc tài khoản chưa xác thực.']);
     }
 
@@ -113,6 +152,7 @@ class AuthController extends Controller
             'email' => $user->email,
             'purpose' => 'email_verification',
             'code_hash' => Hash::make($code),
+            'attempts' => 0,
             'expires_at' => now()->addMinutes($expiresMinutes),
             'created_at' => now(),
             'updated_at' => now(),
