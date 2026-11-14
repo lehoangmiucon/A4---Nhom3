@@ -13,7 +13,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Quên mật khẩu · Helpdesk</title>
-    <link rel="stylesheet" href="assets/css/auth.css?v=20261109-password-reset1">
+    <link rel="stylesheet" href="assets/css/auth.css?v=20261114-otp-three-minutes1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" crossorigin="anonymous">
 @include('shared.password-visibility-assets')
 </head>
@@ -27,7 +27,7 @@
                 <h1>{{ $resetStep ? 'Tạo mật khẩu mới.' : 'Lấy lại quyền truy cập.' }}</h1>
                 <p>{{ $resetStep ? 'Nhập mã OTP trong email và đặt mật khẩu mới cho tài khoản của bạn.' : 'Chúng tôi sẽ gửi mã OTP đến email đã xác thực để bạn đặt lại mật khẩu.' }}</p>
             </div>
-            <div class="auth-aside-foot">Mã OTP có hiệu lực {{ config('auth.email_otp_expire_minutes', 5) }} phút.</div>
+            <div class="auth-aside-foot">Mã OTP có hiệu lực {{ config('auth.email_otp_expire_minutes', 3) }} phút.</div>
         </aside>
         <section class="auth-content">
             <div class="auth-card">
@@ -44,8 +44,9 @@
                                 <input class="otp-digit" type="text" inputmode="numeric" autocomplete="{{ $digit === 0 ? 'one-time-code' : 'off' }}" maxlength="6" aria-label="Chữ số thứ {{ $digit + 1 }}" aria-describedby="otp-help" data-otp-digit>
                                 @endfor
                         </div>
-                        <span class="role-form-note" id="otp-help">Mã có hiệu lực {{ config('auth.email_otp_expire_minutes', 5) }} phút.</span>
+                        <span class="role-form-note" id="otp-help">Mã có hiệu lực {{ config('auth.email_otp_expire_minutes', 3) }} phút.</span>
                     </div>
+                    <p class="otp-expiry" data-otp-expiry data-reset-field hidden></p>
                     <div class="role-field" data-reset-field><label for="new-password">Mật khẩu mới</label><input id="new-password" name="password" type="password" autocomplete="new-password" minlength="8" required></div>
                     <div class="role-field" data-reset-field><label for="password-confirmation">Xác nhận mật khẩu mới</label><input id="password-confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required></div>
                     <button class="role-button" type="submit" data-reset-field>Đặt lại mật khẩu</button>
@@ -53,7 +54,7 @@
                     <p class="api-feedback" data-api-feedback role="status" aria-live="polite" hidden></p>
                 </form>
                 @else
-                <form class="role-form" action="#" method="post" data-api-endpoint="/password/forgot" data-api-method="POST" data-success-redirect="forgot-password?step=reset" data-busy-label="Đang gửi OTP…" data-otp-resend-seconds="{{ config('auth.email_otp_resend_seconds', 60) }}">
+                <form class="role-form" action="#" method="post" data-api-endpoint="/password/forgot" data-api-method="POST" data-success-redirect="forgot-password?step=reset" data-busy-label="Đang gửi OTP…" data-otp-resend-seconds="{{ config('auth.email_otp_resend_seconds', 180) }}">
                     <div class="role-field"><label for="email">Email tài khoản</label><input id="email" name="email" type="email" autocomplete="email" value="{{ request()->query('email') }}" placeholder="Nhập email của bạn" required></div>
                     <button class="role-button" type="submit">Gửi mã OTP</button>
                     <p class="api-feedback" data-api-feedback role="status" aria-live="polite" hidden></p>
@@ -63,7 +64,7 @@
             </div>
         </section>
     </main>
-    <script src="assets/js/auth.js?v=20261109-password-reset1"></script>
+    <script src="assets/js/auth.js?v=20261114-otp-three-minutes1"></script>
 </body>
 
 </html>

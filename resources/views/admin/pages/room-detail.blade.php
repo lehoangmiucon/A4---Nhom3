@@ -45,7 +45,6 @@ $reportUrl = url('/r/'.urlencode($room->qr_code ?: $room->code));
                 <dd>{{ $room->tickets->whereNotIn('status', ['closed'])->count() }}</dd>
             </div>
         </dl>
-        <a class="button button-secondary" href="{{ $reportUrl }}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Mở biểu mẫu báo sự cố</a>
     </article>
 
     <article class="panel room-qr-card" id="room-qr-print-area">

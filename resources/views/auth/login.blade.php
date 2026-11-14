@@ -56,7 +56,7 @@
             </div>
         </section>
     </main>
-    <script src="assets/js/auth.js?v=20261110-password-eye1"></script>
+    <script src="assets/js/auth.js?v=20261114-otp-three-minutes1"></script>
 </body>
 
 </html>

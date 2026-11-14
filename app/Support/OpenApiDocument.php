@@ -195,12 +195,12 @@ class OpenApiDocument
     {
         return match ($action) {
             'AuthController@register' => 'Chỉ email @ut.edu.vn. Luôn tạo student; vai trò teacher do quản lý cấp.',
-            'AuthController@verifyOtp', 'AuthController@resendOtp' => 'OTP lấy từ email, hiệu lực 5 phút; gửi lại cách nhau tối thiểu 60 giây.',
+            'AuthController@verifyOtp', 'AuthController@resendOtp' => 'OTP lấy từ email, hiệu lực 3 phút; chỉ gửi lại sau 180 giây.',
             'AuthController@sendPasswordResetOtp' => 'Áp dụng mọi email tài khoản hoạt động đã xác thực, không giới hạn email trường.',
             'AuthController@resetPasswordWithOtp' => 'Đặt lại mật khẩu thu hồi các token cũ. Đăng nhập lại sau khi thành công.',
             'TicketController@index', 'TicketController@show' => 'Admin xem tất cả; staff xem phiếu được giao; student/teacher xem phiếu của mình. Customer không nhận ảnh sửa chữa nội bộ.',
             'TicketController@store' => 'Giáo viên được ưu tiên high. Nếu phòng/danh mục đã có phiếu đang xử lý, trả 200 và ticket_number thay vì tạo trùng.',
-            'TicketController@updateReport' => 'Chỉ người báo student/teacher và chỉ khi trạng thái new. Dùng POST multipart khi gửi ảnh.',
+            'TicketController@updateReport' => 'Chỉ người báo staff/student/teacher và chỉ khi trạng thái new. Dùng POST multipart khi gửi ảnh.',
             'TicketController@assign' => 'Bắt buộc chọn nhân viên, ngày giờ xử lý và nhập ghi chú phân công. Nhân viên phải có chuyên môn phù hợp. scheduled_at phải ở tương lai; gửi schedule_id khi sửa lịch. Lịch ngày đã qua chỉ được xem.',
             'TicketController@staffUpdate' => 'Cần xác nhận lịch trước. Trạng thái resolved cần ảnh minh chứng; dùng POST multipart để gửi ảnh.',
             'TicketController@close' => 'Chỉ duyệt phiếu resolved có ảnh sửa chữa và lịch đã được nhân viên xác nhận.',

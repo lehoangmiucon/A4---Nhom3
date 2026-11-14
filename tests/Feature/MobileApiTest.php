@@ -54,6 +54,80 @@ class MobileApiTest extends TestCase
         ]);
     }
 
+    #[\PHPUnit\Framework\Attributes\DataProvider('roomQrRoutes')]
+    public function test_room_qr_opens_login_and_keeps_the_room_after_login(string $route, string $role): void
+    {
+        $student = $this->user($role);
+        $room = $this->ticket($student)->room()->with('building')->firstOrFail();
+        $target = url('/customer/portal').'?'.http_build_query([
+            'room_code' => $room->qr_code,
+            'room_name' => $room->name,
+            'building_code' => $room->building->code,
+            'building_name' => $room->building->name,
+        ]);
+
+        $this->get($route.$room->qr_code)->assertRedirect(url('/auth/login'))
+            ->assertSessionHas('url.intended', $target);
+        $this->get('/auth/login')->assertOk()->assertSessionHas('url.intended', $target);
+        $this->postJson('/login', ['email' => $student->email, 'password' => 'Password123!'])
+            ->assertOk()->assertJsonPath('redirect', $target);
+        $this->assertAuthenticatedAs($student, 'web');
+        $this->get($target)->assertOk()->assertViewIs('customer.portal');
+        $this->get($route.$room->qr_code)->assertRedirect($target);
+    }
+
+    public static function roomQrRoutes(): array
+    {
+        return [
+            ['/r/', 'student'], ['/report/', 'student'],
+            ['/r/', 'teacher'], ['/report/', 'teacher'],
+            ['/r/', 'staff'], ['/report/', 'staff'],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('reporterRoles')]
+    public function test_staff_and_teacher_can_submit_photos_and_follow_their_own_reports(string $role): void
+    {
+        Storage::fake('public');
+        $reporter = $this->user($role);
+        $seed = $this->ticket($reporter);
+        $seed->update(['status' => 'closed']);
+        $payload = [
+            'room_code' => $seed->room->code, 'room_id' => $seed->room_id,
+            'building_code' => $seed->room->building->code, 'category_id' => $seed->category_id,
+            'title' => 'New reported issue', 'description' => 'Equipment needs checking',
+        ];
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9uoAAAAASUVORK5CYII=');
+        $response = $this->token($reporter)->postJson('/api/tickets', $payload + [
+            'attachments' => [UploadedFile::fake()->createWithContent('issue.png', $png)],
+        ])->assertCreated()->assertJsonPath('data.reporter_id', $reporter->id)
+            ->assertJsonPath('data.status', 'new')
+            ->assertJsonPath('data.priority', $role === 'teacher' ? 'high' : 'normal');
+        $created = Ticket::findOrFail($response->json('data.id'));
+        Storage::disk('public')->assertExists($created->reportAttachments()->sole()->path);
+        $this->postJson('/api/tickets/'.$created->id, array_replace($payload, ['title' => 'Updated report']))
+            ->assertOk()->assertJsonPath('data.title', 'Updated report');
+        $other = $this->ticket($this->user('student'), $role === 'staff' ? $reporter : null);
+        $this->postJson('/api/tickets/'.$other->id, $payload)->assertForbidden();
+
+        $this->actingAs($reporter, 'web');
+        $this->get('/customer/portal')->assertOk()->assertViewIs('customer.portal');
+        $this->get('/admin/portal?room_code='.$seed->room->code)
+            ->assertRedirect(url('/customer/portal').'?room_code='.$seed->room->code);
+        $page = $this->get('/customer/tickets')->assertOk();
+        $this->assertEqualsCanonicalizing([$seed->id, $created->id], $page->viewData('tickets')->pluck('id')->all());
+        $this->get('/customer/ticket-detail?ticket='.$created->id)->assertOk();
+        $this->get('/customer/ticket-detail?ticket='.$other->id)->assertNotFound();
+        if ($role === 'staff') {
+            $this->get('/staff/index')->assertOk()->assertSee('Gửi sự cố')->assertSee('Phiếu đã gửi');
+        }
+    }
+
+    public static function reporterRoles(): array
+    {
+        return [['staff'], ['teacher']];
+    }
+
     public function test_registration_otp_and_bearer_login_work_without_web_session(): void
     {
         Mail::fake();

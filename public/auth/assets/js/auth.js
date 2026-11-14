@@ -200,38 +200,60 @@
         return Boolean(firstInvalid);
     };
 
-    const startResendCooldown = (button, restore = false) => {
+    const otpStorageKey = (form) => `helpdesk:otp-clock:${form?.dataset.apiEndpoint?.includes("password") ? "password_reset" : "email_verification"}:${form?.elements.email?.value.trim().toLowerCase() || ""}`;
+
+    const rememberOtpTiming = (form, payload) => {
+        const serverTime = Date.parse(payload.server_time);
+        const expires = Date.parse(payload.otp_expires_at);
+        const resend = Date.parse(payload.otp_resend_available_at);
+        if (![serverTime, expires, resend].every(Number.isFinite)) return null;
+        const timing = {
+            expires: Date.now() + expires - serverTime,
+            resend: Date.now() + resend - serverTime,
+        };
+        try { sessionStorage.setItem(otpStorageKey(form), JSON.stringify(timing)); } catch (_) {}
+        return timing;
+    };
+
+    const startResendCooldown = (button, restore = false, payload = null) => {
         if (!button) return;
         const label = "Gửi lại mã OTP";
-        const seconds = Number(button.form?.dataset.otpResendSeconds) || 60;
-        const email =
-            button.form?.elements.email?.value.trim().toLowerCase() || "";
-        const key = `helpdesk:otp-resend:${email}`;
-        let until = Date.now() + seconds * 1000;
+        const form = button.form;
+        const expiry = form?.querySelector("[data-otp-expiry]");
+        let timing = payload ? rememberOtpTiming(form, payload) : null;
         try {
-            const saved = Number(sessionStorage.getItem(key));
-            if (restore && saved > 0) until = saved;
-            sessionStorage.setItem(key, String(until));
-        } catch (_) {
-            /* The cooldown still works if storage is unavailable. */
+            if (!timing && restore) timing = JSON.parse(sessionStorage.getItem(otpStorageKey(form)));
+        } catch (_) {}
+        window.clearInterval(button.otpTimer);
+        if (!timing || !Number.isFinite(timing.expires) || !Number.isFinite(timing.resend)) {
+            if (expiry) expiry.hidden = true;
+            delete button.dataset.cooldown;
+            button.disabled = false;
+            button.textContent = label;
+            return;
         }
-        if (until <= Date.now()) return;
-        button.dataset.cooldown = "true";
-        button.disabled = true;
-        button.textContent = `Gửi lại sau ${Math.ceil((until - Date.now()) / 1000)}s`;
-        const timer = window.setInterval(() => {
-            const remaining = Math.max(
-                0,
-                Math.ceil((until - Date.now()) / 1000),
-            );
-            button.textContent = `Gửi lại sau ${remaining}s`;
-            if (remaining <= 0) {
-                window.clearInterval(timer);
+        const format = (seconds) => `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+        const tick = () => {
+            const remaining = Math.max(0, Math.ceil((timing.expires - Date.now()) / 1000));
+            const wait = Math.max(0, Math.ceil((timing.resend - Date.now()) / 1000));
+            if (expiry) {
+                expiry.hidden = false;
+                expiry.textContent = remaining > 0 ? `Mã OTP hết hạn sau ${format(remaining)}` : "Mã OTP đã hết hạn. Vui lòng gửi lại mã.";
+                expiry.classList.toggle("otp-expired", remaining === 0);
+            }
+            if (wait > 0) {
+                button.dataset.cooldown = "true";
+                button.disabled = true;
+                button.textContent = `Gửi lại sau ${format(wait)}`;
+            } else {
                 delete button.dataset.cooldown;
                 button.disabled = false;
                 button.textContent = label;
             }
-        }, 1000);
+            if (remaining === 0 && wait === 0) window.clearInterval(button.otpTimer);
+        };
+        button.otpTimer = window.setInterval(tick, 1000);
+        tick();
     };
 
     const setupOtpInputs = () => {
@@ -385,7 +407,7 @@
             form.addEventListener("input", revalidate);
             form.addEventListener("focusout", revalidate);
         });
-        if (new URLSearchParams(window.location.search).get("sent") === "1") {
+        {
             startResendCooldown(
                 document.querySelector(
                     '[data-api-action="/email/resend-otp"], [data-api-action="/password/forgot"]',
@@ -459,6 +481,7 @@
                 return;
             }
             if (form.dataset.successRedirect) {
+                rememberOtpTiming(form, payload);
                 const destination = new URL(
                     form.dataset.successRedirect,
                     document.baseURI,
@@ -495,6 +518,8 @@
                     "Đã lưu thành công.",
             );
             if (form.dataset.apiEndpoint === "/password/reset") {
+                window.clearInterval(form.querySelector('[data-api-action="/password/forgot"]')?.otpTimer);
+                try { sessionStorage.removeItem(otpStorageKey(form)); } catch (_) {}
                 form.reset();
                 form.querySelectorAll("[data-reset-field]").forEach((field) => {
                     field.hidden = true;
@@ -525,6 +550,7 @@
         const action = event.target.closest("[data-api-action]");
         if (!action) return;
         event.preventDefault();
+        if (action.disabled || action.dataset.cooldown === "true") return;
         const form = action.closest("form");
         const emailInput = form?.querySelector('[name="email"]');
         if (!emailInput) return;
@@ -566,7 +592,7 @@
                     action.dataset.apiAction,
                 )
             )
-                startResendCooldown(action);
+                startResendCooldown(action, false, payload);
         } catch (error) {
             showFeedback(
                 form,

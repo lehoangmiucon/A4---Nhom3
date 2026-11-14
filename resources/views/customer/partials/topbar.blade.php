@@ -1,10 +1,13 @@
 <header class="role-topbar customer-topbar">
-    <a class="role-brand" href="{{ url('/customer/index') }}" aria-label="Helpdesk · Tổng quan">
+    <a class="role-brand" href="{{ url($currentUser->role === 'staff' ? '/staff/index' : '/customer/index') }}" aria-label="Helpdesk · Tổng quan">
         <img class="role-brand-image" src="{{ url('/shared/images/helpdesk-logo.png') }}" alt="Helpdesk">
         <span class="customer-brand-caption">CỔNG HỖ TRỢ TRƯỜNG HỌC</span>
     </a>
 
-    <nav class="role-nav" aria-label="Điều hướng sinh viên">
+    <nav class="role-nav" aria-label="Điều hướng báo sự cố">
+        @if($currentUser->role === 'staff')
+            <a href="{{ url('/staff/index') }}">Công việc</a>
+        @endif
         <a class="{{ ($pagePath ?? '') === 'index' ? 'current' : '' }}" href="{{ url('/customer/index') }}">Tổng quan</a>
         <a class="{{ in_array($pagePath ?? '', ['tickets', 'ticket-detail'], true) ? 'current' : '' }}" href="{{ url('/customer/tickets') }}">Phiếu của tôi</a>
         <a class="{{ ($pagePath ?? '') === 'notifications' ? 'current' : '' }}" href="{{ url('/customer/notifications') }}">Thông báo

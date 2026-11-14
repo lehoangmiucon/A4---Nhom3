@@ -36,7 +36,7 @@
                     <div class="role-field"><label for="email">Email trường</label><input id="email" name="email" type="email" autocomplete="email" placeholder="mssv@ut.edu.vn" pattern="[^@\s]+@[uU][tT]\.[eE][dD][uU]\.[vV][nN]" title="Chỉ chấp nhận email trường có đuôi @ut.edu.vn" aria-describedby="school-email-help" data-school-email required><small class="role-form-note" id="school-email-help">Nhập đúng email do trường cấp. Mã xác thực sẽ được gửi vào hộp thư này.</small></div>
                     <div class="role-field"><label for="password">Mật khẩu</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="8" placeholder="Tối thiểu 8 ký tự" required></div>
                     <div class="role-field"><label for="password-confirmation">Xác nhận mật khẩu</label><input id="password-confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" placeholder="Nhập lại mật khẩu" required></div>
-                    <div class="auth-role-note">Tài khoản được tạo với vai trò <strong>Sinh viên</strong>. Mã OTP gồm 6 số có hiệu lực trong {{ config('auth.email_otp_expire_minutes', 5) }} phút. Nếu không xác thực trong 24 giờ, tài khoản sẽ bị xóa và bạn cần đăng ký lại.</div><button class="role-button" type="submit">Đăng ký và gửi mã OTP</button>
+                    <div class="auth-role-note">Tài khoản được tạo với vai trò <strong>Sinh viên</strong>. Mã OTP gồm 6 số có hiệu lực trong {{ config('auth.email_otp_expire_minutes', 3) }} phút. Nếu không xác thực trong 24 giờ, tài khoản sẽ bị xóa và bạn cần đăng ký lại.</div><button class="role-button" type="submit">Đăng ký và gửi mã OTP</button>
                     <p class="api-feedback" data-api-feedback role="status" aria-live="polite" hidden></p>
                 </form>
                 <div class="auth-switch">Đã nhận mã xác thực? <a href="verify-otp">Nhập mã OTP 6 chữ số</a></div>
@@ -44,6 +44,6 @@
             </div>
         </section>
     </main>
-    <script src="assets/js/auth.js?v=20261109-six-digit-otp5"></script>
+    <script src="assets/js/auth.js?v=20261114-otp-three-minutes1"></script>
 </body>
 </html>

@@ -34,7 +34,7 @@ http://<IP-máy-chủ>:8888/Laravelpro/helpdesk/public/api.
 Chỉ tự đăng ký yêu cầu email @ut.edu.vn và luôn tạo vai trò student; client không tự cấp quyền teacher/admin.
 Admin cấp quyền hoặc tạo tài khoản nhân viên/quản lý qua API quản lý.
 Quên mật khẩu áp dụng mọi email tài khoản đã xác thực và còn hoạt động.
-OTP hết hạn sau 5 phút; gửi lại cách nhau ít nhất 60 giây.
+OTP hết hạn sau 3 phút; chỉ được gửi lại sau 180 giây. Phản hồi gửi mã có server_time, otp_expires_at và otp_resend_available_at để web/mobile hiển thị đếm ngược.
 Sau xác thực email, gọi /auth/login nhận access_token, token_type và user.
 Sau đặt lại mật khẩu, đăng nhập lại. Phản hồi quên mật khẩu không tiết lộ email có tồn tại hay không.
 
@@ -77,6 +77,7 @@ Quét URL /r/{code} lấy code gọi /rooms/{code}. App tự tạo QR từ repor
 GET /tickets hỗ trợ search (hoặc q), status, category (tên), category_id, room_id,
 building (mã tòa), reporter_role, priority, period, from, to, page, per_page.
 Admin xem tất cả; staff xem phiếu được giao; student/teacher xem phiếu của mình.
+Nhân viên và giáo viên có thể gửi biểu mẫu tại /customer/portal hoặc quét QR phòng. Nhân viên xem phiếu đã gửi tại /customer/tickets; danh sách công việc vẫn chỉ gồm phiếu được giao. Người báo staff/student/teacher được sửa phiếu của mình khi còn chờ tiếp nhận.
 Customer nhận ảnh báo cáo; ảnh sửa chữa và ghi chú nội bộ của lịch không được trả cho customer.
 Các alias /admin/tickets và /staff/tickets dùng chung bộ lọc này.
 

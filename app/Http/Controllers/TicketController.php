@@ -215,7 +215,7 @@ class TicketController extends Controller
 
     public function updateReport(Request $request, Ticket $ticket): JsonResponse
     {
-        abort_unless(in_array($request->user()?->role, ['student', 'teacher'], true) && (int) $ticket->reporter_id === (int) $request->user()->id, 403, 'Bạn không có quyền sửa phiếu này.');
+        abort_unless(in_array($request->user()?->role, ['staff', 'student', 'teacher'], true) && (int) $ticket->reporter_id === (int) $request->user()->id, 403, 'Bạn không có quyền sửa phiếu này.');
         abort_unless($ticket->status === 'new', 422, 'Chỉ có thể sửa phiếu khi đang chờ tiếp nhận.');
 
         $data = $request->validate([

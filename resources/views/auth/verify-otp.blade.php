@@ -13,7 +13,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Xác thực email · Helpdesk</title>
-    <link rel="stylesheet" href="assets/css/auth.css?v=20261109-six-digit-otp5">
+    <link rel="stylesheet" href="assets/css/auth.css?v=20261114-otp-three-minutes1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" crossorigin="anonymous">
 </head>
 
@@ -30,7 +30,7 @@
             <div class="auth-card">
                 <h2>Kiểm tra email</h2>
                 <p>Nhập mã OTP 6 chữ số đã gửi đến <strong data-otp-email>email của bạn</strong>.</p>
-                <form class="role-form" action="#" method="post" data-api-endpoint="/email/verify-otp" data-success-redirect="login" data-busy-label="Đang xác thực…" data-otp-resend-seconds="{{ config('auth.email_otp_resend_seconds', 60) }}">
+                <form class="role-form" action="#" method="post" data-api-endpoint="/email/verify-otp" data-success-redirect="login" data-busy-label="Đang xác thực…" data-otp-resend-seconds="{{ config('auth.email_otp_resend_seconds', 180) }}">
                     <div class="role-field"><label for="email">Email đăng ký</label><input id="email" name="email" type="email" autocomplete="email" placeholder="ten@truong.edu.vn" required></div>
                     <div class="role-field otp-field">
                         <label id="otp-label">Mã xác thực OTP</label>
@@ -40,8 +40,9 @@
                                 <input class="otp-digit" type="text" inputmode="numeric" autocomplete="{{ $digit === 0 ? 'one-time-code' : 'off' }}" maxlength="6" aria-label="Chữ số thứ {{ $digit + 1 }}" aria-describedby="otp-help" data-otp-digit>
                             @endfor
                         </div>
-                        <span class="role-form-note" id="otp-help">Mã có hiệu lực {{ config('auth.email_otp_expire_minutes', 5) }} phút. Bạn có thể gửi lại mã trong 24 giờ; sau thời gian đó, tài khoản chưa xác thực sẽ bị xóa và cần đăng ký lại.</span>
+                        <span class="role-form-note" id="otp-help">Mã có hiệu lực {{ config('auth.email_otp_expire_minutes', 3) }} phút. Bạn có thể gửi lại mã trong 24 giờ; sau thời gian đó, tài khoản chưa xác thực sẽ bị xóa và cần đăng ký lại.</span>
                     </div>
+                    <p class="otp-expiry" data-otp-expiry hidden></p>
                     <button class="role-button" type="submit">Xác thực tài khoản</button>
                     <div class="role-form-note">Chưa thấy email? Kiểm tra mục Spam/Thư rác hoặc gửi lại mã bên dưới.</div><button class="role-button secondary" type="button" data-api-action="/email/resend-otp">Gửi lại mã OTP</button>
                     <p class="api-feedback" data-api-feedback role="status" aria-live="polite" hidden></p>
@@ -50,7 +51,7 @@
             </div>
         </section>
     </main>
-    <script src="assets/js/auth.js?v=20261109-six-digit-otp5"></script>
+    <script src="assets/js/auth.js?v=20261114-otp-three-minutes1"></script>
 </body>
 
 </html>

@@ -6,6 +6,8 @@
     <nav class="role-nav" aria-label="Điều hướng nhân viên">
         <a class="{{ in_array($pagePath ?? '', ['index', 'ticket-detail'], true) ? 'current' : '' }}" href="index">Công việc</a>
         <a class="{{ ($pagePath ?? '') === 'schedule' ? 'current' : '' }}" href="schedule">Lịch của tôi</a>
+        <a href="{{ url('/customer/tickets') }}">Phiếu đã gửi</a>
+        <a href="{{ url('/customer/portal') }}">Gửi sự cố</a>
         <a class="{{ ($pagePath ?? '') === 'notifications' ? 'current' : '' }}" href="notifications">Thông báo
             @if(($unreadNotificationCount ?? 0) > 0)<span class="role-nav-notification-badge" aria-label="{{ $unreadNotificationCount }} unread notifications">{{ min($unreadNotificationCount, 99) }}{{ $unreadNotificationCount > 99 ? '+' : '' }}</span>
             @endif
