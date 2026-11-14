@@ -15,11 +15,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+        $middleware->prependToGroup('api', \App\Http\Middleware\SwaggerTokenRequests::class);
         $middleware->alias([
             'role' => EnsureRole::class,
             'account.active' => EnsureAccountActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->shouldRenderJsonWhen(fn (\Illuminate\Http\Request $request, \Throwable $exception) =>
+            $request->is('api/*') || $request->expectsJson()
+        );
     })->create();

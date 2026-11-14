@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -33,6 +34,11 @@ class Ticket extends Model
     protected function casts(): array
     {
         return ['resolved_at' => 'datetime', 'closed_at' => 'datetime'];
+    }
+
+    public function scopePendingAssignment(Builder $query): Builder
+    {
+        return $query->whereIn('status', ['new', 'reopened'])->whereNull('assigned_to_id');
     }
 
     public function getPriorityLabelAttribute(): string

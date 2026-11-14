@@ -22,20 +22,20 @@ class PeriodRange
     {
         $now = now();
 
-        return [
-            match ($period) {
-                'day' => $now->copy()->startOfDay(),
-                'week' => $now->copy()->startOfWeek(Carbon::MONDAY),
-                'year' => $now->copy()->startOfYear(),
-                default => $now->copy()->startOfMonth(),
-            },
-            match ($period) {
-                'day' => $now->copy()->endOfDay(),
-                'week' => $now->copy()->endOfWeek(Carbon::SUNDAY),
-                'year' => $now->copy()->endOfYear(),
-                default => $now->copy()->endOfMonth(),
-            },
-        ];
+        $start = match ($period) {
+            'day' => $now->copy()->startOfDay(),
+            'week' => $now->copy()->startOfWeek(Carbon::MONDAY),
+            'year' => $now->copy()->startOfYear(),
+            default => $now->copy()->startOfMonth(),
+        };
+        $end = match ($period) {
+            'day' => $now->copy()->endOfDay(),
+            'week' => $start->copy()->addDays(5)->endOfDay(),
+            'year' => $now->copy()->endOfYear(),
+            default => $now->copy()->endOfMonth(),
+        };
+
+        return [$start, $end];
     }
 
     public static function title(string $period): string

@@ -136,6 +136,6 @@
     </main>
     <script src="{{ url('/customer/assets/js/portal-qr.js?v=20261105-building-room2') }}"></script>
     <script src="{{ url('/customer/assets/js/portal-attachments.js?v=20261104-preview1') }}"></script>
-    <script src="{{ url('/admin/assets/js/api-client.js?v=20261110-report-toast-center1') }}"></script>
+    <script src="{{ url('/admin/assets/js/api-client.js?v=20261113-duplicate-red1') }}"></script>
 </body>
 </html>

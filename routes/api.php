@@ -7,10 +7,17 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UiController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\ApiDashboardController;
+use App\Http\Controllers\ApiDirectoryController;
+use App\Http\Controllers\ApiScheduleController;
 use Illuminate\Support\Facades\Route;
 
 // Sanctum accepts stateful website sessions and Bearer tokens from mobile clients.
 Route::post('/auth/login', [AuthController::class, 'tokenLogin'])->middleware('throttle:10,1');
+Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+Route::post('/auth/email/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
+Route::post('/auth/email/resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:3,1');
 Route::post('/auth/logout', [AuthController::class, 'tokenLogout'])->middleware('auth:sanctum');
 Route::post('/auth/password/forgot', [AuthController::class, 'sendPasswordResetOtp'])->middleware('throttle:5,1');
 Route::post('/auth/password/reset', [AuthController::class, 'resetPasswordWithOtp'])->middleware('throttle:10,1');
@@ -20,9 +27,15 @@ Route::get('/categories', [CategoryController::class, 'options']);
 Route::post('/tickets', [TicketController::class, 'store'])->middleware(['auth:sanctum', 'account.active']);
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::get('/me', [AccountController::class, 'profile']);
+    Route::get('/account/profile', [AccountController::class, 'profile']);
+    Route::patch('/account/profile', [AccountController::class, 'updateProfile']);
+    Route::post('/account/profile', [AccountController::class, 'updateProfile']);
+    Route::get('/buildings', [ApiDirectoryController::class, 'buildingOptions']);
     Route::post('/account/password', [AuthController::class, 'changePassword']);
     Route::get('/tickets', [TicketController::class, 'index']);
     Route::patch('/tickets/{ticket}', [TicketController::class, 'updateReport']);
+    Route::post('/tickets/{ticket}', [TicketController::class, 'updateReport']);
     Route::get('/tickets/{ticket}/logs', [TicketController::class, 'logs']);
     Route::get('/tickets/{ticket}', [TicketController::class, 'show']);
     Route::get('/notifications', [NotificationController::class, 'index']);
@@ -31,6 +44,19 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::patch('/notifications/tickets/{ticketId}/read', [NotificationController::class, 'readTicket']);
 
     Route::prefix('admin')->middleware('role:admin')->group(function () {
+        Route::get('/dashboard', [ApiDashboardController::class, 'admin']);
+        Route::get('/schedules', [ApiScheduleController::class, 'index']);
+        Route::get('/schedules/{schedule}', [ApiScheduleController::class, 'show'])->whereNumber('schedule');
+        Route::get('/team', [ApiDirectoryController::class, 'team']);
+        Route::get('/team/summary', [ApiDirectoryController::class, 'teamSummary']);
+        Route::get('/users/summary', [ApiDirectoryController::class, 'userSummary']);
+        Route::get('/team/{user}', [ApiDirectoryController::class, 'teamMember'])->whereNumber('user');
+        Route::get('/team/{user}/tickets', [ApiDirectoryController::class, 'assignedTickets']);
+        Route::get('/users/{user}', [ApiDirectoryController::class, 'user'])->whereNumber('user');
+        Route::get('/users/{user}/tickets', [ApiDirectoryController::class, 'reportedTickets']);
+        Route::get('/locations/summary', [ApiDirectoryController::class, 'locationsSummary']);
+        Route::get('/buildings/{building}', [ApiDirectoryController::class, 'building']);
+        Route::get('/rooms/{room}', [ApiDirectoryController::class, 'room']);
         Route::get('/reports/summary', [UiController::class, 'reportSummary']);
         Route::get('/team/filter', [UserController::class, 'filterTeam']);
         Route::get('/schedules/filter', [TicketController::class, 'filterSchedules']);
@@ -64,11 +90,17 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     });
 
     Route::prefix('staff')->middleware('role:admin,staff')->group(function () {
+        Route::get('/dashboard', [ApiDashboardController::class, 'staff']);
         Route::get('/tickets', [TicketController::class, 'index']);
         Route::get('/tickets/{ticket}', [TicketController::class, 'show']);
-        Route::get('/schedules', [TicketController::class, 'staffSchedules']);
+        Route::get('/schedules', [ApiScheduleController::class, 'index']);
+        Route::get('/schedules/{schedule}', [ApiScheduleController::class, 'show']);
         Route::post('/schedules/{schedule}/acknowledge', [TicketController::class, 'acknowledgeSchedule']);
         Route::patch('/tickets/{ticket}/status', [TicketController::class, 'staffUpdate']);
         Route::post('/tickets/{ticket}/status', [TicketController::class, 'staffUpdate']);
+    });
+
+    Route::prefix('customer')->middleware('role:admin,staff,student,teacher')->group(function () {
+        Route::get('/dashboard', [ApiDashboardController::class, 'customer']);
     });
 });

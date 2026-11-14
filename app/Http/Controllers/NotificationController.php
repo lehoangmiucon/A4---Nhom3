@@ -16,10 +16,13 @@ class NotificationController extends Controller
             'title' => $notification->data['title'] ?? 'Cập nhật Helpdesk',
             'body' => $notification->data['message'] ?? '',
             'status' => $notification->data['status'] ?? null,
+            'payload' => $notification->data,
             'created_at' => $notification->created_at,
             'read_at' => $notification->read_at,
         ]);
-        return response()->json($page);
+        return response()->json(array_merge($page->toArray(), [
+            'unread_count' => $request->user()->unreadNotifications()->count(),
+        ]));
     }
 
     public function read(Request $request, string $id): JsonResponse

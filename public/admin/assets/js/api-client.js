@@ -4,6 +4,23 @@
   const appBase = new URL(config.appUrl || '/', window.location.origin).pathname.replace(/\/+$/, '');
   const apiEnabled = config.apiEnabled === true;
   const feedbackTimers = new WeakMap();
+  const assignmentSelector = 'form[data-require-complete-assignment]';
+  const assignmentsSaving = new WeakSet();
+
+  const assignmentIsComplete = (form) => ['staff_id', 'scheduled_at', 'note'].every((name) => {
+    const field = form.elements.namedItem(name);
+    return field && !field.disabled && field.value.trim() && field.checkValidity();
+  });
+
+  const updateAssignmentButton = (form) => {
+    const button = form.querySelector('button[type="submit"]');
+    if (button) button.disabled = assignmentsSaving.has(form) || !assignmentIsComplete(form);
+  };
+  document.querySelectorAll(assignmentSelector).forEach(updateAssignmentButton);
+  ['input', 'change'].forEach((eventName) => document.addEventListener(eventName, (event) => {
+    const form = event.target.closest(assignmentSelector);
+    if (form) updateAssignmentButton(form);
+  }));
 
   const endpointUrl = (endpoint) => {
     const path = endpoint.startsWith('/') ? endpoint : `${apiBase}/${endpoint.replace(/^\/+/, '')}`;
@@ -50,6 +67,14 @@
     const form = event.target.closest('form[data-api-endpoint]');
     if (!form) return;
     event.preventDefault();
+    if (form.matches(assignmentSelector)) {
+      if (assignmentsSaving.has(form)) return;
+      if (!assignmentIsComplete(form)) {
+        updateAssignmentButton(form);
+        showFeedback(form, 'Vui lòng chọn nhân viên, ngày giờ xử lý và nhập ghi chú phân công trước khi lưu.', 'error');
+        return;
+      }
+    }
     if (!form.reportValidity()) return;
     if (!apiEnabled) {
       showFeedback(form, 'API chưa được bật.', 'error');
@@ -68,6 +93,7 @@
     const button = form.querySelector('button[type="submit"]');
     const originalLabel = button?.textContent;
     if (button) button.disabled = true;
+    if (form.matches(assignmentSelector)) assignmentsSaving.add(form);
     const feedback = form.querySelector('[data-api-feedback]');
     if (feedback) feedback.hidden = true;
 
@@ -85,6 +111,9 @@
       const isJson = (response.headers.get('content-type') || '').includes('application/json');
       const payload = isJson ? await response.json() : { message: await response.text() };
       if (!response.ok) throw new Error(messageFrom(payload));
+      const isDuplicateReport = method === 'POST'
+        && form.dataset.apiEndpoint === '/api/tickets'
+        && response.status === 200;
 
       if (form.dataset.apiEndpoint.endsWith('/login') && payload.redirect) {
         window.location.assign(payload.redirect);
@@ -100,14 +129,14 @@
         }
         const message = payload.message || form.dataset.successMessage || 'Đã gửi thành công.';
         if (window.HelpdeskFeedback) window.HelpdeskFeedback.redirect(message, destination.href, {
-          variant: form.dataset.feedbackVariant || 'success',
+          variant: isDuplicateReport ? 'warning' : (form.dataset.feedbackVariant || 'success'),
           position: form.dataset.feedbackPosition || 'top-right',
         });
         else window.location.assign(destination.href);
         return;
       }
 
-      showFeedback(form, payload.message || form.dataset.successMessage || 'Đã lưu thành công.');
+      showFeedback(form, payload.message || form.dataset.successMessage || 'Đã lưu thành công.', isDuplicateReport ? 'error' : 'success');
       if (form.dataset.resetOnSuccess === 'true') form.reset();
       if (/\/(assign|status|close|reopen)$/.test(form.dataset.apiEndpoint)) {
         if (window.HelpdeskFeedback) window.HelpdeskFeedback.reload(payload.message || form.dataset.successMessage);
@@ -117,7 +146,10 @@
       showFeedback(form, error.message || 'Không thể kết nối máy chủ.', 'error');
     } finally {
       if (button) {
-        button.disabled = false;
+        if (form.matches(assignmentSelector)) {
+          assignmentsSaving.delete(form);
+          updateAssignmentButton(form);
+        } else button.disabled = false;
         if (originalLabel) button.textContent = originalLabel;
       }
     }

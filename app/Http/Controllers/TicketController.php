@@ -11,6 +11,7 @@ use App\Models\TicketLog;
 use App\Models\TicketSchedule;
 use App\Models\User;
 use App\Notifications\TicketActivity;
+use App\Services\ImageStorage;
 use App\Support\PeriodRange;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -30,7 +31,7 @@ class TicketController extends Controller
 
     public function room(string $code): JsonResponse
     {
-        $room = Room::with('building:id,code,name')->where('qr_code', $code)->orWhere('code', $code)->firstOrFail();
+        $room = Room::with(['building:id,code,name', 'equipment'])->where('qr_code', $code)->orWhere('code', $code)->firstOrFail();
         return response()->json(['data' => $room]);
     }
 
@@ -92,8 +93,8 @@ class TicketController extends Controller
             ]);
             TicketLog::create(['ticket_id' => $ticket->id, 'user_id' => $request->user()->id, 'to_status' => 'new', 'note' => 'Người báo sự cố đã gửi báo cáo.']);
             foreach ($request->file('attachments', []) as $file) {
-                $path = $file->store('ticket-attachments/reports', 'public');
-                TicketAttachment::create(['ticket_id' => $ticket->id, 'uploaded_by_id' => $request->user()->id, 'path' => $path, 'original_name' => $file->getClientOriginalName(), 'attachment_type' => 'report']);
+                $path = ImageStorage::attachment($file, $ticket, 'report');
+                TicketAttachment::create(['ticket_id' => $ticket->id, 'uploaded_by_id' => $request->user()->id, 'path' => $path, 'original_name' => basename($path), 'attachment_type' => 'report']);
             }
             return ['ticket' => $ticket];
         });
@@ -124,14 +125,24 @@ class TicketController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = Ticket::with(['room.building:id,code,name', 'assignee:id,name', 'category:id,name,color'])->latest();
+        $query = Ticket::with(['room.building:id,code,name', 'assignee:id,name', 'category:id,name,color'])
+            ->latest('updated_at')->orderByDesc('id');
         $this->scopeTickets($query, $request->user());
-        if ($request->filled('status')) $query->where('status', $request->string('status'));
-        return response()->json($query->paginate(15));
+        $this->filteredTickets($request, $query);
+        return response()->json($query->paginate($request->integer('per_page', 15))->withQueryString());
     }
 
     public function filterIncidents(Request $request): JsonResponse
     {
+        $ids = $this->filteredTickets($request, Ticket::query())->latest('updated_at')->orderByDesc('id')->pluck('id');
+        return response()->json(['data' => ['ids' => $ids, 'count' => $ids->count()]]);
+    }
+
+    private function filteredTickets(Request $request, Builder $query): Builder
+    {
+        if (!$request->filled('search') && $request->has('q')) {
+            $request->merge(['search' => $request->input('q')]);
+        }
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:200'],
             'status' => ['nullable', Rule::in(['new', 'assigned', 'in_progress', 'resolved', 'closed', 'reopened'])],
@@ -139,8 +150,18 @@ class TicketController extends Controller
             'building' => ['nullable', 'string', Rule::exists('buildings', 'code')],
             'reporter_role' => ['nullable', Rule::in(['student', 'teacher', 'staff', 'admin'])],
             'period' => ['nullable', Rule::in(['day', 'week', 'month', 'year'])],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'room_id' => ['nullable', 'integer', 'exists:rooms,id'],
+            'priority' => ['nullable', Rule::in(['low', 'normal', 'high', 'urgent'])],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d', ...($request->filled('from') ? ['after_or_equal:from'] : [])],
         ]);
-        $query = Ticket::query();
+        foreach (['category_id', 'room_id', 'priority'] as $field) {
+            if (!empty($filters[$field])) $query->where($field, $filters[$field]);
+        }
+        if (!empty($filters['from'])) $query->where('created_at', '>=', $filters['from'].' 00:00:00');
+        if (!empty($filters['to'])) $query->where('created_at', '<=', $filters['to'].' 23:59:59');
         if (!empty($filters['status'])) $query->where('status', $filters['status']);
         if (!empty($filters['category'])) $query->where('equipment_label', $filters['category']);
         if (!empty($filters['reporter_role'])) {
@@ -174,8 +195,7 @@ class TicketController extends Controller
                 ->orWhereHas('room', fn($rooms) => $rooms->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"))
                 ->orWhereHas('room.building', fn($buildings) => $buildings->where('name', 'like', "%{$search}%")));
         }
-        $ids = $query->latest()->pluck('id');
-        return response()->json(['data' => ['ids' => $ids, 'count' => $ids->count()]]);
+        return $query;
     }
 
     public function filterSchedules(Request $request): JsonResponse
@@ -241,12 +261,12 @@ class TicketController extends Controller
                 $replacedPaths = $oldAttachments->pluck('path')->all();
                 $lockedTicket->reportAttachments()->delete();
                 foreach ($request->file('attachments', []) as $file) {
-                    $path = $file->store('ticket-attachments/reports', 'public');
+                    $path = ImageStorage::attachment($file, $lockedTicket, 'report');
                     TicketAttachment::create([
                         'ticket_id' => $lockedTicket->id,
                         'uploaded_by_id' => $request->user()->id,
                         'path' => $path,
-                        'original_name' => $file->getClientOriginalName(),
+                        'original_name' => basename($path),
                         'attachment_type' => 'report',
                     ]);
                 }
@@ -262,7 +282,7 @@ class TicketController extends Controller
     public function show(Request $request, Ticket $ticket): JsonResponse
     {
         abort_unless($this->canView($request->user(), $ticket), 403, 'Bạn không có quyền xem phiếu này.');
-        $relations = ['room.building:id,code,name', 'assignee:id,name', 'reporter:id,name,email', 'category:id,name,color', 'reportAttachments', 'logs.user:id,name'];
+        $relations = ['room.building:id,code,name', 'assignee:id,name', 'reporter:id,name,email,role,avatar_path', 'category:id,name,color', 'reportAttachments', 'logs.user:id,name'];
         if (! in_array($request->user()->role, ['student', 'teacher'], true)) $relations[] = 'repairAttachments';
         $ticket->load($relations);
         $data = $ticket->toArray();
@@ -271,6 +291,19 @@ class TicketController extends Controller
             : $ticket->reportAttachments->concat($ticket->repairAttachments)->values()->toArray();
         $data['assigned_staff'] = $ticket->assignee;
         $data['equipment'] = ['name' => $ticket->equipment_label];
+        $schedules = $ticket->schedules()->where('status', '!=', 'cancelled')->orderBy('starts_at');
+        if ($request->user()->role === 'staff') $schedules->where('staff_id', $request->user()->id);
+        if (in_array($request->user()->role, ['student', 'teacher'], true)) {
+            $data['schedules'] = $schedules->get(['id', 'ticket_id', 'starts_at', 'ends_at', 'status', 'acknowledged_at']);
+        } else {
+            $data['schedules'] = $schedules->with('staff:id,name')->get();
+        }
+        if ($request->user()->role === 'admin') {
+            $data['eligible_staff'] = User::with('categories:id,name,color')->where('role', 'staff')->where('is_deleted', false)
+                ->when($ticket->category_id, fn ($staff) => $staff->whereHas('categories', fn ($categories) =>
+                    $categories->whereKey($ticket->category_id)
+                ))->orderBy('name')->get(['id', 'name', 'email', 'phone', 'avatar_path']);
+        }
         return response()->json(['data' => $data]);
     }
 
@@ -287,34 +320,20 @@ class TicketController extends Controller
 
     public function staffSchedules(Request $request): JsonResponse
     {
-        $schedules = TicketSchedule::with(['ticket.room.building:id,code,name', 'ticket.category:id,name,color'])->where('status', '!=', 'cancelled');
-        if ($request->user()->role !== 'admin') $schedules->where('staff_id', $request->user()->id);
-        $items = $schedules->where('starts_at', '>=', now()->subDays(30))
-            ->orderBy('starts_at')->get()->map(fn($schedule) => [
-                'ticket_id' => $schedule->ticket_id,
-                'starts_at' => $schedule->starts_at,
-                'note' => $schedule->note,
-                'ticket' => [
-                    'ticket_number' => $schedule->ticket->ticket_number,
-                    'title' => $schedule->ticket->title,
-                    'status' => $schedule->ticket->status,
-                    'room' => [
-                        'name' => $schedule->ticket->room?->name,
-                        'building' => ['name' => $schedule->ticket->room?->building?->name],
-                    ],
-                    'category' => $schedule->ticket->category,
-                ],
-            ]);
-        return response()->json(['data' => $items]);
+        return app(ApiScheduleController::class)->index($request);
     }
 
     public function assign(Request $request, Ticket $ticket): JsonResponse
     {
         $data = $request->validate([
-            'staff_id' => ['required', 'integer', Rule::exists('users', 'id')->where('role', 'staff')->where('is_deleted', false)],
-            'scheduled_at' => ['nullable', 'date', 'after_or_equal:now'],
-            'note' => ['nullable', 'string', 'max:2000'],
+            'staff_id' => ['required', 'integer', Rule::exists('users', 'id')->where('role', 'staff')->where('is_deleted', 0)],
+            'scheduled_at' => ['required', 'date', 'after_or_equal:now'],
+            'note' => ['required', 'string', 'max:2000'],
             'schedule_id' => ['nullable', 'integer', Rule::exists('ticket_schedules', 'id')->where('ticket_id', $ticket->id)],
+        ], [
+            'staff_id.required' => 'Vui lòng chọn nhân viên kỹ thuật.',
+            'scheduled_at.required' => 'Vui lòng chọn ngày và giờ xử lý.',
+            'note.required' => 'Vui lòng nhập ghi chú phân công.',
         ]);
         if ($ticket->category_id && ! User::findOrFail($data['staff_id'])->categories()->whereKey($ticket->category_id)->exists()) {
             throw ValidationException::withMessages([
@@ -327,6 +346,7 @@ class TicketController extends Controller
         $selectedSchedule = null;
         if (!empty($data['schedule_id'])) {
             $selectedSchedule = $ticket->schedules()->findOrFail($data['schedule_id']);
+            abort_if($selectedSchedule->starts_at?->lt(today()), 422, 'Lịch của ngày đã qua chỉ được xem, không thể thay đổi phân công.');
             if ($selectedSchedule->status === 'cancelled') abort(422, 'Lịch này đã bị hủy. Hãy tạo lịch mới cho phiếu.');
         }
 
@@ -347,7 +367,8 @@ class TicketController extends Controller
         DB::transaction(function () use ($ticket, $data, $oldStatus, $previousStaffId, $request) {
             $ticket->update(['assigned_to_id' => $data['staff_id'], 'status' => 'assigned']);
             if ($previousStaffId && (int) $previousStaffId !== (int) $data['staff_id']) {
-                $ticket->schedules()->where('status', '!=', 'cancelled')->update(['staff_id' => $data['staff_id']]);
+                $ticket->schedules()->where('status', '!=', 'cancelled')
+                    ->whereDate('starts_at', '>=', today())->update(['staff_id' => $data['staff_id']]);
             }
             if ($oldStatus !== 'assigned' || (int) $previousStaffId !== (int) $data['staff_id']) TicketLog::create(['ticket_id' => $ticket->id, 'user_id' => $request->user()->id, 'from_status' => $oldStatus, 'to_status' => 'assigned', 'note' => $data['note'] ?? 'Quản lý đã phân công nhân viên.']);
             if (!empty($data['scheduled_at'])) {
@@ -422,6 +443,7 @@ class TicketController extends Controller
 
     public function cancelSchedule(Request $request, TicketSchedule $schedule): JsonResponse
     {
+        abort_if($schedule->starts_at?->lt(today()), 422, 'Lịch của ngày đã qua chỉ được xem, không thể hủy.');
         $data = $request->validate(['note' => ['nullable', 'string', 'max:1000']]);
         abort_unless($schedule->status !== 'cancelled', 422, 'Lịch này đã được hủy trước đó.');
         $ticket = $schedule->ticket;
@@ -524,15 +546,13 @@ class TicketController extends Controller
                 'to_status' => $targetStatus,
                 'note' => $data['note'],
             ]);
-            $attachmentIndex = $ticket->repairAttachments()->count();
             foreach ($request->file('attachments', []) as $file) {
-                $originalName = $ticket->ticket_number . '_' . (++$attachmentIndex) . '.' . $file->extension();
-                $path = $file->storeAs('ticket-attachments/repairs', $originalName, 'public');
+                $path = ImageStorage::attachment($file, $ticket, 'repair');
                 TicketAttachment::create([
                     'ticket_id' => $ticket->id,
                     'uploaded_by_id' => $request->user()->id,
                     'path' => $path,
-                    'original_name' => $originalName,
+                    'original_name' => basename($path),
                     'attachment_type' => 'repair',
                 ]);
             }

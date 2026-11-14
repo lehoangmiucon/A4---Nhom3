@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Services\ImageStorage;
+use App\Support\PasswordPolicy;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +16,12 @@ use Illuminate\Validation\ValidationException;
 
 class AccountController extends Controller
 {
-    public function updateProfile(Request $request): RedirectResponse
+    public function profile(Request $request): JsonResponse
+    {
+        return response()->json(['data' => $request->user()->load('categories:id,name,color')]);
+    }
+
+    public function updateProfile(Request $request): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:120'],
@@ -31,7 +39,7 @@ class AccountController extends Controller
         }
         $oldAvatarPath = $user->avatar_path;
         if ($request->hasFile('avatar')) {
-            $user->avatar_path = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar_path = ImageStorage::avatar($request->file('avatar'), $user);
             $changedFields[] = 'avatar';
         }
         $user->save();
@@ -47,6 +55,13 @@ class AccountController extends Controller
             ]);
         }
 
+        if ($request->is('api/*') || $request->expectsJson()) {
+            return response()->json([
+                'message' => 'Đã cập nhật thông tin cá nhân.',
+                'data' => $user->fresh()->load('categories:id,name,color'),
+            ]);
+        }
+
         return back()->with('status', 'Đã cập nhật thông tin cá nhân.');
     }
 
@@ -54,9 +69,7 @@ class AccountController extends Controller
     {
         $data = $request->validate([
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
-        ], [
-            'password.different' => 'Mật khẩu mới phải khác mật khẩu hiện tại.',
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
         $user = $request->user();
@@ -66,6 +79,7 @@ class AccountController extends Controller
             ]);
         }
 
+        PasswordPolicy::ensureDifferent($data['password'], $user->password);
         $user->password = $data['password'];
         $user->save();
         $user->tokens()->delete();

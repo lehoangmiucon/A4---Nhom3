@@ -10,6 +10,14 @@ use App\Models\Room;
 use App\Models\Building;
 use App\Models\Category;
 
+Route::withoutMiddleware([
+    \Illuminate\Session\Middleware\StartSession::class,
+    \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+    \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+])->group(function () {
+    Route::get('/api', [\App\Http\Controllers\ApiDocumentationController::class, 'index'])->name('api.docs');
+});
+
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
 Route::post('/email/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
 Route::post('/email/resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:3,1');

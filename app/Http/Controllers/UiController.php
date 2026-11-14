@@ -46,7 +46,7 @@ class UiController extends Controller
         $data = [
             'currentUser' => $request->user(),
             'pagePath' => $path,
-            'pendingTicketCount' => Ticket::whereIn('status', ['new', 'reopened'])->count(),
+            'pendingTicketCount' => Ticket::pendingAssignment()->count(),
             'unreadNotificationCount' => $request->user()?->unreadNotifications()->count() ?? 0,
             'statusLabels' => [
                 'new' => 'Chờ tiếp nhận',
@@ -78,7 +78,7 @@ class UiController extends Controller
             $data['dashboardCounts'] = (clone $periodTickets)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
             $data['dashboardTotal'] = (clone $periodTickets)->count();
             $data['dashboardTodayCount'] = $data['dashboardTotal'];
-            $data['dashboardUnassignedCount'] = (clone $periodTickets)->whereIn('status', ['new', 'reopened'])->count();
+            $data['dashboardUnassignedCount'] = (clone $periodTickets)->pendingAssignment()->count();
             $data['dashboardTeacherCount'] = (clone $periodTickets)
                 ->whereHas('reporter', fn($reporter) => $reporter->where('role', 'teacher'))->count();
             $data['dashboardResolvedCount'] = $data['dashboardCounts']['resolved'] ?? 0;
@@ -153,6 +153,11 @@ class UiController extends Controller
         $user = $request->user();
 
         if ($section === 'admin' && $path === 'pages/incidents') {
+            $period = $request->query('period', 'month');
+            if (!is_string($period) || ($period !== 'all' && !array_key_exists($period, PeriodRange::OPTIONS))) {
+                $period = 'month';
+            }
+            $data['incidentPeriod'] = $period;
             $focus = $request->query('focus');
             $focusLabels = [
                 'today' => 'Phiếu được gửi hôm nay',
@@ -165,20 +170,23 @@ class UiController extends Controller
                 $focus = null;
             }
             $ticketQuery = Ticket::with(['room.building', 'assignee', 'schedules', 'reporter:id,name,role', 'category']);
+            if ($period !== 'all') {
+                $ticketQuery->whereBetween('created_at', PeriodRange::bounds($period));
+            }
             match ($focus) {
                 'today' => $ticketQuery->whereDate('created_at', today()),
-                'unassigned' => $ticketQuery->whereIn('status', ['new', 'reopened']),
+                'unassigned' => $ticketQuery->pendingAssignment(),
                 'assigned' => $ticketQuery->where('status', 'assigned'),
                 'in_progress' => $ticketQuery->where('status', 'in_progress'),
                 'resolved' => $ticketQuery->where('status', 'resolved'),
                 default => null,
             };
-            $data['tickets'] = $ticketQuery->latest()->get();
+            $data['tickets'] = $ticketQuery->latest('updated_at')->orderByDesc('id')->get();
             $data['incidentFocus'] = $focus;
             $data['incidentFocusLabel'] = $focus ? $focusLabels[$focus] : null;
             $data['incidentCounts'] = [
                 'all' => Ticket::count(),
-                'pending' => Ticket::whereIn('status', ['new', 'reopened'])->count(),
+                'pending' => Ticket::pendingAssignment()->count(),
                 'in_progress' => Ticket::where('status', 'in_progress')->count(),
                 'completed_month' => Ticket::whereIn('status', ['resolved', 'closed'])
                     ->whereMonth('resolved_at', now()->month)->whereYear('resolved_at', now()->year)->count(),
@@ -228,6 +236,7 @@ class UiController extends Controller
                 'ticket_number' => $schedule->ticket->ticket_number,
                 'title' => $schedule->ticket->title,
                 'room' => $schedule->ticket->room?->code,
+                'room_name' => $schedule->ticket->room?->name ?: ($schedule->ticket->room_label ?: ($schedule->ticket->room?->code ?: 'Chưa xác định phòng')),
                 'date' => $schedule->starts_at->format('Y-m-d'),
                 'time' => $schedule->starts_at->format('H:i'),
                 'staff_id' => $schedule->staff_id,
@@ -237,19 +246,18 @@ class UiController extends Controller
                 'category_color' => $schedule->ticket->category?->color ?? '#64748B',
                 'ticket_status' => $schedule->ticket->status,
                 'schedule_status' => $schedule->status,
+                'note' => $schedule->note ?? '',
             ])->values();
             $data['staffMembers'] = User::with('categories:id,name,color')->where('role', 'staff')->where('is_deleted', false)->orderBy('name')->get();
-            $data['tickets'] = Ticket::with('category')
-                ->whereIn('status', ['new', 'reopened'])
-                ->whereNull('assigned_to_id')
+            $data['tickets'] = Ticket::with(['category', 'room'])
+                ->pendingAssignment()
                 ->whereDoesntHave('schedules', fn($query) => $query->where('status', '!=', 'cancelled'))
                 ->latest()
                 ->get();
             $data['categories'] = Category::orderBy('name')->get();
             $data['scheduleCounts'] = [
                 'today' => TicketSchedule::where('status', '!=', 'cancelled')->whereDate('starts_at', today())->count(),
-                'unassigned' => Ticket::whereIn('status', ['new', 'reopened'])
-                    ->whereNull('assigned_to_id')
+                'unassigned' => Ticket::pendingAssignment()
                     ->whereDoesntHave('schedules', fn($query) => $query->where('status', '!=', 'cancelled'))
                     ->count(),
                 'staff' => \App\Models\User::where('role', 'staff')->where('is_deleted', false)->count(),

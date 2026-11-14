@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\ActivityLog;
 use App\Mail\EmailVerificationOtp;
 use App\Services\PurgeExpiredUnverifiedAccounts;
+use App\Support\PasswordPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -201,7 +202,7 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
         $user = $request->user();
@@ -211,6 +212,7 @@ class AuthController extends Controller
             ]);
         }
 
+        PasswordPolicy::ensureDifferent($data['password'], $user->password);
         $user->password = $data['password'];
         $user->save();
         $token = $user->currentAccessToken();
@@ -306,6 +308,7 @@ class AuthController extends Controller
                 throw ValidationException::withMessages(['otp' => 'Mã OTP không hợp lệ hoặc đã hết hạn. Hãy yêu cầu mã mới.']);
             }
             $lockedUser = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            PasswordPolicy::ensureDifferent($data['password'], $lockedUser->password);
             $lockedUser->password = $data['password'];
             $lockedUser->save();
             DB::table('email_otps')->where('id', $lockedOtp->id)->update(['verified_at' => now(), 'updated_at' => now()]);

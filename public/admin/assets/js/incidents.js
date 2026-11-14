@@ -16,6 +16,11 @@
   let currentPage = 1;
   let matchingRows = rows;
   const pageSize = 15;
+  const rowsById = new Map(rows.map((row) => {
+    const link = row.querySelector('.ticket-code');
+    const id = row.dataset.ticketId || (link ? new URL(link.href).searchParams.get('ticket') : '');
+    return [String(id), row];
+  }));
 
   function renderPage() {
     const pageCount = Math.max(1, Math.ceil(matchingRows.length / pageSize));
@@ -54,7 +59,12 @@
   }
 
   const initialFilters = new URLSearchParams(window.location.search);
-  [[reporterRoleSelect, 'reporter_role'], [periodSelect, 'period']].forEach(([select, key]) => {
+  const filterFields = [
+    [statusSelect, 'status'], [categorySelect, 'category'], [buildingSelect, 'building'],
+    [reporterRoleSelect, 'reporter_role'], [periodSelect, 'period'],
+  ];
+  if (searchInput && initialFilters.has('search')) searchInput.value = initialFilters.get('search');
+  filterFields.forEach(([select, key]) => {
     const value = initialFilters.get(key);
     if (select && value && [...select.options].some((option) => option.value === value)) {
       select.value = value;
@@ -78,7 +88,7 @@
     if (categorySelect?.value) params.set('category', categorySelect.value);
     if (buildingSelect?.value) params.set('building', buildingSelect.value);
     if (reporterRoleSelect?.value) params.set('reporter_role', reporterRoleSelect.value);
-    if (periodSelect?.value) params.set('period', periodSelect.value);
+    if (periodSelect?.value && periodSelect.value !== 'all') params.set('period', periodSelect.value);
 
     try {
       const response = await fetch(`${appBase}/api/admin/tickets/filter?${params.toString()}`, {
@@ -88,12 +98,8 @@
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || 'Không thể lọc phiếu sự cố.');
       if (sequence !== requestSequence) return;
-      const matchingIds = new Set((result.data?.ids || []).map(String));
-      matchingRows = rows.filter((row) => {
-        const detailLink = row.querySelector('.ticket-code');
-        const ticketId = detailLink ? new URL(detailLink.href).searchParams.get('ticket') : '';
-        return matchingIds.has(String(ticketId));
-      });
+      matchingRows = (result.data?.ids || []).map((id) => rowsById.get(String(id))).filter(Boolean);
+      matchingRows.forEach((row) => tableBody.append(row));
       currentPage = 1;
       if (noResultsRow) noResultsRow.hidden = matchingRows.length > 0;
       renderPage();
@@ -113,7 +119,18 @@
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(applyFilters, 250);
   });
-  [statusSelect, categorySelect, buildingSelect, reporterRoleSelect, periodSelect]
+  [statusSelect, categorySelect, buildingSelect, reporterRoleSelect]
     .forEach((select) => select?.addEventListener('change', () => { currentPage = 1; applyFilters(); }));
+  periodSelect?.addEventListener('change', () => {
+    const destination = new URL(window.location.href);
+    destination.searchParams.delete('page');
+    filterFields.forEach(([select, key]) => {
+      if (select?.value) destination.searchParams.set(key, select.value);
+      else destination.searchParams.delete(key);
+    });
+    if (searchInput?.value.trim()) destination.searchParams.set('search', searchInput.value.trim());
+    else destination.searchParams.delete('search');
+    window.location.assign(destination.href);
+  });
   applyFilters();
 })();

@@ -27,6 +27,12 @@ Khi `MAIL_MAILER=log`, mã OTP được ghi vào log Laravel để phát triển
 
 ## Luồng API hiện có
 
+Swagger UI để xem và gọi thử API: mở /api. Xem [hướng dẫn Swagger](docs/swagger.md).
+
+Tài liệu endpoint dùng chung cho website và app mobile: [docs/mobile-api.md](docs/mobile-api.md).
+API có đăng ký/OTP, hồ sơ và ảnh đại diện, dashboard theo vai trò, danh sách lịch/phiếu phân trang,
+chi tiết người dùng/đội ngũ, địa điểm và thông báo. Mobile đăng nhập lấy Bearer token qua /api/auth/login.
+
 - Đăng ký sinh viên, xác thực/gửi lại OTP, đăng nhập và đăng xuất bằng session cookie.
 - Tra cứu phòng QR, tạo phiếu có ảnh; sinh viên chỉ xem phiếu của mình.
 - Quản lý xem phiếu, phân công nhân viên/lịch, đóng hoặc mở lại phiếu.

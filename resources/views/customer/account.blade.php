@@ -72,13 +72,16 @@
                 <form class="account-password-form" data-api-endpoint="account/password" data-api-method="POST">
                     <label for="current-password">Mật khẩu hiện tại</label>
                     <input id="current-password" type="password" name="current_password" autocomplete="current-password" required>
+                    @error('current_password')<small class="helpdesk-password-error">{{ $message }}</small>@enderror
 
                     <label for="new-password">Mật khẩu mới</label>
                     <input id="new-password" type="password" name="password" autocomplete="new-password" minlength="8" required>
+                    @error('password')<small class="helpdesk-password-error">{{ $message }}</small>@enderror
                     <small class="account-field-hint">Mật khẩu mới cần có ít nhất 8 ký tự.</small>
 
                     <label for="password-confirmation">Xác nhận mật khẩu mới</label>
                     <input id="password-confirmation" type="password" name="password_confirmation" autocomplete="new-password" minlength="8" required>
+                    @error('password_confirmation')<small class="helpdesk-password-error">{{ $message }}</small>@enderror
 
                     <p class="api-feedback" data-api-feedback role="status" aria-live="polite" hidden></p>
                     <button class="role-button account-submit" type="submit">Lưu mật khẩu mới</button>

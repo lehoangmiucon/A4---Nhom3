@@ -80,10 +80,10 @@ $currentSchedule = $ticket->schedules
             @endif
 
             @if(in_array($ticket->status, ['new', 'reopened', 'assigned'], true))
-            <form class="role-form assignment-form" action="#" method="post" data-api-endpoint="/api/admin/tickets/{id}/assign" data-current-staff-id="{{ $ticket->assigned_to_id ?? '' }}" data-current-staff-name="{{ $ticket->assignee?->name ?? '' }}" data-ticket-number="{{ $ticket->ticket_number }}">
+            <form class="role-form assignment-form" action="#" method="post" data-api-endpoint="/api/admin/tickets/{id}/assign" data-require-complete-assignment data-current-staff-id="{{ $ticket->assigned_to_id ?? '' }}" data-current-staff-name="{{ $ticket->assignee?->name ?? '' }}" data-ticket-number="{{ $ticket->ticket_number }}">
                 <input type="hidden" name="schedule_id" value="{{ $currentSchedule?->id }}">
                 <p class="assignment-form-title">{{ $ticket->assignee ? 'Cập nhật phân công hoặc lịch xử lý' : 'Chọn nhân viên và lịch xử lý' }}</p>
-                <label class="form-item assignment-staff-field"><span><i class="fa-solid fa-user-gear" aria-hidden="true"></i> Nhân viên kỹ thuật</span><select name="staff_id" required>
+                <label class="form-item assignment-staff-field"><span><i class="fa-solid fa-user-gear" aria-hidden="true"></i> Nhân viên kỹ thuật <b>*</b></span><select name="staff_id" required>
                         <option value="">Chọn nhân viên</option>
                         @foreach($staffMembers as $staffMember)
                         <option value="{{ $staffMember->id }}" @selected($ticket->assigned_to_id === $staffMember->id)>{{ $staffMember->name }}</option>
@@ -92,11 +92,11 @@ $currentSchedule = $ticket->schedules
                 @if($staffMembers->isEmpty())
                 <p class="assignment-no-staff">Chưa có nhân viên nào được gán danh mục <strong>{{ $ticket->category?->name ?? $ticket->equipment_label }}</strong>. <a href="team#technicians">Cập nhật chuyên môn nhân viên</a></p>
                 @endif
-                <label class="form-item assignment-date-field"><span><i class="fa-regular fa-calendar" aria-hidden="true"></i> Thời gian xử lý</span><input id="assignment-scheduled-at" type="datetime-local" name="scheduled_at"><small class="assignment-help">Để trống nếu muốn giữ lịch hiện tại.</small></label>
-                <label class="form-item assignment-note-field"><span><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i> Ghi chú phân công</span><textarea name="note" maxlength="2000" placeholder="Nội dung cần chuẩn bị trước khi xử lý">{{ $currentSchedule?->note }}</textarea></label>
+                <label class="form-item assignment-date-field"><span><i class="fa-regular fa-calendar" aria-hidden="true"></i> Thời gian xử lý <b>*</b></span><input id="assignment-scheduled-at" type="datetime-local" name="scheduled_at" value="{{ $currentSchedule?->starts_at?->format('Y-m-d\TH:i') }}" required><small class="assignment-help">Vui lòng chọn đầy đủ ngày và giờ xử lý.</small></label>
+                <label class="form-item assignment-note-field"><span><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i> Ghi chú phân công <b>*</b></span><textarea name="note" maxlength="2000" required placeholder="Nội dung cần chuẩn bị trước khi xử lý">{{ $currentSchedule?->note }}</textarea></label>
                 <div class="assignment-form-actions">
                     <small><i class="fa-regular fa-bell" aria-hidden="true"></i> Nhân viên sẽ nhận thông báo khi cập nhật phân công.</small>
-                    <button class="button button-primary" type="submit" @disabled($staffMembers->isEmpty())><i class="fa-regular fa-floppy-disk" aria-hidden="true"></i> {{ $ticket->assignee ? 'Lưu thay đổi phân công' : 'Tiếp nhận và phân công' }}</button>
+                    <button class="button button-primary" type="submit" disabled><i class="fa-regular fa-floppy-disk" aria-hidden="true"></i> {{ $ticket->assignee ? 'Lưu thay đổi phân công' : 'Tiếp nhận và phân công' }}</button>
                 </div>
                 <p class="api-feedback" data-api-feedback role="status" aria-live="polite" hidden></p>
             </form>
@@ -262,7 +262,7 @@ $stateMessage = $ticket->assignee
 @endsection
 
 @section('scripts')
-<script src="../assets/js/api-client.js?v=20261110-report-toast-center1"></script>
+<script src="{{ url('/admin/assets/js/api-client.js?v=20261113-required-assignment1') }}"></script>
 <script>
     const assignmentForm = document.querySelector('.assignment-form');
     assignmentForm?.addEventListener('submit', (event) => {

@@ -13,8 +13,11 @@
   const assignmentActions = modal.querySelector('[data-modal-assignment-actions]');
   const cancelScheduleButton = modal.querySelector('[data-modal-cancel-schedule]');
   const saveAssignmentButton = modal.querySelector('[data-modal-save]');
-  const assignmentDate = modal.querySelector('#modal-assignment-date');
   const assignmentTime = modal.querySelector('#modal-assignment-time');
+  const assignmentNote = modal.querySelector('#modal-assignment-note');
+  const assignmentFeedback = modal.querySelector('[data-modal-feedback]');
+  const addAssignmentButton = modal.querySelector('[data-modal-add]');
+  const openAssignmentButton = document.querySelector('[data-open-assignment]');
   const ticketSelect = modal.querySelector('#modal-ticket');
   const technicianSelect = modal.querySelector('#modal-technician');
   const staffFilter = document.querySelector('.staff-filter select');
@@ -30,11 +33,70 @@
   let selectedScheduleId = '';
   let selectedScheduleStatus = '';
   let assignmentLocked = false;
+  let assignmentSaving = false;
+  let assignmentValidationShown = false;
   let dayHasEvents = false;
   let remoteScheduleIds = null;
   let filterRequestSequence = 0;
   let refreshTicketDropdown = () => {};
   let refreshTechnicianDropdown = () => {};
+  function assignmentErrors() {
+    const errors = [];
+    if (!ticketSelect.value) errors.push({ field: ticketSelect, message: 'Vui lòng chọn phiếu sự cố.' });
+    if (!technicianSelect.value || technicianSelect.disabled) {
+      errors.push({ field: technicianSelect, message: ticketSelect.value && technicianSelect.disabled
+        ? 'Chưa có nhân viên phù hợp với danh mục của phiếu này.'
+        : 'Vui lòng chọn nhân viên kỹ thuật.' });
+    }
+    if (!assignmentTime.value) errors.push({ field: assignmentTime, message: 'Vui lòng chọn giờ bắt đầu.' });
+    else if (!assignmentTime.checkValidity()) errors.push({ field: assignmentTime, message: 'Giờ bắt đầu không hợp lệ.' });
+    if (!assignmentNote.value.trim()) errors.push({ field: assignmentNote, message: 'Vui lòng nhập ghi chú phân công.' });
+    else if (!assignmentNote.checkValidity() || assignmentNote.value.length > 2000)
+      errors.push({ field: assignmentNote, message: 'Ghi chú không được vượt quá 2000 ký tự.' });
+    return errors;
+  }
+
+  function markAssignmentField(field, invalid) {
+    const trigger = field.closest('.modal-custom-select')?.querySelector('.modal-select-trigger');
+    [field, trigger].filter(Boolean).forEach((control) => {
+      if (invalid) control.setAttribute('aria-invalid', 'true');
+      else control.removeAttribute('aria-invalid');
+    });
+  }
+
+  function renderAssignmentErrors() {
+    const errors = assignmentErrors();
+    [ticketSelect, technicianSelect, assignmentTime, assignmentNote].forEach((field) =>
+      markAssignmentField(field, errors.some((error) => error.field === field))
+    );
+    assignmentFeedback.textContent = errors.map((error) => error.message).join(' ');
+    assignmentFeedback.hidden = !errors.length;
+    return errors;
+  }
+
+  function clearAssignmentFeedback() {
+    assignmentValidationShown = false;
+    assignmentFeedback.hidden = true;
+    assignmentFeedback.textContent = '';
+    [ticketSelect, technicianSelect, assignmentTime, assignmentNote].forEach((field) => markAssignmentField(field, false));
+  }
+
+  function showAssignmentFeedback(message) {
+    assignmentFeedback.textContent = message;
+    assignmentFeedback.hidden = false;
+    assignmentFeedback.scrollIntoView({ block: 'nearest' });
+  }
+
+  function updateSaveButton() {
+    saveAssignmentButton.disabled = assignmentSaving || assignmentLocked || assignmentPanel.hidden
+      || !selectedDate || isPastDate(selectedDate);
+  }
+
+  function updateAssignmentForm() {
+    updateSaveButton();
+    if (assignmentValidationShown) renderAssignmentErrors();
+  }
+
   function filterTechnicians() {
     const hasSelectedTicket = Boolean(ticketSelect.value);
     const categoryId = ticketSelect.selectedOptions[0]?.dataset.categoryId || '';
@@ -55,6 +117,7 @@
     const technicianTrigger = modal.querySelector('.modal-custom-select-technician .modal-select-trigger');
     if (technicianTrigger) technicianTrigger.disabled = technicianSelect.disabled;
     refreshTechnicianDropdown();
+    updateAssignmentForm();
   }
 
   function categoryIcon(name) {
@@ -102,8 +165,9 @@
     const render = () => {
       const selected = select.selectedOptions[0];
       triggerText.textContent = type === 'ticket' && selected?.dataset.ticketNumber
-        ? `${selected.dataset.ticketNumber} · ${selected.dataset.ticketTitle || selected.textContent.trim()}`
+        ? [selected.dataset.ticketNumber, selected.dataset.roomName, selected.dataset.ticketTitle].filter(Boolean).join(' · ')
         : selected?.textContent.trim() || 'Chọn';
+      trigger.title = triggerText.textContent;
       menu.replaceChildren();
 
       [...select.options].forEach((option) => {
@@ -128,7 +192,7 @@
         const subtitle = document.createElement('small');
         if (type === 'ticket' && option.dataset.ticketNumber) {
           title.textContent = `${option.dataset.ticketNumber} · ${option.dataset.ticketTitle || ''}`;
-          subtitle.textContent = option.dataset.categoryName || 'Chưa phân loại';
+          subtitle.textContent = `${option.dataset.roomName || 'Chưa xác định phòng'} · ${option.dataset.categoryName || 'Chưa phân loại'}`;
         } else {
           title.textContent = option.textContent.trim();
           subtitle.textContent = type === 'ticket' ? 'Chọn phiếu sự cố' : 'Nhân viên kỹ thuật';
@@ -197,8 +261,25 @@
     return new Date(year, month - 1, day);
   }
 
-  const todayDate = new Date();
-  todayDate.setHours(0, 0, 0, 0);
+  function currentDayKey() {
+    const parts = new Intl.DateTimeFormat('en', {
+      timeZone: calendar.dataset.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date());
+    const part = (type) => parts.find((item) => item.type === type).value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
+  }
+
+  function isPastDate(key) {
+    return Boolean(key) && key < currentDayKey();
+  }
+
+  function currentDayDate() {
+    const [year, month, day] = currentDayKey().split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  let todayDate = currentDayDate();
   let activeDate = new Date(todayDate);
   let viewMode = 'month';
 
@@ -217,6 +298,8 @@
         ticketStatus: item.ticket_status || '', ticketId: item.ticket_id, scheduleId: item.id,
         ticketNumber: item.ticket_number || '', ticketTitle: item.title || '',
         scheduleStatus: item.schedule_status || '', staffId: item.staff_id || '',
+        note: item.note || '',
+        roomName: item.room_name || item.room || 'Chưa xác định phòng',
         staffName: item.staff_name || '', categoryName: item.category_name || 'Chưa phân loại',
       });
       const time = document.createElement('time');
@@ -244,6 +327,8 @@
   }
 
   function renderCalendar() {
+    todayDate = currentDayDate();
+    if (openAssignmentButton) openAssignmentButton.hidden = isPastDate(dateKey(activeDate));
     const year = activeDate.getFullYear();
     const month = activeDate.getMonth();
     const heading = document.querySelector('.calendar-toolbar .section-heading');
@@ -287,12 +372,15 @@
       number.textContent = date.getDate();
       if (dateKey(date) === dateKey(todayDate)) number.classList.add('today-number');
 
-      const addButton = document.createElement('button');
-      addButton.className = 'day-schedule-add';
-      addButton.type = 'button';
-      addButton.setAttribute('data-day-add', '');
-      addButton.textContent = '+ X\u1ebfp l\u1ecbch';
-      cell.append(number, addButton);
+      cell.append(number);
+      if (!isPastDate(cell.dataset.date) && viewMode !== 'day') {
+        const addButton = document.createElement('button');
+        addButton.className = 'day-schedule-add';
+        addButton.type = 'button';
+        addButton.setAttribute('data-day-add', '');
+        addButton.textContent = '+ X\u1ebfp l\u1ecbch';
+        cell.append(addButton);
+      }
 
       const dayEvents = eventsForDate(date);
       dayEvents.forEach((event) => cell.append(event));
@@ -307,7 +395,6 @@
       fragment.append(cell);
     });
     calendar.replaceChildren(fragment);
-    document.querySelectorAll('.day-schedule-add').forEach((button) => { button.hidden = viewMode === 'day'; });
     applyCalendarFilters();
   }
 
@@ -482,14 +569,23 @@
   filterTechnicians();
 
   function resetModalView() {
+    clearAssignmentFeedback();
     assignmentPanel.hidden = true;
     detailsActions.hidden = false;
     assignmentActions.hidden = true;
     eventList.hidden = false;
     emptyState.hidden = dayHasEvents;
+    if (addAssignmentButton) addAssignmentButton.hidden = isPastDate(selectedDate);
+    if (isPastDate(selectedDate) && !dayHasEvents) emptyState.textContent = 'Ngày này không có lịch xử lý.';
+    updateSaveButton();
   }
 
   function openAssignment(eventInfo = {}) {
+    if (!selectedDate || isPastDate(selectedDate)) {
+      resetModalView();
+      return;
+    }
+    clearAssignmentFeedback();
     [...ticketSelect.options]
       .filter((option) => option.dataset.existingScheduleOption === 'true' && option.value !== String(eventInfo.ticketId || ''))
       .forEach((option) => option.remove());
@@ -500,10 +596,8 @@
     assignmentLocked = scheduleLocked;
     ticketSelect.disabled = scheduleLocked;
     technicianSelect.disabled = scheduleLocked;
-    assignmentDate.disabled = scheduleLocked;
     assignmentTime.disabled = scheduleLocked;
     modal.querySelector('#modal-assignment-note').disabled = scheduleLocked;
-    saveAssignmentButton.disabled = scheduleLocked;
     modal.querySelectorAll('.modal-select-trigger').forEach((trigger) => { trigger.disabled = scheduleLocked; });
     eventList.hidden = false;
     eventList.querySelectorAll('.modal-event.is-selected').forEach((row) => row.classList.remove('is-selected'));
@@ -512,12 +606,12 @@
     assignmentPanel.hidden = false;
     detailsActions.hidden = true;
     assignmentActions.hidden = false;
-    assignmentDate.value = selectedDate;
     const eventTime = typeof eventInfo === 'string'
       ? eventInfo.split('\u00b7')[0]?.trim()
       : eventInfo.time;
     const eventTitle = typeof eventInfo === 'string' ? eventInfo : (eventInfo.title || '');
     assignmentTime.value = eventTime || '';
+    assignmentNote.value = eventInfo.note || '';
 
     if (eventInfo.ticketId && ![...ticketSelect.options].some((option) => option.value === String(eventInfo.ticketId))) {
       const currentTicket = document.createElement('option');
@@ -525,6 +619,7 @@
       currentTicket.textContent = `${eventInfo.ticketNumber || ''} · ${eventInfo.ticketTitle || ''}`.trim();
       currentTicket.dataset.ticketNumber = eventInfo.ticketNumber || '';
       currentTicket.dataset.ticketTitle = eventInfo.ticketTitle || '';
+      currentTicket.dataset.roomName = eventInfo.roomName || 'Chưa xác định phòng';
       currentTicket.dataset.categoryId = eventInfo.categoryId || '';
       currentTicket.dataset.categoryName = eventInfo.categoryName || '';
       currentTicket.dataset.categoryColor = eventInfo.categoryColor || '';
@@ -539,6 +634,7 @@
     );
     technicianSelect.value = matchingStaff?.value || '';
     refreshTechnicianDropdown();
+    updateSaveButton();
   }
 
   function openDay(cell) {
@@ -556,7 +652,9 @@
     emptyState.hidden = dayHasEvents;
     emptyState.textContent = cellEvents.length > 0
       ? 'Kh\u00f4ng c\u00f3 l\u1ecbch c\u1ee7a nh\u00e2n vi\u00ean \u0111ang ch\u1ecdn trong ng\u00e0y n\u00e0y.'
-      : 'Ng\u00e0y n\u00e0y ch\u01b0a c\u00f3 l\u1ecbch x\u1eed l\u00fd. B\u1ea1n c\u00f3 th\u1ec3 x\u1ebfp l\u1ecbch m\u1edbi.';
+      : (isPastDate(selectedDate)
+        ? 'Ngày này không có lịch xử lý.'
+        : 'Ng\u00e0y n\u00e0y ch\u01b0a c\u00f3 l\u1ecbch x\u1eed l\u00fd. B\u1ea1n c\u00f3 th\u1ec3 x\u1ebfp l\u1ecbch m\u1edbi.');
     events.forEach((event) => {
       const rawParts = event.textContent.split('\u00b7').map((part) => part.trim());
       const time = event.querySelector('.event-time')?.textContent.trim() || rawParts[0] || '';
@@ -567,7 +665,7 @@
       const categoryColor = event.dataset.categoryColor || getComputedStyle(event).getPropertyValue('--category-color').trim();
       row.className = categoryColor ? 'modal-event category-modal-event' : `modal-event ${[...event.classList].find((name) => name.startsWith('event-')) || 'event-blue'}`;
       if (categoryColor) row.style.setProperty('--category-color', categoryColor);
-      row.setAttribute('aria-label', `Xem hoặc sửa lịch ${time} · ${eventTitle}`);
+      row.setAttribute('aria-label', `${isPastDate(selectedDate) ? 'Xem chi tiết phiếu' : 'Xem hoặc sửa lịch'} ${time} · ${eventTitle}`);
       const timeLabel = document.createElement('time');
       timeLabel.textContent = time;
       const details = document.createElement('div');
@@ -576,10 +674,20 @@
       titleLabel.textContent = eventTitle || 'L\u1ecbch x\u1eed l\u00fd s\u1ef1 c\u1ed1';
       const meta = document.createElement('small');
       const category = event.dataset.categoryName || '';
-      const scheduleStatus = event.dataset.scheduleStatus === 'acknowledged'
+      const acknowledged = event.dataset.scheduleStatus === 'acknowledged';
+      const scheduleStatus = acknowledged
         ? 'Nhân viên đã xác nhận · đang trên đường'
         : 'Chờ nhân viên xác nhận';
-      meta.textContent = [category, technician ? `K\u1ef9 thu\u1eadt vi\u00ean: ${technician}` : '', scheduleStatus].filter(Boolean).join(' · ');
+      meta.textContent = [category, technician ? `K\u1ef9 thu\u1eadt vi\u00ean: ${technician}` : ''].filter(Boolean).join(' · ');
+      const statusBadge = document.createElement('span');
+      statusBadge.className = `modal-schedule-status ${acknowledged ? 'is-acknowledged' : 'is-pending'}`;
+      const statusIcon = document.createElement('span');
+      statusIcon.className = 'modal-schedule-status-icon';
+      statusIcon.setAttribute('aria-hidden', 'true');
+      statusIcon.textContent = acknowledged ? '✓' : '◷';
+      const statusText = document.createElement('span');
+      statusText.textContent = scheduleStatus;
+      statusBadge.append(statusIcon, statusText);
       const ticketId = event.dataset.ticketId || '';
       const detailLink = document.createElement('a');
       detailLink.className = 'button button-secondary modal-edit';
@@ -588,21 +696,29 @@
         ? `${appBase}/admin/pages/ticket-detail?ticket=${encodeURIComponent(ticketId)}`
         : `${appBase}/admin/pages/incidents`;
       detailLink.addEventListener('click', (clickEvent) => clickEvent.stopPropagation());
-      row.addEventListener('click', () => openAssignment({
+      row.addEventListener('click', () => {
+        if (isPastDate(selectedDate)) {
+          window.location.assign(detailLink.href);
+          return;
+        }
+        openAssignment({
         time,
         title: eventTitle,
         ticketId,
         ticketNumber: event.dataset.ticketNumber || '',
         ticketTitle: event.dataset.ticketTitle || '',
+        roomName: event.dataset.roomName || 'Chưa xác định phòng',
         categoryId: event.dataset.categoryId || '',
         categoryName: event.dataset.categoryName || '',
         categoryColor: event.dataset.categoryColor || '',
         staffId: event.dataset.staffId || '',
         scheduleId: event.dataset.scheduleId || '',
         scheduleStatus: event.dataset.scheduleStatus || 'scheduled',
+        note: event.dataset.note || '',
         sourceRow: row,
-      }));
-      details.append(titleLabel, meta);
+        });
+      });
+      details.append(titleLabel, meta, statusBadge);
       row.append(timeLabel, details, detailLink);
       eventList.append(row);
     });
@@ -611,6 +727,11 @@
   }
 
   renderCalendar();
+  window.setInterval(() => {
+    if (dateKey(todayDate) === currentDayKey()) return;
+    renderCalendar();
+    if (modal.open && isPastDate(selectedDate)) resetModalView();
+  }, 60000);
 
   calendar.addEventListener('click', (event) => {
     const cell = event.target.closest('.day-cell');
@@ -647,7 +768,7 @@
   });
 
   document.querySelector('.today-button')?.addEventListener('click', () => {
-    activeDate = new Date(todayDate);
+    activeDate = currentDayDate();
     renderCalendar();
     calendar.querySelector('.today-number')?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
   });
@@ -660,7 +781,7 @@
   modal.querySelector('[data-modal-add]')?.addEventListener('click', () => openAssignment());
   modal.querySelector('[data-modal-cancel]')?.addEventListener('click', resetModalView);
   cancelScheduleButton?.addEventListener('click', async () => {
-    if (!selectedScheduleId) return;
+    if (!selectedScheduleId || isPastDate(selectedDate)) return;
     const warning = selectedScheduleStatus === 'acknowledged'
       ? 'Nhân viên đã xác nhận và đang trên đường. Hủy lịch này? Nhân viên và người báo sự cố sẽ được thông báo.'
       : 'Hủy lịch xử lý này? Nhân viên và người báo sự cố sẽ được thông báo.';
@@ -680,8 +801,7 @@
       if (!response.ok) throw new Error(result.message || Object.values(result.errors || {}).flat().join(' '));
       window.location.reload();
     } catch (error) {
-      emptyState.textContent = error.message || 'Không thể hủy lịch.';
-      emptyState.hidden = false;
+      showAssignmentFeedback(error.message || 'Không thể hủy lịch.');
     } finally {
       cancelScheduleButton.disabled = false;
     }
@@ -690,15 +810,35 @@
     technicianSelect.value = '';
     filterTechnicians();
   });
-  modal.querySelector('[data-modal-save]')?.addEventListener('click', async (event) => {
-    const button = event.currentTarget;
+  [technicianSelect, assignmentTime, assignmentNote].forEach((field) => {
+    field.addEventListener('input', updateAssignmentForm);
+    field.addEventListener('change', updateAssignmentForm);
+  });
+  assignmentTime.addEventListener('click', () => {
+    if (assignmentTime.disabled || assignmentTime.readOnly) return;
+    try {
+      assignmentTime.showPicker();
+    } catch (_) {
+      assignmentTime.focus();
+    }
+  });
+  modal.querySelector('[data-modal-save]')?.addEventListener('click', async () => {
     let saved = false;
-    if (!ticketSelect.value || !technicianSelect.value || !assignmentDate.value || !assignmentTime.value) {
-      emptyState.textContent = 'Chọn phiếu, nhân viên và thời gian trước khi lưu.';
-      emptyState.hidden = false;
+    if (assignmentSaving) return;
+    if (assignmentLocked || !selectedDate || isPastDate(selectedDate)) {
+      resetModalView();
       return;
     }
-    button.disabled = true;
+    assignmentValidationShown = true;
+    const errors = renderAssignmentErrors();
+    if (errors.length) {
+      const field = errors[0].field;
+      (field.closest('.modal-custom-select')?.querySelector('.modal-select-trigger') || field).focus();
+      assignmentFeedback.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    assignmentSaving = true;
+    updateSaveButton();
     try {
       const response = await fetch(`${appBase}/api/admin/tickets/${encodeURIComponent(ticketSelect.value)}/assign`, {
         method: 'POST', credentials: 'same-origin',
@@ -709,8 +849,8 @@
         body: JSON.stringify({
           staff_id: technicianSelect.value,
           schedule_id: selectedScheduleId || null,
-          scheduled_at: `${assignmentDate.value}T${assignmentTime.value}`,
-          note: modal.querySelector('#modal-assignment-note')?.value || '',
+          scheduled_at: `${selectedDate}T${assignmentTime.value}`,
+          note: assignmentNote.value.trim(),
         }),
       });
       const result = await response.json();
@@ -719,13 +859,16 @@
       if (window.HelpdeskFeedback) window.HelpdeskFeedback.reload('Đã lưu phân công thành công.');
       else window.location.reload();
     } catch (error) {
-      emptyState.textContent = error.message || 'Không thể lưu lịch phân công.';
-      emptyState.hidden = false;
+      showAssignmentFeedback(error.message || 'Không thể lưu lịch phân công.');
     } finally {
-      if (!saved) button.disabled = false;
+      if (!saved) {
+        assignmentSaving = false;
+        updateSaveButton();
+      }
     }
   });
-  document.querySelector('[data-open-assignment]')?.addEventListener('click', () => {
+  openAssignmentButton?.addEventListener('click', () => {
+    if (isPastDate(dateKey(activeDate))) return;
     const dateCell = [...calendar.querySelectorAll('.day-cell')].find((cell) => cell.dataset.date === dateKey(activeDate));
     if (dateCell) openDay(dateCell);
     else {
