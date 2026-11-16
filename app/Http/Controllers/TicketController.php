@@ -607,6 +607,8 @@ class TicketController extends Controller
             $lockedTicket->repairAttachments()->delete();
         });
         if ($oldRepairPaths !== []) {
+            Storage::disk('repair-evidence')->delete($oldRepairPaths);
+            // Remove any legacy public copies remaining before migration.
             Storage::disk('public')->delete($oldRepairPaths);
         }
         $this->notifyPeople($ticket, ['ticket_id' => $ticket->id, 'ticket_number' => $ticket->ticket_number, 'title' => $ticket->title, 'status' => 'reopened', 'message' => 'Quản lý yêu cầu tiếp tục xử lý phiếu.']);

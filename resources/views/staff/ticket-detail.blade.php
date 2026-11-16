@@ -81,7 +81,7 @@
                             <h3>Ảnh sinh viên gửi ban đầu <span>{{ $ticket->reportAttachments->count() }}</span></h3>
                             <div class="staff-ticket-attachment-grid">
                                 @foreach($ticket->reportAttachments as $attachment)
-                                    <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh do sinh viên gửi: {{ $attachment->original_name }}" loading="lazy"></a>
+                                    <a class="js-image-preview" href="{{ $attachment->url }}" title="{{ $attachment->original_name }}"><img src="{{ $attachment->url }}" alt="Ảnh do sinh viên gửi: {{ $attachment->original_name }}" loading="lazy"></a>
                                 @endforeach
                             </div>
                         </div>
@@ -91,7 +91,7 @@
                             <h3>Ảnh nhân viên minh chứng sửa chữa <span>{{ $ticket->repairAttachments->count() }}</span></h3>
                             <div class="staff-ticket-attachment-grid">
                                 @foreach($ticket->repairAttachments as $attachment)
-                                    <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh nhân viên sửa chữa: {{ $attachment->original_name }}" loading="lazy"></a>
+                                    <a class="js-image-preview" href="{{ $attachment->url }}" title="{{ $attachment->original_name }}"><img src="{{ $attachment->url }}" alt="Ảnh nhân viên sửa chữa: {{ $attachment->original_name }}" loading="lazy"></a>
                                 @endforeach
                             </div>
                         </div>

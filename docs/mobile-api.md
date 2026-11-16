@@ -67,6 +67,7 @@ Lịch tuần/tháng lấy qua endpoint lịch với from, to.
 | GET | /tickets/{id} | Chi tiết, ảnh, lịch, lịch sử; admin có eligible_staff phù hợp danh mục |
 | PATCH / POST | /tickets/{id} | Người báo sửa phiếu còn trạng thái new |
 | GET | /tickets/{id}/logs | Lịch sử xử lý |
+| GET | /tickets/{ticket}/attachments/{attachment} | Dữ liệu ảnh sửa chữa; chỉ admin hoặc staff đang được giao phiếu |
 
 Tạo phiếu: room_code, category_id, title, description; tùy chọn room_id, building_code, phone, priority, attachments[].
 Sửa phiếu cần thêm room_id, building_code; remove_attachments=1 hoặc ảnh mới thay bộ ảnh báo cáo cũ.
@@ -79,6 +80,18 @@ building (mã tòa), reporter_role, priority, period, from, to, page, per_page.
 Admin xem tất cả; staff xem phiếu được giao; student/teacher xem phiếu của mình.
 Customer nhận ảnh báo cáo; ảnh sửa chữa và ghi chú nội bộ của lịch không được trả cho customer.
 Các alias /admin/tickets và /staff/tickets dùng chung bộ lọc này.
+
+### Tải ảnh minh chứng sửa chữa (SEC-01)
+
+Ảnh có `attachment_type=repair` nằm trên disk riêng tư. Thuộc tính `url` là URL đầy đủ của endpoint ở bảng trên; dùng URL API trả về, không ghép đường dẫn `/storage/` từ `path` hoặc tên file.
+
+- Mobile phải gửi `Authorization: Bearer <access_token>` trong **request tải ảnh**, kể cả khi request lấy chi tiết phiếu trước đó đã có token. Cấu hình header cho thư viện hiển thị ảnh, hoặc tải bytes có header rồi hiển thị. Không truyền token qua query string.
+- Web sử dụng session Sanctum đang đăng nhập cho ảnh và xem trước ảnh.
+- API thành công trả trực tiếp dữ liệu ảnh theo MIME thực tế, không bọc JSON. Phản hồi có `Cache-Control: private, no-store` và `X-Content-Type-Options: nosniff`; client không lưu ảnh này vào cache dùng chung hoặc cache bền vững.
+- Chưa đăng nhập/token không hợp lệ trả 401; sai quyền hoặc tài khoản bị khóa trả 403. Ảnh không tồn tại, sai phiếu, không phải loại `repair` hoặc thiếu file riêng tư trả 404 với người đã qua các kiểm tra tương ứng.
+- Admin xem được ảnh; staff chỉ xem khi đang được giao phiếu. Student/teacher không được xem ảnh sửa chữa của chính phiếu mình báo. Khi đổi người phụ trách, staff cũ mất quyền; khi mở lại phiếu, URL ảnh cũ không còn hợp lệ.
+
+Ảnh báo cáo và avatar vẫn dùng URL công khai hiện có. Máy chủ nâng cấp từ bản cũ phải chuyển dữ liệu theo [hướng dẫn SEC-01](SEC-01-repair-evidence.md); không có cơ chế đọc dự phòng ảnh sửa chữa từ public.
 
 ## Phân công, lịch và xử lý
 

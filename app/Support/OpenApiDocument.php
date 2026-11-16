@@ -94,6 +94,7 @@ class OpenApiDocument
     private function tag(string $path, string $action): string
     {
         $tags = self::TAGS;
+        if ($action === 'RepairEvidenceController@show') return $tags[4];
         if (str_starts_with($path, '/auth/')) return $tags[0];
         if ($path === '/me' || str_starts_with($path, '/account/')) return $tags[1];
         if (str_starts_with($path, '/notifications')) return $tags[10];
@@ -121,6 +122,7 @@ class OpenApiDocument
             if ($uploadLabel) return $uploadLabel;
         }
         $labels = [
+            'RepairEvidenceController@show' => 'Xem ảnh minh chứng sửa chữa nội bộ',
             'AuthController@register' => 'Đăng ký sinh viên',
             'AuthController@verifyOtp' => 'Xác thực OTP email',
             'AuthController@resendOtp' => 'Gửi lại OTP email',
@@ -194,6 +196,7 @@ class OpenApiDocument
     private function notes(string $action): string
     {
         return match ($action) {
+            'RepairEvidenceController@show' => 'Trả dữ liệu ảnh, chỉ admin hoặc staff đang được giao phiếu được xem. Gửi Bearer token trong header khi tải ảnh; không đặt token trong URL. Không lưu cache ảnh.',
             'AuthController@register' => 'Chỉ email @ut.edu.vn. Luôn tạo student; vai trò teacher do quản lý cấp.',
             'AuthController@verifyOtp', 'AuthController@resendOtp' => 'OTP lấy từ email, hiệu lực 5 phút; gửi lại cách nhau tối thiểu 60 giây.',
             'AuthController@sendPasswordResetOtp' => 'Áp dụng mọi email tài khoản hoạt động đã xác thực, không giới hạn email trường.',

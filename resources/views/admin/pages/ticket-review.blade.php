@@ -28,7 +28,7 @@
         <p class="detail-description">Ảnh gốc được gửi cùng phiếu để đối chiếu tình trạng trước khi sửa.</p>
         <div class="ticket-attachments">
             @forelse($ticket->reportAttachments as $attachment)
-            <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh sinh viên gửi: {{ $attachment->original_name }}" loading="lazy"></a>
+            <a class="js-image-preview" href="{{ $attachment->url }}" title="{{ $attachment->original_name }}"><img src="{{ $attachment->url }}" alt="Ảnh sinh viên gửi: {{ $attachment->original_name }}" loading="lazy"></a>
             @empty
             <p>Phiếu này không có ảnh ban đầu.</p>
             @endforelse
@@ -41,7 +41,7 @@
         <p class="detail-description">{{ $ticket->resolution_note ?: 'Nhân viên chưa gửi ghi chú kết quả.' }}</p>
         <div class="ticket-attachments">
             @forelse($ticket->repairAttachments as $attachment)
-            <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh nhân viên sửa chữa: {{ $attachment->original_name }}" loading="lazy"></a>
+            <a class="js-image-preview" href="{{ $attachment->url }}" title="{{ $attachment->original_name }}"><img src="{{ $attachment->url }}" alt="Ảnh nhân viên sửa chữa: {{ $attachment->original_name }}" loading="lazy"></a>
             @empty
             <p>Chưa có ảnh minh chứng sửa chữa.</p>
             @endforelse

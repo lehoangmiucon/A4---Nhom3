@@ -28,6 +28,14 @@ PATCH hỗ trợ sửa dữ liệu JSON; PHP không xử lý upload PATCH multip
 Các request Execute gọi thẳng API đang chạy và áp dụng điều kiện nghiệp vụ như website.
 Swagger UI là công cụ xem tài liệu và gọi API tương tác; các kiểm thử tự động của backend nằm trong tests/Feature.
 
+## Kiểm tra ảnh sửa chữa riêng tư (SEC-01)
+
+Trong nhóm **05 - Staff - Công việc**, dùng `GET /tickets/{ticket}/attachments/{attachment}` để tải ảnh sửa chữa. Điền ID phiếu và ID ảnh lấy từ chi tiết phiếu, rồi Execute với token admin hoặc staff đang được giao phiếu. Endpoint trả dữ liệu ảnh trực tiếp, không phải JSON; xem Code và Response headers để kiểm tra kết quả. Response có `Cache-Control: private, no-store`.
+
+Token student/teacher hoặc staff không được giao phiếu bị từ chối; thiếu/sai token trả 401 dù trình duyệt đang đăng nhập web. Không mở link ảnh trong tab mới để kiểm chứng quyền của Bearer token: tab mới không tự gửi token trong Authorize và có thể sử dụng session web. Dùng Execute để kiểm tra từng token.
+
+Client mobile cũng phải gửi header xác thực trong request tải ảnh. Xem [hướng dẫn API mobile](mobile-api.md#tải-ảnh-minh-chứng-sửa-chữa-sec-01) và [quy trình triển khai SEC-01](SEC-01-repair-evidence.md).
+
 ## Cách tích hợp
 
 - OpenAPI 3.0.3 được xây từ route API đã đăng ký, gồm nhóm chức năng, quyền, body, tham số và response.

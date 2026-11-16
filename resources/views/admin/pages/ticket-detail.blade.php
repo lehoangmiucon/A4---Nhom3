@@ -161,7 +161,7 @@ $stateMessage = $ticket->assignee
         @if($ticket->reportAttachments->isNotEmpty())
         <div class="ticket-attachments evidence-card-attachments">
             @foreach($ticket->reportAttachments as $attachment)
-            <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh sinh viên gửi: {{ $attachment->original_name }}"><span><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Xem ảnh</span></a>
+            <a class="js-image-preview" href="{{ $attachment->url }}" title="{{ $attachment->original_name }}"><img src="{{ $attachment->url }}" alt="Ảnh sinh viên gửi: {{ $attachment->original_name }}"><span><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Xem ảnh</span></a>
             @endforeach
         </div>
         @else
@@ -181,7 +181,7 @@ $stateMessage = $ticket->assignee
         @if($ticket->repairAttachments->isNotEmpty())
         <div class="ticket-attachments evidence-card-attachments repair-evidence-attachments">
             @foreach($ticket->repairAttachments as $attachment)
-            <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh nhân viên sửa chữa: {{ $attachment->original_name }}"><span><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Xem ảnh</span></a>
+            <a class="js-image-preview" href="{{ $attachment->url }}" title="{{ $attachment->original_name }}"><img src="{{ $attachment->url }}" alt="Ảnh nhân viên sửa chữa: {{ $attachment->original_name }}"><span><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Xem ảnh</span></a>
             @endforeach
         </div>
         @else

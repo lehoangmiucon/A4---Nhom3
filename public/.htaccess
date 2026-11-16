@@ -5,6 +5,9 @@
 
     RewriteEngine On
 
+    # Legacy evidence URLs must never bypass Laravel authentication.
+    RewriteRule ^storage/ticket-attachments/repairs(?:/|$) - [F,L,NC]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

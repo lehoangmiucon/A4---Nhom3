@@ -27,6 +27,8 @@ Route::get('/categories', [CategoryController::class, 'options']);
 Route::post('/tickets', [TicketController::class, 'store'])->middleware(['auth:sanctum', 'account.active']);
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::get('/tickets/{ticket}/attachments/{attachment}', [\App\Http\Controllers\RepairEvidenceController::class, 'show'])
+        ->whereNumber(['ticket', 'attachment'])->name('tickets.attachments.show');
     Route::get('/me', [AccountController::class, 'profile']);
     Route::get('/account/profile', [AccountController::class, 'profile']);
     Route::patch('/account/profile', [AccountController::class, 'updateProfile']);

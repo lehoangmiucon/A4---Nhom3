@@ -11,6 +11,10 @@ class TicketAttachment extends Model
 
     public function getUrlAttribute(): string
     {
+        if ($this->attachment_type === 'repair') {
+            return route('tickets.attachments.show', ['ticket' => $this->ticket_id, 'attachment' => $this->id]);
+        }
+
         return url(\Illuminate\Support\Facades\Storage::disk('public')->url($this->path));
     }
 

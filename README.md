@@ -18,12 +18,14 @@ php artisan key:generate
 2. Mở phpMyAdmin và tạo database `helpdesk` nếu chưa có. Migration trong `database/migrations` mô tả cấu trúc bảng của hệ thống.
 3. Kiểm tra `.env`: `DB_CONNECTION=mysql`, host `127.0.0.1`, port `3309` theo cấu hình máy hiện tại; đổi port và thông tin đăng nhập cho phù hợp máy cài đặt.
 4. Chạy `php artisan migrate` để tạo bảng. Không cần tạo từng bảng bằng tay trong phpMyAdmin.
-5. Chạy `php artisan storage:link` để truy cập ảnh minh chứng.
+5. Chạy `php artisan storage:link` để truy cập ảnh báo cáo và ảnh đại diện. Ảnh minh chứng sửa chữa lưu riêng tư và được tải qua API có kiểm tra quyền.
 6. Trỏ document root của Apache vào thư mục `public`, hoặc dùng `php artisan serve`.
 7. Đăng ký tài khoản, xác thực OTP rồi cấp quyền admin cho tài khoản đầu tiên bằng `php artisan helpdesk:make-admin email@domain.test`.
 8. Mở thêm một cửa sổ PowerShell và chạy `php artisan schedule:work` để scheduler tự dọn tài khoản chưa xác thực sau 24 giờ khi đang phát triển local.
 
 Repository chứa mã nguồn và migration; `.env`, `vendor`, cache, database cục bộ và ảnh do người dùng tải lên không được đưa lên Git. GitHub Pages chỉ phục vụ trang tĩnh, không chạy được backend Laravel/PHP của dự án.
+
+Khi cập nhật hệ thống đã có ảnh sửa chữa, chạy `php artisan attachments:privatize-repairs --dry-run` rồi `php artisan attachments:privatize-repairs` trên từng máy lưu ảnh. Xem [hướng dẫn khắc phục SEC-01](docs/SEC-01-repair-evidence.md) về chặn URL cũ, chuyển ảnh và kiểm tra sau triển khai. Trạng thái các phát hiện nằm trong [báo cáo bảo mật](docs/SECURITY_AUDIT.md).
 
 Khi `MAIL_MAILER=log`, mã OTP được ghi vào log Laravel để phát triển trên máy. Muốn gửi email thật, cấu hình SMTP trong `.env`.
 
