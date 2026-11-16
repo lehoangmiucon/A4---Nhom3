@@ -7,9 +7,9 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Thông báo kỹ thuật · Helpdesk</title>
     <link rel="stylesheet" href="assets/css/staff.css?v=20261106-cleanup1">
-    <link rel="stylesheet" href="../admin/assets/css/notifications.css?v=20261104-grouped1">
-    <link rel="stylesheet" href="assets/css/staff-notifications.css?v=20261104-redesign1">
-    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261104-3">
+    <link rel="stylesheet" href="../admin/assets/css/notifications.css?v=20261110-read-all1">
+    <link rel="stylesheet" href="assets/css/staff-notifications.css?v=20261110-read-all1">
+    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261110-custom-select1">
 </head>
 <body class="staff-role-page role-page">
 <div class="role-shell">
@@ -48,10 +48,15 @@
                     <h2 id="sn-list-title">Cập nhật gần đây</h2>
                     <p>Thông báo cùng một phiếu được gộp lại để bạn dễ theo dõi.</p>
                 </div>
-                <span class="sn-total-pill">{{ $notificationGroups->count() }} mục</span>
+                <div class="sn-notification-actions">
+                    @if(($unreadNotificationCount ?? 0) > 0)
+                        <button class="notification-read-all-button" type="button" data-notification-read-all="{{ url('/api/notifications/read-all') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg> Đánh dấu đã đọc hết</button>
+                    @endif
+                    <span class="sn-total-pill">{{ $notificationGroups->count() }} mục</span>
+                </div>
             </header>
 
-            <p class="api-feedback" id="staff-notification-error" role="status" aria-live="polite" hidden></p>
+            <p class="api-feedback" id="staff-notification-error" data-notification-feedback role="status" aria-live="polite" hidden></p>
 
             <div class="sn-list">
                 @forelse($notificationGroups as $group)
@@ -100,6 +105,6 @@
     </main>
 </div>
 <script src="assets/js/staff.js?v=20261106-cleanup1"></script>
-<script src="../admin/assets/js/notification-groups.js?v=20261104-grouped1"></script>
+<script src="../admin/assets/js/notification-groups.js?v=20261110-read-all1"></script>
 </body>
 </html>

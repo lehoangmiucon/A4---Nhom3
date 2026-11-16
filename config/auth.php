@@ -114,4 +114,8 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    'email_otp_expire_minutes' => 5,
+    'email_otp_resend_seconds' => 60,
+    'unverified_account_expire_hours' => 24,
+
 ];

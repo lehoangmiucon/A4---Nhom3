@@ -8,6 +8,7 @@ use App\Models\Room;
 use App\Models\Ticket;
 use App\Models\TicketSchedule;
 use App\Models\User;
+use App\Support\PeriodRange;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class UiController extends Controller
         $path = trim($path ?: 'index', '/');
         if (str_ends_with($path, '.html')) {
             $cleanPath = substr($path, 0, -5);
-            return redirect(url('/'.$section.'/'.$cleanPath).($request->getQueryString() ? '?'.$request->getQueryString() : ''), 301);
+            return redirect(url('/' . $section . '/' . $cleanPath) . ($request->getQueryString() ? '?' . $request->getQueryString() : ''), 301);
         }
         if (!$request->user()) return redirect(url('/auth/login'));
         abort_if($request->user()->is_deleted, 403, 'Tai khoan da bi khoa.');
@@ -45,7 +46,7 @@ class UiController extends Controller
         $data = [
             'currentUser' => $request->user(),
             'pagePath' => $path,
-            'pendingTicketCount' => Ticket::whereIn('status', ['new', 'reopened'])->count(),
+            'pendingTicketCount' => Ticket::pendingAssignment()->count(),
             'unreadNotificationCount' => $request->user()?->unreadNotifications()->count() ?? 0,
             'statusLabels' => [
                 'new' => 'Chờ tiếp nhận',
@@ -66,39 +67,24 @@ class UiController extends Controller
             $data['notificationPreviewGroups'] = $this->groupNotifications($recentNotifications)->take(5);
         }
         if ($section === 'admin' && $path === 'index') {
-            $period = $request->query('period', 'month');
-            $periodOptions = [
-                'day' => 'Ngày',
-                'month' => 'Tháng',
-                'year' => 'Năm',
-            ];
-            if (! array_key_exists($period, $periodOptions)) {
-                $period = 'month';
-            }
-
-            $periodStart = match ($period) {
-                'day' => now()->startOfDay(),
-                'year' => now()->startOfYear(),
-                default => now()->startOfMonth(),
-            };
-            $periodEnd = match ($period) {
-                'day' => now()->endOfDay(),
-                'year' => now()->endOfYear(),
-                default => now()->endOfMonth(),
-            };
+            $period = PeriodRange::normalize($request->query('period', 'month'));
+            $periodOptions = PeriodRange::OPTIONS;
+            [$periodStart, $periodEnd] = PeriodRange::bounds($period);
 
             $data['dashboardPeriod'] = $period;
             $data['dashboardPeriodOptions'] = $periodOptions;
-            $data['dashboardPeriodTitle'] = ['day' => 'hôm nay', 'month' => 'tháng này', 'year' => 'năm nay'][$period];
+            $data['dashboardPeriodTitle'] = PeriodRange::title($period);
             $periodTickets = Ticket::whereBetween('created_at', [$periodStart, $periodEnd]);
             $data['dashboardCounts'] = (clone $periodTickets)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
             $data['dashboardTotal'] = (clone $periodTickets)->count();
             $data['dashboardTodayCount'] = $data['dashboardTotal'];
-            $data['dashboardUnassignedCount'] = (clone $periodTickets)->whereIn('status', ['new', 'reopened'])->count();
+            $data['dashboardUnassignedCount'] = (clone $periodTickets)->pendingAssignment()->count();
+            $data['dashboardTeacherCount'] = (clone $periodTickets)
+                ->whereHas('reporter', fn($reporter) => $reporter->where('role', 'teacher'))->count();
             $data['dashboardResolvedCount'] = $data['dashboardCounts']['resolved'] ?? 0;
             $data['dashboardInProgressCount'] = $data['dashboardCounts']['in_progress'] ?? 0;
             $data['weeklyTicketCount'] = $data['dashboardTotal'];
-            $data['recentTickets'] = Ticket::with(['room.building', 'assignee'])
+            $data['recentTickets'] = Ticket::with(['room.building', 'assignee', 'category'])
                 ->whereBetween('created_at', [$periodStart, $periodEnd])->latest()->take(6)->get();
             $data['equipmentBreakdown'] = Category::query()
                 ->withCount(['tickets as tickets_count' => fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd])])
@@ -108,12 +94,20 @@ class UiController extends Controller
                 ->withCount('rooms')->orderBy('code')->get();
         }
         if ($section === 'admin' && $path === 'pages/reports') {
-            $data['reportCounts'] = Ticket::selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
-            $data['totalTickets'] = Ticket::count();
-            $data['resolvedTickets'] = Ticket::whereIn('status', ['resolved', 'closed'])->count();
-            $data['equipmentBreakdown'] = Category::query()->withCount('tickets')
-                ->whereHas('tickets')->orderByDesc('tickets_count')->take(5)->get();
-            $resolved = Ticket::whereNotNull('resolved_at')->get(['created_at', 'resolved_at']);
+            $period = PeriodRange::normalize($request->query('period', 'month'));
+            [$periodStart, $periodEnd] = PeriodRange::bounds($period);
+            $data['reportPeriod'] = $period;
+            $data['reportPeriodOptions'] = PeriodRange::OPTIONS;
+            $data['reportPeriodTitle'] = PeriodRange::title($period);
+            $periodTickets = Ticket::whereBetween('created_at', [$periodStart, $periodEnd]);
+            $data['reportCounts'] = (clone $periodTickets)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
+            $data['totalTickets'] = (clone $periodTickets)->count();
+            $data['resolvedTickets'] = (clone $periodTickets)->whereIn('status', ['resolved', 'closed'])->count();
+            $data['equipmentBreakdown'] = Category::query()
+                ->withCount(['tickets as tickets_count' => fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd])])
+                ->whereHas('tickets', fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
+                ->orderByDesc('tickets_count')->take(5)->get();
+            $resolved = (clone $periodTickets)->whereNotNull('resolved_at')->get(['created_at', 'resolved_at']);
             $averageMinutes = $resolved->avg(fn($ticket) => $ticket->created_at->diffInMinutes($ticket->resolved_at));
             $data['averageResolutionHours'] = number_format(($averageMinutes ?? 0) / 60, 1, ',', '');
         }
@@ -122,11 +116,48 @@ class UiController extends Controller
         return response()->view($view, $data);
     }
 
+    public function reportSummary(Request $request)
+    {
+        abort_unless($request->user()?->role === 'admin', 403);
+
+        $period = PeriodRange::normalize($request->query('period', 'month'));
+        [$periodStart, $periodEnd] = PeriodRange::bounds($period);
+        $periodTickets = Ticket::whereBetween('created_at', [$periodStart, $periodEnd]);
+        $counts = (clone $periodTickets)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
+        $total = (clone $periodTickets)->count();
+        $teacherReports = (clone $periodTickets)
+            ->whereHas('reporter', fn($reporter) => $reporter->where('role', 'teacher'))->count();
+        $resolved = (clone $periodTickets)->whereNotNull('resolved_at')->get(['created_at', 'resolved_at']);
+        $averageMinutes = $resolved->avg(fn($ticket) => $ticket->created_at->diffInMinutes($ticket->resolved_at));
+        $categories = Category::query()
+            ->withCount(['tickets as tickets_count' => fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd])])
+            ->whereHas('tickets', fn($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
+            ->orderByDesc('tickets_count')->take(5)->get(['id', 'name', 'color']);
+
+        return response()->json([
+            'period' => $period,
+            'period_title' => PeriodRange::title($period),
+            'total' => $total,
+            'teacher_reports' => $teacherReports,
+            'closed' => (int) ($counts['closed'] ?? 0),
+            'resolved' => (int) ($counts['resolved'] ?? 0) + (int) ($counts['closed'] ?? 0),
+            'average_hours' => number_format(($averageMinutes ?? 0) / 60, 1, ',', ''),
+            'counts' => $counts,
+            'categories' => $categories,
+            'max_category_count' => (int) ($categories->max('tickets_count') ?? 0),
+        ]);
+    }
+
     private function addPageData(Request $request, string $section, string $path, array &$data): void
     {
         $user = $request->user();
 
         if ($section === 'admin' && $path === 'pages/incidents') {
+            $period = $request->query('period', 'month');
+            if (!is_string($period) || ($period !== 'all' && !array_key_exists($period, PeriodRange::OPTIONS))) {
+                $period = 'month';
+            }
+            $data['incidentPeriod'] = $period;
             $focus = $request->query('focus');
             $focusLabels = [
                 'today' => 'Phiếu được gửi hôm nay',
@@ -138,21 +169,24 @@ class UiController extends Controller
             if (! is_string($focus) || ! array_key_exists($focus, $focusLabels)) {
                 $focus = null;
             }
-            $ticketQuery = Ticket::with(['room.building', 'assignee', 'schedules']);
+            $ticketQuery = Ticket::with(['room.building', 'assignee', 'schedules', 'reporter:id,name,role', 'category']);
+            if ($period !== 'all') {
+                $ticketQuery->whereBetween('created_at', PeriodRange::bounds($period));
+            }
             match ($focus) {
                 'today' => $ticketQuery->whereDate('created_at', today()),
-                'unassigned' => $ticketQuery->whereIn('status', ['new', 'reopened']),
+                'unassigned' => $ticketQuery->pendingAssignment(),
                 'assigned' => $ticketQuery->where('status', 'assigned'),
                 'in_progress' => $ticketQuery->where('status', 'in_progress'),
                 'resolved' => $ticketQuery->where('status', 'resolved'),
                 default => null,
             };
-            $data['tickets'] = $ticketQuery->latest()->get();
+            $data['tickets'] = $ticketQuery->latest('updated_at')->orderByDesc('id')->get();
             $data['incidentFocus'] = $focus;
             $data['incidentFocusLabel'] = $focus ? $focusLabels[$focus] : null;
             $data['incidentCounts'] = [
                 'all' => Ticket::count(),
-                'pending' => Ticket::whereIn('status', ['new', 'reopened'])->count(),
+                'pending' => Ticket::pendingAssignment()->count(),
                 'in_progress' => Ticket::where('status', 'in_progress')->count(),
                 'completed_month' => Ticket::whereIn('status', ['resolved', 'closed'])
                     ->whereMonth('resolved_at', now()->month)->whereYear('resolved_at', now()->year)->count(),
@@ -196,12 +230,13 @@ class UiController extends Controller
         }
         if ($section === 'admin' && $path === 'pages/schedule') {
             $data['schedules'] = TicketSchedule::with(['ticket.room.building', 'ticket.category', 'staff'])->where('status', '!=', 'cancelled')->orderBy('starts_at')->get();
-            $data['scheduleEvents'] = $data['schedules']->map(fn ($schedule) => [
+            $data['scheduleEvents'] = $data['schedules']->map(fn($schedule) => [
                 'id' => $schedule->id,
                 'ticket_id' => $schedule->ticket_id,
                 'ticket_number' => $schedule->ticket->ticket_number,
                 'title' => $schedule->ticket->title,
                 'room' => $schedule->ticket->room?->code,
+                'room_name' => $schedule->ticket->room?->name ?: ($schedule->ticket->room_label ?: ($schedule->ticket->room?->code ?: 'Chưa xác định phòng')),
                 'date' => $schedule->starts_at->format('Y-m-d'),
                 'time' => $schedule->starts_at->format('H:i'),
                 'staff_id' => $schedule->staff_id,
@@ -211,19 +246,18 @@ class UiController extends Controller
                 'category_color' => $schedule->ticket->category?->color ?? '#64748B',
                 'ticket_status' => $schedule->ticket->status,
                 'schedule_status' => $schedule->status,
+                'note' => $schedule->note ?? '',
             ])->values();
             $data['staffMembers'] = User::with('categories:id,name,color')->where('role', 'staff')->where('is_deleted', false)->orderBy('name')->get();
-            $data['tickets'] = Ticket::with('category')
-                ->whereIn('status', ['new', 'reopened'])
-                ->whereNull('assigned_to_id')
+            $data['tickets'] = Ticket::with(['category', 'room'])
+                ->pendingAssignment()
                 ->whereDoesntHave('schedules', fn($query) => $query->where('status', '!=', 'cancelled'))
                 ->latest()
                 ->get();
             $data['categories'] = Category::orderBy('name')->get();
             $data['scheduleCounts'] = [
                 'today' => TicketSchedule::where('status', '!=', 'cancelled')->whereDate('starts_at', today())->count(),
-                'unassigned' => Ticket::whereIn('status', ['new', 'reopened'])
-                    ->whereNull('assigned_to_id')
+                'unassigned' => Ticket::pendingAssignment()
                     ->whereDoesntHave('schedules', fn($query) => $query->where('status', '!=', 'cancelled'))
                     ->count(),
                 'staff' => \App\Models\User::where('role', 'staff')->where('is_deleted', false)->count(),
@@ -242,15 +276,22 @@ class UiController extends Controller
         }
         if ($section === 'admin' && $path === 'pages/user-detail') {
             $data['student'] = User::whereIn('role', ['student', 'teacher'])
-                ->with(['reportedTickets' => fn($query) => $query->with(['room.building', 'category', 'assignee'])->latest()])
                 ->withCount('reportedTickets')
                 ->findOrFail($request->integer('user'));
+            $data['reportedTicketPage'] = Ticket::with(['room.building', 'category', 'assignee'])
+                ->where('reporter_id', $data['student']->id)->latest()->paginate(15)->withQueryString();
+            $data['reportedTicketsInProgress'] = Ticket::where('reporter_id', $data['student']->id)
+                ->whereIn('status', ['assigned', 'in_progress'])->count();
+            $data['reportedTicketsResolved'] = Ticket::where('reporter_id', $data['student']->id)
+                ->whereIn('status', ['resolved', 'closed'])->count();
         }
         if ($section === 'admin' && $path === 'pages/team-detail') {
             $data['teamMember'] = User::whereIn('role', ['admin', 'staff'])
-                ->with(['categories:id,name,color', 'assignedTickets' => fn($query) => $query->with(['room.building', 'category', 'assignee'])->latest()])
+                ->with('categories:id,name,color')
                 ->withCount('assignedTickets')
                 ->findOrFail($request->integer('user'));
+            $data['assignedTicketPage'] = Ticket::with(['room.building', 'category', 'assignee'])
+                ->where('assigned_to_id', $data['teamMember']->id)->latest()->paginate(15)->withQueryString();
             $data['teamScheduleCount'] = $data['teamMember']->role === 'staff'
                 ? TicketSchedule::where('staff_id', $data['teamMember']->id)->count()
                 : 0;
@@ -267,7 +308,33 @@ class UiController extends Controller
             $data['categories'] = Category::orderBy('name')->get(['id', 'name', 'color']);
         }
         if ($section === 'customer' && $path === 'tickets') {
-            $data['tickets'] = Ticket::with('room.building')->where('reporter_id', $user->id)->latest()->get();
+            $data['categories'] = Category::orderBy('name')->get(['id', 'name', 'color']);
+            $selectedCategoryId = $request->query('category_id');
+            $ticketQuery = Ticket::with(['room.building', 'category'])->where('reporter_id', $user->id);
+            if (is_scalar($selectedCategoryId) && ctype_digit((string) $selectedCategoryId)) {
+                $ticketQuery->where('category_id', (int) $selectedCategoryId);
+            } else {
+                $selectedCategoryId = '';
+            }
+            $searchInput = $request->query('q');
+            $ticketSearch = is_string($searchInput) ? trim($searchInput) : '';
+            if ($ticketSearch !== '') {
+                $searchPattern = '%' . $ticketSearch . '%';
+                $ticketQuery->where(function ($query) use ($searchPattern) {
+                    $query->where('ticket_number', 'like', $searchPattern)
+                        ->orWhere('title', 'like', $searchPattern)
+                        ->orWhere('description', 'like', $searchPattern)
+                        ->orWhere('room_label', 'like', $searchPattern)
+                        ->orWhere('building_label', 'like', $searchPattern)
+                        ->orWhere('equipment_label', 'like', $searchPattern)
+                        ->orWhereHas('room', fn($room) => $room->where('name', 'like', $searchPattern)->orWhere('code', 'like', $searchPattern))
+                        ->orWhereHas('room.building', fn($building) => $building->where('name', 'like', $searchPattern))
+                        ->orWhereHas('category', fn($category) => $category->where('name', 'like', $searchPattern));
+                });
+            }
+            $data['ticketSearch'] = $ticketSearch;
+            $data['selectedCategoryId'] = (string) $selectedCategoryId;
+            $data['tickets'] = $ticketQuery->latest()->paginate(15)->withQueryString();
         }
         if ($section === 'customer' && $path === 'notifications') {
             $data['notifications'] = $user->notifications()->latest()->get();
@@ -284,6 +351,7 @@ class UiController extends Controller
             $data['recentTickets'] = Ticket::with('room.building')->where('reporter_id', $user->id)->latest()->take(5)->get();
         }
         if ($section === 'staff' && $path === 'index') {
+            $data['categories'] = Category::orderBy('name')->get(['id', 'name', 'color']);
             $scheduleQuery = fn($query) => $query->orderBy('starts_at');
             if ($user->role === 'staff') {
                 $scheduleQuery = fn($query) => $query->where('staff_id', $user->id)->orderBy('starts_at');
@@ -412,7 +480,7 @@ class UiController extends Controller
         return $notifications
             ->groupBy(function ($notification) {
                 $ticketId = $notification->data['ticket_id'] ?? null;
-                return $ticketId ? 'ticket:'.$ticketId : 'notification:'.$notification->id;
+                return $ticketId ? 'ticket:' . $ticketId : 'notification:' . $notification->id;
             })
             ->map(function (Collection $items) {
                 $latest = $items->first();
@@ -423,10 +491,10 @@ class UiController extends Controller
                     'ticket_id' => $ticketId,
                     'count' => $items->count(),
                     'unread_count' => $items->whereNull('read_at')->count(),
-                    'count_label' => $items->count().' cập nhật'.($items->whereNull('read_at')->count() ? ' | '.$items->whereNull('read_at')->count().' chưa đọc' : ''),
+                    'count_label' => $items->count() . ' cập nhật' . ($items->whereNull('read_at')->count() ? ' | ' . $items->whereNull('read_at')->count() . ' chưa đọc' : ''),
                     'read_url' => $ticketId
-                        ? url('/api/notifications/tickets/'.$ticketId.'/read')
-                        : url('/api/notifications/'.$latest->id.'/read'),
+                        ? url('/api/notifications/tickets/' . $ticketId . '/read')
+                        : url('/api/notifications/' . $latest->id . '/read'),
                 ];
             })
             ->values();

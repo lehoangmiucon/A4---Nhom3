@@ -80,10 +80,10 @@ $currentSchedule = $ticket->schedules
             @endif
 
             @if(in_array($ticket->status, ['new', 'reopened', 'assigned'], true))
-            <form class="role-form assignment-form" action="#" method="post" data-api-endpoint="/api/admin/tickets/{id}/assign">
+            <form class="role-form assignment-form" action="#" method="post" data-api-endpoint="/api/admin/tickets/{id}/assign" data-require-complete-assignment data-current-staff-id="{{ $ticket->assigned_to_id ?? '' }}" data-current-staff-name="{{ $ticket->assignee?->name ?? '' }}" data-ticket-number="{{ $ticket->ticket_number }}">
                 <input type="hidden" name="schedule_id" value="{{ $currentSchedule?->id }}">
                 <p class="assignment-form-title">{{ $ticket->assignee ? 'Cập nhật phân công hoặc lịch xử lý' : 'Chọn nhân viên và lịch xử lý' }}</p>
-                <label class="form-item assignment-staff-field"><span><i class="fa-solid fa-user-gear" aria-hidden="true"></i> Nhân viên kỹ thuật</span><select name="staff_id" required>
+                <label class="form-item assignment-staff-field"><span><i class="fa-solid fa-user-gear" aria-hidden="true"></i> Nhân viên kỹ thuật <b>*</b></span><select name="staff_id" required>
                         <option value="">Chọn nhân viên</option>
                         @foreach($staffMembers as $staffMember)
                         <option value="{{ $staffMember->id }}" @selected($ticket->assigned_to_id === $staffMember->id)>{{ $staffMember->name }}</option>
@@ -92,11 +92,11 @@ $currentSchedule = $ticket->schedules
                 @if($staffMembers->isEmpty())
                 <p class="assignment-no-staff">Chưa có nhân viên nào được gán danh mục <strong>{{ $ticket->category?->name ?? $ticket->equipment_label }}</strong>. <a href="team#technicians">Cập nhật chuyên môn nhân viên</a></p>
                 @endif
-                <label class="form-item assignment-date-field"><span><i class="fa-regular fa-calendar" aria-hidden="true"></i> Thời gian xử lý</span><input id="assignment-scheduled-at" type="datetime-local" name="scheduled_at"><small class="assignment-help">Để trống nếu muốn giữ lịch hiện tại.</small></label>
-                <label class="form-item assignment-note-field"><span><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i> Ghi chú phân công</span><textarea name="note" maxlength="2000" placeholder="Nội dung cần chuẩn bị trước khi xử lý">{{ $currentSchedule?->note }}</textarea></label>
+                <label class="form-item assignment-date-field"><span><i class="fa-regular fa-calendar" aria-hidden="true"></i> Thời gian xử lý <b>*</b></span><input id="assignment-scheduled-at" type="datetime-local" name="scheduled_at" value="{{ $currentSchedule?->starts_at?->format('Y-m-d\TH:i') }}" required><small class="assignment-help">Vui lòng chọn đầy đủ ngày và giờ xử lý.</small></label>
+                <label class="form-item assignment-note-field"><span><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i> Ghi chú phân công <b>*</b></span><textarea name="note" maxlength="2000" required placeholder="Nội dung cần chuẩn bị trước khi xử lý">{{ $currentSchedule?->note }}</textarea></label>
                 <div class="assignment-form-actions">
                     <small><i class="fa-regular fa-bell" aria-hidden="true"></i> Nhân viên sẽ nhận thông báo khi cập nhật phân công.</small>
-                    <button class="button button-primary" type="submit" @disabled($staffMembers->isEmpty())><i class="fa-regular fa-floppy-disk" aria-hidden="true"></i> {{ $ticket->assignee ? 'Lưu thay đổi phân công' : 'Tiếp nhận và phân công' }}</button>
+                    <button class="button button-primary" type="submit" disabled><i class="fa-regular fa-floppy-disk" aria-hidden="true"></i> {{ $ticket->assignee ? 'Lưu thay đổi phân công' : 'Tiếp nhận và phân công' }}</button>
                 </div>
                 <p class="api-feedback" data-api-feedback role="status" aria-live="polite" hidden></p>
             </form>
@@ -148,6 +148,48 @@ $stateMessage = $ticket->assignee
     <span><strong>{{ $stateTitle }}</strong><small>{{ $stateMessage }}</small></span>
 </aside>
 
+<div class="ticket-evidence-comparison" aria-label="Ảnh minh chứng sự cố">
+    <article class="panel detail-panel evidence-card report-evidence-card">
+        <div class="evidence-heading">
+            <span class="evidence-heading-icon"><i class="fa-solid fa-camera" aria-hidden="true"></i></span>
+            <div class="evidence-heading-copy">
+                <p class="eyebrow">KHI GỬI BÁO CÁO</p>
+                <h2 class="section-heading">Ảnh minh chứng của sinh viên</h2>
+                <small>Hình ảnh ban đầu về tình trạng sự cố · {{ $ticket->reportAttachments->count() }} ảnh</small>
+            </div>
+        </div>
+        @if($ticket->reportAttachments->isNotEmpty())
+        <div class="ticket-attachments evidence-card-attachments">
+            @foreach($ticket->reportAttachments as $attachment)
+            <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh sinh viên gửi: {{ $attachment->original_name }}"><span><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Xem ảnh</span></a>
+            @endforeach
+        </div>
+        @else
+        <p class="evidence-empty">Sinh viên không đính kèm ảnh khi gửi báo cáo.</p>
+        @endif
+    </article>
+
+    <article class="panel detail-panel evidence-card repair-evidence-panel">
+        <div class="evidence-heading">
+            <span class="evidence-heading-icon"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i></span>
+            <div class="evidence-heading-copy">
+                <p class="eyebrow">SAU KHI XỬ LÝ</p>
+                <h2 class="section-heading">Ảnh minh chứng của nhân viên</h2>
+                <small>Kết quả sửa chữa gửi quản lý kiểm tra · {{ $ticket->repairAttachments->count() }} ảnh</small>
+            </div>
+        </div>
+        @if($ticket->repairAttachments->isNotEmpty())
+        <div class="ticket-attachments evidence-card-attachments repair-evidence-attachments">
+            @foreach($ticket->repairAttachments as $attachment)
+            <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh nhân viên sửa chữa: {{ $attachment->original_name }}"><span><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Xem ảnh</span></a>
+            @endforeach
+        </div>
+        @else
+        <p class="evidence-empty">Nhân viên chưa gửi ảnh minh chứng sửa chữa.</p>
+        @endif
+    </article>
+</div>
+
 <section class="two-column detail-columns">
     <div>
         <article class="panel detail-panel">
@@ -157,7 +199,7 @@ $stateMessage = $ticket->assignee
             <div class="detail-facts ticket-issue-facts">
                 <div><small>Danh mục lỗi</small><strong>{{ $ticket->category?->name ?? $ticket->equipment_label }}</strong></div>
                 <div><small>Địa điểm</small><strong>{{ $ticket->room?->building?->name ?? $ticket->building_label }} · {{ $ticket->room?->name ?? $ticket->room_label }}</strong></div>
-                <div><small>Mức độ ưu tiên</small><strong><span class="status-badge status-wait">{{ $ticket->priority }}</span></strong></div>
+                <div><small>Mức độ ưu tiên</small><strong><span class="status-badge priority-badge priority-{{ $ticket->priority }}">{{ $ticket->priority_label }}</span></strong></div>
             </div>
         </article>
 
@@ -165,7 +207,7 @@ $stateMessage = $ticket->assignee
             <p class="eyebrow">NGƯỜI BÁO</p>
             <div class="person-profile">
                 <span class="mini-avatar av-blue" style="width:40px;height:40px;font-size:12px">{{ mb_strtoupper(mb_substr($ticket->reporter?->name ?? $ticket->reporter_name, 0, 2)) }}</span>
-                <span><strong>{{ $ticket->reporter?->name ?? $ticket->reporter_name }}</strong><small>Người gửi sự cố</small><small>{{ $ticket->reporter?->email ?? $ticket->reporter_email }}</small></span>
+                <span><strong>{{ $ticket->reporter?->name ?? $ticket->reporter_name }}</strong><small>{{ $ticket->reporter?->role === 'teacher' ? 'Giáo viên · báo cáo ưu tiên cao' : 'Người gửi sự cố' }}</small><small>{{ $ticket->reporter?->email ?? $ticket->reporter_email }}</small></span>
             </div>
             <div class="detail-facts single-fact">
                 <div><small>Số điện thoại</small><strong>{{ $ticket->reporter_phone ?: '—' }}</strong></div>
@@ -189,7 +231,7 @@ $stateMessage = $ticket->assignee
             </form>
             <form class="role-form ticket-rework-form" action="#" method="post" data-api-endpoint="/api/admin/tickets/{id}/reopen" data-success-message="Đã yêu cầu nhân viên tiếp tục xử lý.">
                 <p class="assignment-help">Ghi rõ phần chưa đạt. Lý do này sẽ lưu vào lịch sử phiếu và gửi cho nhân viên được phân công.</p>
-                <label class="form-item"><span>Yêu cầu nhân viên làm lại</span><textarea name="note" required maxlength="2000" placeholder="Mô tả phần chưa đạt để nhân viên tiếp tục xử lý"></textarea></label>
+                <label class="form-item"><span>Yêu cầu nhân viên làm lại</span><textarea name="note" maxlength="2000" placeholder="Mô tả phần chưa đạt để nhân viên tiếp tục xử lý" aria-describedby="rework-note-error"></textarea><small class="field-validation-error" id="rework-note-error" role="alert" hidden><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> Vui lòng ghi rõ lý do yêu cầu xử lý lại.</small></label>
                 <button class="button button-danger full-button" type="submit"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Yêu cầu xử lý lại</button>
                 <p class="api-feedback" data-api-feedback role="status" aria-live="polite" hidden></p>
             </form>
@@ -216,61 +258,45 @@ $stateMessage = $ticket->assignee
         </article>
     </div>
 
-    <div class="ticket-evidence-comparison" aria-label="Ảnh minh chứng sự cố">
-        <article class="panel detail-panel evidence-card report-evidence-card">
-            <div class="evidence-heading">
-                <span class="evidence-heading-icon"><i class="fa-solid fa-camera" aria-hidden="true"></i></span>
-                <div class="evidence-heading-copy">
-                    <p class="eyebrow">KHI GỬI BÁO CÁO</p>
-                    <h2 class="section-heading">Ảnh minh chứng của sinh viên</h2>
-                    <small>Hình ảnh ban đầu về tình trạng sự cố · {{ $ticket->reportAttachments->count() }} ảnh</small>
-                </div>
-            </div>
-            @if($ticket->reportAttachments->isNotEmpty())
-            <div class="ticket-attachments evidence-card-attachments">
-                @foreach($ticket->reportAttachments as $attachment)
-                @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($attachment->path))
-                <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh sinh viên gửi: {{ $attachment->original_name }}"><span><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Xem ảnh</span></a>
-                @else
-                <p class="evidence-empty" title="{{ $attachment->original_name }}">Không tìm thấy ảnh gốc. Vui lòng khôi phục hoặc tải lại ảnh minh chứng.</p>
-                @endif
-                @endforeach
-            </div>
-            @else
-            <p class="evidence-empty">Sinh viên không đính kèm ảnh khi gửi báo cáo.</p>
-            @endif
-        </article>
-
-        <article class="panel detail-panel evidence-card repair-evidence-panel">
-            <div class="evidence-heading">
-                <span class="evidence-heading-icon"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i></span>
-                <div class="evidence-heading-copy">
-                    <p class="eyebrow">SAU KHI XỬ LÝ</p>
-                    <h2 class="section-heading">Ảnh minh chứng của nhân viên</h2>
-                    <small>Kết quả sửa chữa gửi quản lý kiểm tra · {{ $ticket->repairAttachments->count() }} ảnh</small>
-                </div>
-            </div>
-            @if($ticket->repairAttachments->isNotEmpty())
-            <div class="ticket-attachments evidence-card-attachments repair-evidence-attachments">
-                @foreach($ticket->repairAttachments as $attachment)
-                @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($attachment->path))
-                <a class="js-image-preview" href="{{ url('/storage/'.$attachment->path) }}" title="{{ $attachment->original_name }}"><img src="{{ url('/storage/'.$attachment->path) }}" alt="Ảnh nhân viên sửa chữa: {{ $attachment->original_name }}"><span><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Xem ảnh</span></a>
-                @else
-                <p class="evidence-empty" title="{{ $attachment->original_name }}">Không tìm thấy ảnh gốc. Vui lòng khôi phục hoặc tải lại ảnh minh chứng.</p>
-                @endif
-                @endforeach
-            </div>
-            @else
-            <p class="evidence-empty">Nhân viên chưa gửi ảnh minh chứng sửa chữa.</p>
-            @endif
-        </article>
-    </div>
 </section>
 @endsection
 
 @section('scripts')
-<script src="../assets/js/api-client.js?v=20261106-fast-actions1"></script>
+<script src="{{ url('/admin/assets/js/api-client.js?v=20261113-required-assignment1') }}"></script>
 <script>
+    const assignmentForm = document.querySelector('.assignment-form');
+    assignmentForm?.addEventListener('submit', (event) => {
+        const staffSelect = assignmentForm.querySelector('[name="staff_id"]');
+        const previousStaffId = assignmentForm.dataset.currentStaffId;
+        if (!previousStaffId || staffSelect?.value === previousStaffId) return;
+
+        const nextStaffName = staffSelect?.selectedOptions[0]?.textContent.trim() || 'nhân viên mới';
+        const message = `Phiếu ${assignmentForm.dataset.ticketNumber} hiện đang được phân công cho ${assignmentForm.dataset.currentStaffName}. Bạn có chắc muốn chuyển phiếu này sang ${nextStaffName}?`;
+        if (!window.confirm(message)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+
+    const reworkForm = document.querySelector('.ticket-rework-form');
+    const reworkNote = reworkForm?.querySelector('[name="note"]');
+    const reworkError = reworkForm?.querySelector('#rework-note-error');
+    reworkForm?.addEventListener('submit', (event) => {
+        if (reworkNote?.value.trim()) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        reworkNote?.classList.add('is-invalid');
+        reworkNote?.setAttribute('aria-invalid', 'true');
+        if (reworkError) reworkError.hidden = false;
+        reworkNote?.focus();
+    }, true);
+    reworkNote?.addEventListener('input', () => {
+        if (!reworkNote.value.trim()) return;
+        reworkNote.classList.remove('is-invalid');
+        reworkNote.removeAttribute('aria-invalid');
+        if (reworkError) reworkError.hidden = true;
+    });
+
     document.querySelector('#assignment-scheduled-at')?.addEventListener('click', function() {
         try {
             this.showPicker();

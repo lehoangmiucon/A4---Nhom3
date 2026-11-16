@@ -7,21 +7,25 @@ Danh sách người dùng · Helpdesk trường học
 @section('content')
 <section class="page-title-row">
     <div>
-        <p class="eyebrow">SINH VIÊN VÀ GIẢNG VIÊN</p>
+    <p class="eyebrow">TÀI KHOẢN SINH VIÊN VÀ GIÁO VIÊN</p>
         <h1>Danh sách người dùng</h1>
-        <p>Danh sách sinh viên và giảng viên đã đăng ký và gửi phiếu hỗ trợ.</p>
+        <p>Quản lý tài khoản người báo cáo. Giáo viên dùng cổng sinh viên và phiếu được đánh dấu ưu tiên cao.</p>
     </div>
-    <span class="helper-text">SV/GV tự đăng ký; admin tạo tài khoản nhân viên và quản lý.</span>
+    <span class="helper-text">Tại trang chi tiết, admin có thể chuyển tài khoản sinh viên thành giáo viên.</span>
 </section>
 <section class="summary-strip">
     <div class="summary-tile"><span>Tổng người dùng</span><strong>{{ $users->count() }}</strong></div>
-    <div class="summary-tile"><span>Đang hoạt động</span><strong>{{ $users->where('is_deleted', false)->count() }}</strong></div>
+    <div class="summary-tile"><span>Giáo viên</span><strong>{{ $users->where('role', 'teacher')->count() }}</strong></div>
     <div class="summary-tile"><span>Đã khóa</span><strong>{{ $users->where('is_deleted', true)->count() }}</strong></div>
-    <div class="summary-tile"><span>Phiếu gửi tháng này</span><strong>{{ $monthlyTicketCount }}</strong></div>
+    <div class="summary-tile"><span>Phiếu đã gửi tháng này</span><strong>{{ $monthlyTicketCount }}</strong></div>
 </section>
 <section class="filter-bar">
-    <input id="users-search" class="search-field" type="search" placeholder="Tìm theo tên, mã sinh viên hoặc email...">
-    <select id="users-type-filter" class="select-field" aria-label="Loại người dùng"><option value="">Tất cả loại người dùng</option><option value="student">Sinh viên</option><option value="teacher">Giảng viên</option></select>
+    <input id="users-search" class="search-field" type="search" placeholder="Tìm theo tên hoặc email...">
+    <select id="users-role-filter" class="select-field">
+        <option value="">Tất cả vai trò</option>
+        <option value="student">Sinh viên</option>
+        <option value="teacher">Giáo viên</option>
+    </select>
     <select id="users-status-filter" class="select-field">
         <option value="">Tất cả trạng thái</option>
         <option value="active">Đang hoạt động</option>
@@ -35,7 +39,8 @@ Danh sách người dùng · Helpdesk trường học
             <thead>
                 <tr>
                     <th>NGƯỜI DÙNG</th>
-                    <th>LOẠI NGƯỜI DÙNG</th><th>MÃ SINH VIÊN</th><th>EMAIL</th>
+                    <th>EMAIL</th>
+                    <th>VAI TRÒ</th>
                     <th>PHIẾU ĐÃ GỬI</th>
                     <th>TRẠNG THÁI</th>
                     <th>THAO TÁC</th>
@@ -43,13 +48,13 @@ Danh sách người dùng · Helpdesk trường học
             </thead>
             <tbody>
                 @forelse($users as $listedUser)
-                <tr data-user-row data-user-type="{{ $listedUser->role }}" data-user-status="{{ $listedUser->is_deleted ? 'locked' : 'active' }}" data-user-search="{{ mb_strtolower($listedUser->name.' '.$listedUser->email.' '.$listedUser->member_code) }}">
+                <tr data-user-row data-user-status="{{ $listedUser->is_deleted ? 'locked' : 'active' }}" data-user-role="{{ $listedUser->role }}" data-user-search="{{ mb_strtolower($listedUser->name.' '.$listedUser->email.' '.$listedUser->phone.' '.$listedUser->role) }}">
                     <td><span class="person-cell"><span class="mini-avatar av-blue">{{ mb_strtoupper(mb_substr($listedUser->name, 0, 1)) }}</span><strong>{{ $listedUser->name }}</strong></span></td>
-                    <td>{{ $listedUser->role === 'teacher' ? 'Giảng viên' : 'Sinh viên' }}</td><td>{{ $listedUser->role === 'student' ? ($listedUser->member_code ?: 'Chưa cập nhật') : '—' }}</td><td>{{ $listedUser->email }}</td>
+                    <td>{{ $listedUser->email }}</td>
+                    <td><span class="status-badge {{ $listedUser->role === 'teacher' ? 'status-wait' : 'status-done' }}">{{ $listedUser->role === 'teacher' ? 'Giáo viên' : 'Sinh viên' }}</span></td>
                     <td>{{ $listedUser->reported_tickets_count }}</td>
                     <td><span class="status-badge {{ $listedUser->is_deleted ? 'status-locked' : 'status-done' }}">{{ $listedUser->is_deleted ? 'Đã khóa' : 'Đang hoạt động' }}</span></td>
                     <td>
-                        @include('shared.teacher-confirmation', ['member' => $listedUser])
                         <a class="button button-secondary student-detail-button" href="{{ url('/admin/pages/user-detail?user='.$listedUser->id) }}">
                             <i class="fa-solid fa-eye" aria-hidden="true"></i> Xem chi tiết
                         </a>
@@ -66,9 +71,8 @@ Danh sách người dùng · Helpdesk trường học
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="7">Chưa có người dùng.</td></tr>
+                <tr><td colspan="6">Chưa có tài khoản người dùng.</td></tr>
                 @endforelse
-                <tr data-users-empty hidden><td colspan="7">Không tìm thấy người dùng phù hợp.</td></tr>
             </tbody>
         </table>
     </div>
@@ -78,5 +82,5 @@ Danh sách người dùng · Helpdesk trường học
 @endsection
 
 @section('scripts')
-<script src="{{ url('/admin/assets/js/users.js?v=20261109-teacher') }}"></script>
+<script src="{{ url('/admin/assets/js/users.js?v=20261109-user-roles2') }}"></script>
 @endsection

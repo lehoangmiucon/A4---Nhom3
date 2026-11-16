@@ -454,3 +454,37 @@
     .customer-role-page .customer-topbar .role-logout { min-height: 30px; padding: 0 7px; font-size: 9px; }
     .customer-role-page .customer-topbar .role-nav a { padding: 8px 10px; font-size: 11px; }
 }
+
+/* Shared accessible select menu for customer and staff forms. */
+.helpdesk-select-control{position:relative;display:block;width:100%;min-width:0;--select-accent:#1686df;--select-tint:#edf6fd;--select-border:#d7e3ee}
+.staff-role-page .helpdesk-select-control{--select-accent:#108785;--select-tint:#e8f7f5;--select-border:#cfe7e4}
+.helpdesk-select-control>select.helpdesk-select-native{position:absolute!important;inset:auto auto 0 0!important;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;border:0!important;opacity:0!important;pointer-events:none!important}
+.helpdesk-select-trigger{display:flex;width:100%;min-width:0;min-height:44px;align-items:center;justify-content:space-between;gap:12px;padding:10px 13px;border:1px solid var(--select-border);border-radius:11px;background:linear-gradient(180deg,#fff,#fbfdff);color:#294761;text-align:left;font:500 13px 'Be Vietnam Pro',Arial,sans-serif;cursor:pointer;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}
+.helpdesk-select-trigger:hover,.helpdesk-select-control.is-open .helpdesk-select-trigger{border-color:var(--select-accent);background:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--select-accent) 12%,transparent)}
+.helpdesk-select-trigger:focus-visible{outline:0;border-color:var(--select-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--select-accent) 18%,transparent)}
+.helpdesk-select-trigger:disabled{border-color:#e1e8ee;background:#f3f6f8;color:#9aa9b6;cursor:not-allowed;box-shadow:none}
+.helpdesk-select-trigger>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.helpdesk-select-trigger>i{flex:none;color:var(--select-accent);font-size:11px;transition:transform .16s ease}
+.helpdesk-select-control.is-open .helpdesk-select-trigger>i{transform:rotate(180deg)}
+.helpdesk-select-trigger.is-placeholder>span{color:#8498aa}
+.helpdesk-select-menu{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:1000;display:grid;max-height:min(280px,42vh);gap:3px;overflow:auto;padding:6px;border:1px solid var(--select-border);border-radius:12px;background:#fff;box-shadow:0 14px 34px #173a581f;scrollbar-width:thin;scrollbar-color:#cbd9e6 transparent}
+.helpdesk-select-menu[hidden]{display:none!important}
+.helpdesk-select-option{display:flex;width:100%;min-height:39px;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border:0;border-radius:8px;background:#fff;color:#405970;text-align:left;font:500 12px 'Be Vietnam Pro',Arial,sans-serif;cursor:pointer;transition:background .13s ease,color .13s ease}
+.helpdesk-select-option>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.helpdesk-select-option>i{flex:none;color:var(--select-accent);font-size:11px;opacity:0}
+.helpdesk-select-option:hover,.helpdesk-select-option:focus-visible,.helpdesk-select-option.is-selected{outline:0;background:var(--select-tint);color:var(--select-accent)}
+.helpdesk-select-option.is-selected{font-weight:700}
+.helpdesk-select-option.is-selected>i{opacity:1}
+.helpdesk-select-option:disabled{color:#aab7c3;cursor:not-allowed}
+.helpdesk-select-option[hidden]{display:none!important}
+.helpdesk-select-error{display:flex;align-items:center;gap:6px;margin-top:6px;color:#c14e45;font-size:11px}
+.helpdesk-select-error[hidden]{display:none!important}
+
+.ticket-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding:12px 2px;border-top:1px solid var(--role-line,#e4ebf2);color:var(--role-muted,#718399);font-size:12px}
+.ticket-pagination-links{display:flex;align-items:center;gap:5px}
+.ticket-pagination-links a,.ticket-pagination-links button,.ticket-pagination-links>span{display:grid;min-width:32px;height:32px;place-items:center;padding:0 8px;border:1px solid var(--role-line,#e4ebf2);border-radius:8px;background:#fff;color:var(--role-ink,#294761);font-family:inherit;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer}
+.ticket-pagination-links .current{border-color:var(--role-blue,#1769d2);background:var(--role-blue,#1769d2);color:#fff}
+.ticket-pagination-links [aria-disabled="true"],.ticket-pagination-links button:disabled{opacity:.45;cursor:default}
+.staff-role-page .ticket-pagination-links .current{border-color:#108785;background:#108785}
+.staff-ticket-pagination{margin-top:8px}
+@media(max-width:560px){.ticket-pagination{align-items:flex-start;flex-direction:column}.ticket-pagination-links{max-width:100%;flex-wrap:wrap}}

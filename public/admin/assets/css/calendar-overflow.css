@@ -1,3 +1,4 @@
+.calendar-panel{isolation:isolate}
 .month-days .day-cell{height:150px;min-height:150px;max-height:150px;overflow:hidden}
 .month-days .day-number{position:relative;z-index:1}
 .month-days .day-cell .cal-event{margin-top:3px;padding:3px 5px;border-radius:7px;line-height:1.05}
@@ -9,6 +10,16 @@
 .day-more-events{display:block;width:100%;min-height:18px;margin-top:3px;padding:2px 6px;border:1px solid #d9eafa;border-radius:6px;background:#f2f8fe;color:#1978b7;font:700 9px 'Be Vietnam Pro',Arial,sans-serif;text-align:center;cursor:pointer;transition:background .15s,border-color .15s}
 .day-more-events:hover{border-color:#a9d2ef;background:#e8f4fd}
 .day-more-events[hidden]{display:none!important}
+#calendar-modal [hidden],[data-open-assignment][hidden]{display:none!important}
+#calendar-modal,#calendar-modal .modal-event{box-sizing:border-box}
+#calendar-modal .modal-event-details{min-width:0}
+#modal-assignment-time:not(:disabled){cursor:pointer}
+#calendar-modal .modal-assignment-feedback{margin:12px 0 0;padding:10px 12px;border:1px solid #fecdd3;border-radius:8px;background:#fff1f2;color:#b42332;font-size:13px;font-weight:600;line-height:1.6}
+#calendar-modal input[aria-invalid="true"],#calendar-modal .modal-select-trigger[aria-invalid="true"]{border-color:#ef4444;background:#fffafa;box-shadow:0 0 0 2px #ef444414}
+.modal-event-details .modal-schedule-status{display:inline-flex;align-items:center;gap:6px;max-width:100%;box-sizing:border-box;margin-top:7px;padding:5px 9px;border:1px solid;border-radius:7px;font-size:11px;font-weight:700;line-height:1.45;white-space:normal}
+.modal-event-details .modal-schedule-status.is-pending{background:#fff7ed;border-color:#fb923c;color:#9a3412}
+.modal-event-details .modal-schedule-status.is-acknowledged{background:#047857;border-color:#047857;color:#fff}
+.modal-schedule-status-icon{flex:0 0 16px;width:16px;font-size:15px;line-height:1;text-align:center}
 @media(max-width:700px){
     .month-days .day-cell{height:142px;min-height:142px;max-height:142px;padding:5px 4px}
     .month-days .day-cell .cal-event{margin-top:3px;padding:3px 5px;line-height:1.05}

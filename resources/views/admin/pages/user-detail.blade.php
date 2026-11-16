@@ -103,6 +103,13 @@
         margin-top: 17px
     }
 
+    .user-role-editor { display:flex; align-items:flex-end; gap:10px; margin-top:16px; padding-top:15px; border-top:1px solid #eaf0f5 }
+    .user-role-editor .button { min-height:42px; white-space:nowrap }
+    .user-role-editor .button.teacher-grant { border-color:#1884cb; background:#1884cb; color:#fff }
+    .user-role-editor .button.teacher-revoke { border-color:#e9aeb1; background:#fff7f7; color:#b4232c }
+    .user-role-note { margin:9px 0 0; color:#7b8da2; font-size:11px; line-height:1.5 }
+    @media(max-width:560px) { .user-role-editor { align-items:stretch; flex-direction:column } }
+
     .student-detail-stat {
         padding: 12px;
         border: 1px solid #e5edf4;
@@ -287,6 +294,7 @@
             <span class="student-profile-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($student->name, 0, 1)) }}</span>
             <div>
                 <h2 id="student-profile-title">{{ $student->name }}</h2>
+                <span class="status-badge {{ $student->role === 'teacher' ? 'status-wait' : 'status-done' }}">{{ $student->role === 'teacher' ? 'Giáo viên' : 'Sinh viên' }}</span>
                 <p>{{ $student->email }}</p>
             </div>
         </div>
@@ -308,10 +316,18 @@
                 <dd>{{ $student->created_at?->format('d/m/Y H:i') ?? '—' }}</dd>
             </div>
         </dl>
+        <form class="user-role-editor" data-role-form data-user-id="{{ $student->id }}" data-user-role="{{ $student->role }}" data-user-name="{{ $student->name }}">
+            <button class="button {{ $student->role === 'teacher' ? 'teacher-revoke' : 'teacher-grant' }}" type="submit">
+                <i class="fa-solid {{ $student->role === 'teacher' ? 'fa-user-minus' : 'fa-user-plus' }}" aria-hidden="true"></i>
+                {{ $student->role === 'teacher' ? 'Gỡ quyền giáo viên' : 'Cấp tài khoản giáo viên' }}
+            </button>
+        </form>
+        <p class="user-role-note">{{ $student->role === 'teacher' ? 'Gỡ quyền sẽ chuyển tài khoản về sinh viên. Phiếu đã gửi vẫn giữ mức ưu tiên hiện tại.' : 'Giáo viên vẫn dùng cổng sinh viên. Phiếu mới được tự động xếp ưu tiên cao và gắn nhãn để admin dễ nhận biết.' }}</p>
+        <p id="users-feedback" class="api-feedback" role="status" aria-live="polite" hidden></p>
         <div class="student-detail-stats" aria-label="Thống kê phiếu">
             <div class="student-detail-stat"><span>Tổng phiếu</span><strong>{{ $student->reported_tickets_count }}</strong></div>
-            <div class="student-detail-stat"><span>Đang xử lý</span><strong>{{ $student->reportedTickets->whereIn('status', ['assigned', 'in_progress'])->count() }}</strong></div>
-            <div class="student-detail-stat"><span>Đã hoàn tất</span><strong>{{ $student->reportedTickets->whereIn('status', ['resolved', 'closed'])->count() }}</strong></div>
+            <div class="student-detail-stat"><span>Đang xử lý</span><strong>{{ $reportedTicketsInProgress }}</strong></div>
+            <div class="student-detail-stat"><span>Đã hoàn tất</span><strong>{{ $reportedTicketsResolved }}</strong></div>
         </div>
     </section>
 
@@ -320,9 +336,9 @@
             <h2 id="student-tickets-title">Phiếu sự cố đã gửi</h2>
             <span class="period-pill">{{ $student->reported_tickets_count }} phiếu</span>
         </div>
-        @if($student->reportedTickets->isNotEmpty())
+        @if($reportedTicketPage->isNotEmpty())
         <div class="student-ticket-list">
-            @foreach($student->reportedTickets as $ticket)
+            @foreach($reportedTicketPage as $ticket)
             <article class="student-ticket-item">
                 <div class="student-ticket-main">
                     <a class="ticket-code student-ticket-code" href="{{ url('/admin/pages/ticket-detail?ticket='.$ticket->id) }}">{{ $ticket->ticket_number }}</a>
@@ -337,13 +353,14 @@
             </article>
             @endforeach
         </div>
+        @include('shared.ticket-pagination', ['paginator' => $reportedTicketPage])
         @else
         <div class="student-empty">Người dùng này chưa gửi phiếu sự cố nào.</div>
         @endif
     </section>
 </div>
-<section class="panel" style="padding:22px;margin-top:20px"><h2>Loại người dùng: {{ $student->role === 'teacher' ? 'Giảng viên' : 'Sinh viên' }}</h2>
-@include('shared.teacher-confirmation', ['member' => $student])
-<p>Chỉ xác nhận giảng viên sau khi đối chiếu thông tin. Thao tác thay đổi loại người dùng sẽ yêu cầu tài khoản đăng nhập lại.</p></section>
-@include('shared.delete-user', ['deleteUser' => $student])
+@endsection
+
+@section('scripts')
+<script src="{{ url('/admin/assets/js/users.js?v=20261109-teacher-role2') }}"></script>
 @endsection

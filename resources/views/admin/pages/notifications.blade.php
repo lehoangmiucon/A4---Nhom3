@@ -10,10 +10,15 @@ Thông báo · Helpdesk trường học
                         <p class="eyebrow">CẬP NHẬT HOẠT ĐỘNG</p>
                         <h1>Thông báo</h1>
                         <p>Theo dõi phiếu mới, lịch phân công và cập nhật từ đội kỹ thuật.</p>
-                    </div><a class="text-link" href="incidents">Đến danh sách phiếu →</a>
+                    </div><div class="notification-page-actions">
+                        @if(($unreadNotificationCount ?? 0) > 0)
+                            <button class="notification-read-all-button" type="button" data-notification-read-all="{{ url('/api/notifications/read-all') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg> Đánh dấu tất cả đã đọc</button>
+                        @endif
+                        <a class="text-link" href="incidents">Đến danh sách phiếu →</a>
+                    </div>
                 </section>
                 <section class="panel notification-panel">
-                    <p class="api-feedback" id="notification-load-error" role="status" aria-live="polite" hidden></p>
+                    <p class="api-feedback" id="notification-load-error" data-notification-feedback role="status" aria-live="polite" hidden></p>
                     <div class="role-list">
                         @forelse($notificationGroups as $group)
                         @php($notification = $group['latest'])
@@ -38,5 +43,5 @@ Thông báo · Helpdesk trường học
 @endsection
 
 @section('scripts')
-<script src="../assets/js/api-client.js?v=20261106-fast-actions1"></script>
+<script src="../assets/js/api-client.js?v=20261110-report-toast-center1"></script>
 @endsection

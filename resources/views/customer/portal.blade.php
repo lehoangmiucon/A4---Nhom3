@@ -10,7 +10,8 @@
     <link rel="stylesheet" href="{{ url('/customer/assets/css/customer.css?v=20261104-dashboard2') }}">
     <link rel="stylesheet" href="{{ url('/customer/assets/css/account.css?v=20261103-responsive1') }}">
     <link rel="stylesheet" href="{{ url('/customer/assets/css/portal.css?v=20261106-cleanup1') }}">
-    <link rel="stylesheet" href="{{ url('/admin/assets/css/role-refresh.css?v=20261105-staff-header2') }}">
+    <link rel="stylesheet" href="{{ url('/admin/assets/css/role-refresh.css?v=20261110-custom-select1') }}">
+    <link rel="stylesheet" href="{{ asset('customer/assets/css/portal-chat.css?v=2') }}">
 </head>
 <body class="report-portal customer-role-page role-page">
     @include('customer.partials.topbar')
@@ -42,7 +43,7 @@
                 <span class="required-note"><b>*</b> Thông tin bắt buộc</span>
             </div>
 
-            <form class="report-form" action="#" method="post" enctype="multipart/form-data" data-api-endpoint="/api/tickets" data-success-redirect="/customer/tickets">
+            <form class="report-form" action="#" method="post" enctype="multipart/form-data" data-api-endpoint="/api/tickets" data-success-redirect="/customer/tickets" data-feedback-variant="success" data-feedback-position="top">
                 <div class="report-fields">
                     <div class="report-field report-field-wide">
                         <label for="phone">Số điện thoại liên hệ <span>(không bắt buộc)</span></label>
@@ -86,6 +87,7 @@
                 </section>
 
                 <div class="form-section-title report-section-spaced"><span>2</span><div><strong>Nội dung sự cố</strong><small>Chọn đúng danh mục và mô tả rõ dấu hiệu gặp phải.</small></div></div>
+                <p id="report-chat-feedback" class="report-chat-feedback" role="status" hidden></p>
                 <div class="report-fields report-issue-fields">
                     <div class="report-field report-field-wide">
                         <label for="category_id">Danh mục sự cố <b>*</b></label>
@@ -106,11 +108,12 @@
                         <small class="field-hint">Không nhập mật khẩu hoặc thông tin cá nhân nhạy cảm.</small>
                     </div>
                     <div class="report-field report-field-wide">
-                        <label for="priority">Mức độ ảnh hưởng</label>
+                        <label for="priority">Mức độ ưu tiên</label>
                         <select id="priority" name="priority">
-                            <option value="normal">Ảnh hưởng một thiết bị</option>
-                            <option value="high">Ảnh hưởng hoạt động của cả lớp / phòng</option>
-                            <option value="urgent">Ảnh hưởng an toàn, cần hỗ trợ sớm</option>
+                            <option value="low">Thấp — ảnh hưởng nhẹ</option>
+                            <option value="normal" selected>Bình thường — ảnh hưởng một thiết bị</option>
+                            <option value="high">Cao — ảnh hưởng cả lớp hoặc phòng</option>
+                            <option value="urgent">Khẩn cấp — nguy cơ an toàn, cần xử lý sớm</option>
                         </select>
                     </div>
                     <div class="report-field report-field-wide">
@@ -133,8 +136,10 @@
 
         <footer class="report-footer">Helpdesk trường học <span>·</span> Hỗ trợ thiết bị và cơ sở vật chất</footer>
     </main>
+    @include('customer.partials.portal-chat')
     <script src="{{ url('/customer/assets/js/portal-qr.js?v=20261105-building-room2') }}"></script>
     <script src="{{ url('/customer/assets/js/portal-attachments.js?v=20261104-preview1') }}"></script>
-    <script src="{{ url('/admin/assets/js/api-client.js?v=20261106-fast-actions1') }}"></script>
+    <script src="{{ url('/admin/assets/js/api-client.js?v=20261113-duplicate-red1') }}"></script>
+    <script src="{{ asset('customer/assets/js/portal-chat.js?v=2') }}" defer></script>
 </body>
 </html>

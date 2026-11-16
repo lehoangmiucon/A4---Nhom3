@@ -6,8 +6,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Chi tiết phiếu {{ $ticket->ticket_number }} · Helpdesk</title>
-    <link rel="stylesheet" href="assets/css/customer.css?v=20261104-flow2"><link rel="stylesheet" href="assets/css/account.css?v=20261103-responsive1"><link rel="stylesheet" href="../admin/assets/css/ticket-status.css?v=20261104-status1">
-    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261105-staff-header2">
+    <link rel="stylesheet" href="assets/css/customer.css?v=20261110-priority-labels1"><link rel="stylesheet" href="assets/css/account.css?v=20261103-responsive1"><link rel="stylesheet" href="../admin/assets/css/ticket-status.css?v=20261104-status1">
+    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261110-custom-select1">
 </head>
 <body class="customer-role-page role-page ticket-detail-page">
 @php
@@ -21,9 +21,7 @@
         default => 0,
     };
     $statusLabel = $statusLabels[$displayStatus] ?? 'Mới';
-    $priorityLabel = [
-        'low' => 'Thấp', 'normal' => 'Bình thường', 'high' => 'Cao', 'urgent' => 'Cần xử lý gấp',
-    ][$ticket->priority] ?? 'Bình thường';
+    $priorityLabel = $ticket->priority_label;
     $latestSchedule = $ticket->schedules->sortByDesc('starts_at')->first();
 @endphp
 <div class="role-shell">
@@ -71,7 +69,7 @@
                     <dl class="ticket-facts">
                         <div><dt>Danh mục lỗi</dt><dd><i style="--category-color:{{ $ticket->category?->color ?? '#64748B' }}"></i>{{ $ticket->category?->name ?? $ticket->equipment_label ?? 'Chưa phân loại' }}</dd></div>
                         <div><dt>Địa điểm</dt><dd>{{ $ticket->room?->building?->name ?? $ticket->building_label ?? '—' }} · {{ $ticket->room?->name ?? $ticket->room_label ?? '—' }}</dd></div>
-                        <div><dt>Mức độ ảnh hưởng</dt><dd><span class="ticket-priority priority-{{ $ticket->priority }}">{{ $priorityLabel }}</span></dd></div>
+                        <div><dt>Mức độ ưu tiên</dt><dd><span class="ticket-priority priority-{{ $ticket->priority }}">{{ $priorityLabel }}</span></dd></div>
                         <div><dt>Người báo</dt><dd>{{ $ticket->reporter_name ?? $currentUser->name }}</dd></div>
                     </dl>
                     @if($ticket->reportAttachments->isNotEmpty())
@@ -100,7 +98,7 @@
                                 <label>Phòng học<select name="room_code" data-edit-room required>@foreach($buildings as $building)@foreach($building->rooms as $room)<option value="{{ $room->code }}" data-building="{{ $building->code }}" data-room-id="{{ $room->id }}" @selected($ticket->room_id === $room->id)>{{ $building->name }} · {{ $room->name }}</option>@endforeach @endforeach</select><input type="hidden" name="room_id" value="{{ $ticket->room_id }}" data-edit-room-id></label>
                                 <label class="ticket-edit-wide">Tiêu đề<input name="title" maxlength="180" required value="{{ $ticket->title }}"></label>
                                 <label class="ticket-edit-wide">Mô tả<textarea name="description" maxlength="5000" required rows="5">{{ $ticket->description }}</textarea></label>
-                                <label class="ticket-edit-wide">Mức độ ảnh hưởng<select name="priority"><option value="low" @selected($ticket->priority === 'low')>Thấp</option><option value="normal" @selected($ticket->priority === 'normal')>Bình thường</option><option value="high" @selected($ticket->priority === 'high')>Cao</option><option value="urgent" @selected($ticket->priority === 'urgent')>Cần xử lý gấp</option></select></label>
+                                <label class="ticket-edit-wide">Mức độ ưu tiên<select name="priority"><option value="low" @selected($ticket->priority === 'low')>Thấp — ảnh hưởng nhẹ</option><option value="normal" @selected($ticket->priority === 'normal')>Bình thường — ảnh hưởng một thiết bị</option><option value="high" @selected($ticket->priority === 'high')>Cao — ảnh hưởng cả lớp hoặc phòng</option><option value="urgent" @selected($ticket->priority === 'urgent')>Khẩn cấp — nguy cơ an toàn, cần xử lý sớm</option></select></label>
                                 <label class="ticket-edit-wide">Thay ảnh báo cáo<input name="attachments[]" type="file" accept="image/*" multiple><small>Nếu chọn ảnh mới, ảnh báo cáo cũ sẽ được thay thế. Để trống nếu muốn giữ ảnh hiện tại. Tối đa 5 ảnh, mỗi ảnh 5 MB.</small></label>
                                 @if($ticket->reportAttachments->isNotEmpty())<label class="ticket-edit-wide ticket-edit-remove-photos"><span><input type="checkbox" name="remove_attachments" value="1"> Xóa ảnh báo cáo hiện tại (chỉ áp dụng nếu không chọn ảnh mới)</span></label>@endif
                             </div>

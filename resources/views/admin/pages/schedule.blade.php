@@ -5,7 +5,7 @@ Lịch phân công · Helpdesk trường học
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ url('/admin/assets/css/calendar-overflow.css?v=20261105-functional-filters1') }}">
+<link rel="stylesheet" href="{{ url('/admin/assets/css/calendar-overflow.css?v=20261114-time-picker1') }}">
 @endpush
 
 @section('content')
@@ -40,10 +40,10 @@ Lịch phân công · Helpdesk trường học
                     </div>
                     <div class="month-scroll-viewport"><div class="month-grid month-head"><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span></div>@php($monthStart = now()->startOfMonth())
                     @php($calendarStart = $monthStart->copy()->startOfWeek(1))
-                    <div class="month-grid month-days">
+                    <div class="month-grid month-days" data-time-zone="{{ config('app.timezone') }}">
                         @for($dayOffset = 0; $dayOffset < 42; $dayOffset++)
                             @php($calendarDate=$calendarStart->copy()->addDays($dayOffset))
-                            <div class="day-cell {{ $calendarDate->month !== $monthStart->month ? 'muted-day' : '' }} {{ $calendarDate->isToday() ? 'today-cell' : '' }}" data-date="{{ $calendarDate->toDateString() }}"><span class="day-number {{ $calendarDate->isToday() ? 'today-number' : '' }}">{{ $calendarDate->day }}</span><button class="day-schedule-add" type="button" data-day-add>＋ Xếp lịch</button>
+                            <div class="day-cell {{ $calendarDate->month !== $monthStart->month ? 'muted-day' : '' }} {{ $calendarDate->isToday() ? 'today-cell' : '' }}" data-date="{{ $calendarDate->toDateString() }}"><span class="day-number {{ $calendarDate->isToday() ? 'today-number' : '' }}">{{ $calendarDate->day }}</span>@if($calendarDate->gte(today()))<button class="day-schedule-add" type="button" data-day-add>＋ Xếp lịch</button>@endif
                                 @foreach($schedules->filter(fn ($item) => $item->starts_at->isSameDay($calendarDate)) as $schedule)
                                 <div class="cal-event category-event" style="--category-color: {{ $schedule->ticket->category?->color ?? '#64748B' }}" data-category-color="{{ $schedule->ticket->category?->color ?? '#64748B' }}" data-category-id="{{ $schedule->ticket->category_id ?? '' }}" data-ticket-status="{{ $schedule->ticket->status }}" data-ticket-id="{{ $schedule->ticket_id }}" data-schedule-id="{{ $schedule->id }}" data-schedule-status="{{ $schedule->status }}" data-staff-id="{{ $schedule->staff_id }}" data-staff-name="{{ $schedule->staff->name }}" data-category-name="{{ $schedule->ticket->category?->name ?? 'Chưa phân loại' }}"><time class="event-time">{{ $schedule->starts_at->format('H:i') }}</time><strong class="event-title">{{ $schedule->ticket->ticket_number }} · {{ $schedule->ticket->room?->code }}</strong><small class="event-meta">{{ $schedule->ticket->category?->name ?? 'Chưa phân loại' }} · {{ $schedule->staff->name }}</small></div>
                                 @endforeach
@@ -67,19 +67,24 @@ Lịch phân công · Helpdesk trường học
                                     <p>Ch&#7885;n phi&#7871;u, ng&#432;&#7901;i ph&#7909; tr&#225;ch v&#224; th&#7901;i gian d&#7921; ki&#7871;n.</p>
                                 </div>
                             </div>
-                            <div class="modal-assignment-grid"><label class="form-item"><span>Phi&#7871;u s&#7921; c&#7889;</span><select id="modal-ticket">
-                                        <option value="">Ch&#7885;n phi&#7871;u s&#7921; c&#7889;</option>@foreach($tickets as $ticketOption)<option value="{{ $ticketOption->id }}" data-category-id="{{ $ticketOption->category_id }}" data-ticket-number="{{ $ticketOption->ticket_number }}" data-ticket-title="{{ $ticketOption->title }}" data-category-name="{{ $ticketOption->category?->name }}" data-category-color="{{ $ticketOption->category?->color }}">{{ $ticketOption->ticket_number }} &#183; {{ $ticketOption->title }} &#8212; {{ $ticketOption->category?->name }}</option>@endforeach
-                                    </select></label><label class="form-item"><span>Nh&#226;n vi&#234;n k&#7929; thu&#7853;t</span><select id="modal-technician" disabled>
+                            <div class="modal-assignment-grid"><label class="form-item"><span>Phi&#7871;u s&#7921; c&#7889; <b>*</b></span><select id="modal-ticket" required>
+                                        <option value="">Ch&#7885;n phi&#7871;u s&#7921; c&#7889;</option>
+                                        @foreach($tickets as $ticketOption)
+                                            @php($ticketRoomName = $ticketOption->room?->name ?: ($ticketOption->room_label ?: ($ticketOption->room?->code ?: 'Chưa xác định phòng')))
+                                            <option value="{{ $ticketOption->id }}" data-category-id="{{ $ticketOption->category_id }}" data-ticket-number="{{ $ticketOption->ticket_number }}" data-ticket-title="{{ $ticketOption->title }}" data-room-name="{{ $ticketRoomName }}" data-category-name="{{ $ticketOption->category?->name }}" data-category-color="{{ $ticketOption->category?->color }}">{{ $ticketOption->ticket_number }} &#183; {{ $ticketOption->title }} &#8212; {{ $ticketOption->category?->name }} &#183; {{ $ticketRoomName }}</option>
+                                        @endforeach
+                                    </select></label><label class="form-item"><span>Nh&#226;n vi&#234;n k&#7929; thu&#7853;t <b>*</b></span><select id="modal-technician" required disabled>
                                         <option value="">Vui l&#242;ng ch&#7885;n phi&#7871;u tr&#432;&#7899;c</option>@foreach($staffMembers as $staffOption)<option value="{{ $staffOption->id }}" data-category-ids='@json($staffOption->categories->pluck("id"))'>{{ $staffOption->name }}</option>@endforeach
-                                    </select></label><label class="form-item"><span>Ng&#224;y th&#7921;c hi&#7879;n</span><input id="modal-assignment-date" type="date"></label><label class="form-item"><span>Gi&#7901; b&#7855;t &#273;&#7847;u</span><input id="modal-assignment-time" type="time"></label><label class="form-item modal-note-field"><span>Ghi ch&#250; ph&#226;n c&#244;ng</span><input id="modal-assignment-note" placeholder="N&#7897;i dung c&#7847;n chu&#7849;n b&#7883; tr&#432;&#7899;c khi ki&#7875;m tra"></label></div>
+                                    </select></label><label class="form-item modal-note-field"><span>Gi&#7901; b&#7855;t &#273;&#7847;u <b>*</b></span><input id="modal-assignment-time" type="time" required></label><label class="form-item modal-note-field"><span>Ghi ch&#250; ph&#226;n c&#244;ng <b>*</b></span><input id="modal-assignment-note" maxlength="2000" required placeholder="N&#7897;i dung c&#7847;n chu&#7849;n b&#7883; tr&#432;&#7899;c khi ki&#7875;m tra"></label></div>
+                            <p class="modal-assignment-feedback" data-modal-feedback role="alert" hidden></p>
                         </section>
                         <footer class="calendar-modal-footer" data-modal-details-actions>
                             <form method="dialog"><button class="button button-secondary">&#272;&#243;ng</button></form><button class="button button-primary" type="button" data-modal-add>＋ X&#7871;p l&#7883;ch ng&#224;y n&#224;y</button>
                         </footer>
-                        <footer class="calendar-modal-footer" data-modal-assignment-actions hidden><button class="button button-danger" type="button" data-modal-cancel-schedule hidden>H&#7911;y l&#7883;ch</button><button class="button button-secondary" type="button" data-modal-cancel>Quay l&#7841;i</button><button class="button button-primary" type="button" data-modal-save>L&#432;u ph&#226;n c&#244;ng</button></footer>
+                        <footer class="calendar-modal-footer" data-modal-assignment-actions hidden><button class="button button-danger" type="button" data-modal-cancel-schedule hidden>H&#7911;y l&#7883;ch</button><button class="button button-secondary" type="button" data-modal-cancel>Quay l&#7841;i</button><button class="button button-primary" type="button" data-modal-save disabled>L&#432;u ph&#226;n c&#244;ng</button></footer>
                     </dialog>
 @endsection
 
 @section('scripts')
-<script src="../assets/js/calendar-modal.js?v=20261106-fast-actions1"></script>
+<script src="{{ url('/admin/assets/js/calendar-modal.js?v=20261114-time-picker1') }}"></script>
 @endsection

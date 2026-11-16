@@ -1,0 +1,125 @@
+.portal-chat-launch,
+.portal-chat {
+    --chat-accent: #095eb2;
+    position: fixed;
+    inset: auto max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) auto;
+    margin: 0;
+    z-index: 1050;
+}
+
+.portal-chat-launch {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 48px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--chat-accent);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 8px 24px #12395c40;
+    cursor: pointer;
+}
+
+.portal-chat-icon {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 18px;
+    border: 1.5px solid currentColor;
+    border-radius: 7px 7px 7px 2px;
+    font-size: 17px;
+    line-height: 0.8;
+}
+
+.portal-chat {
+    bottom: calc(58px + max(16px, env(safe-area-inset-bottom)));
+    display: none;
+    width: min(380px, calc(100% - 32px));
+    height: min(490px, calc(100vh - 92px));
+    height: min(490px, calc(100dvh - 92px));
+    padding: 0;
+    overflow: auto;
+    border: 1px solid #d5e3ef;
+    border-radius: 18px;
+    background: #fff;
+    color: #19344f;
+    box-shadow: 0 18px 42px #12395c38;
+}
+
+.portal-chat:popover-open { display: flex; flex-direction: column; }
+.portal-chat.is-open { display: flex; flex-direction: column; }
+
+.portal-chat [hidden],
+.portal-chat-launch[hidden] { display: none; }
+
+.portal-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px 8px 16px;
+    background: var(--chat-accent);
+    color: #fff;
+}
+
+.portal-chat-header h2 { margin: 0; color: inherit; font-size: 16px; }
+
+.portal-chat button {
+    min-height: 44px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--chat-accent);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.portal-chat button:disabled { opacity: 0.65; cursor: wait; }
+.portal-chat-header button { min-width: 44px; padding: 0; background: #ffffff26; font-size: 23px; }
+.portal-chat button:focus-visible, .portal-chat-launch:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
+
+.portal-chat-log {
+    flex: 1 1 auto;
+    min-height: 60px;
+    padding: 14px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    background: #f4f8fc;
+}
+
+.portal-chat-message {
+    width: fit-content;
+    max-width: 90%;
+    margin: 0 0 10px;
+    padding: 9px 12px;
+    border-radius: 14px 14px 14px 3px;
+    background: #e5eef7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.portal-chat-message.is-user {
+    margin-inline-start: auto;
+    border-radius: 14px 14px 3px 14px;
+    background: var(--chat-accent);
+    color: #fff;
+}
+
+.portal-chat-speaker {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+}
+
+.portal-chat-status { margin: 0 12px; color: #455f77; font-size: 13px; }
+.portal-chat-status:not(:empty) { margin-top: 8px; }
+.portal-chat-draft { align-self: start; margin: 8px 12px 0; }
+.portal-chat-form { display: flex; gap: 8px; margin: 0; padding: 10px 12px 0; }
+.portal-chat-form input { flex: 1; min-width: 0; padding: 0 10px; border: 1px solid #a9bdd0; border-radius: 10px; font-size: 16px; }
+.portal-chat-privacy { margin: 7px 12px 10px; color: #455f77; font-size: 11px; }
+.report-chat-feedback { padding: 10px 12px; border-radius: 8px; background: #e8f3fc; color: #15324e; }

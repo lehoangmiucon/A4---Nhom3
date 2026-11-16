@@ -20,6 +20,6 @@ class TicketSchedule extends Model
 
     public function staff(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'staff_id')->withTrashed();
+        return $this->belongsTo(User::class, 'staff_id');
     }
 }

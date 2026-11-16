@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\PasswordPolicy;
+
 use App\Models\User;
 use App\Models\ActivityLog;
 use Illuminate\Http\JsonResponse;
@@ -32,16 +34,16 @@ class UserController extends Controller
             };
         }
         if (!empty($filters['category'])) {
-            $query->whereHas('categories', fn ($categories) => $categories->whereKey($filters['category']));
+            $query->whereHas('categories', fn($categories) => $categories->whereKey($filters['category']));
         }
         if (!empty($filters['search'])) {
             $search = trim($filters['search']);
             $digits = preg_replace('/\D+/', '', $search);
-            $query->where(fn ($users) => $users
+            $query->where(fn($users) => $users
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%")
                 ->orWhere('phone', 'like', "%{$search}%")
-                ->when($digits !== '', fn ($users) => $users->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', '') LIKE ?", ["%{$digits}%"])));
+                ->when($digits !== '', fn($users) => $users->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', '') LIKE ?", ["%{$digits}%"])));
         }
         $ids = $query->orderBy('name')->pluck('id');
         return response()->json(['data' => ['ids' => $ids, 'count' => $ids->count()]]);
@@ -49,31 +51,32 @@ class UserController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $request->validate(['search' => ['nullable', 'string', 'max:120'], 'role' => ['nullable', Rule::in(['student', 'teacher', 'staff', 'admin'])], 'member_type' => ['nullable', Rule::in(['student', 'lecturer'])], 'status' => ['nullable', Rule::in(['active', 'locked', 'unverified'])]]);
-        $users = User::query()->select('id', 'name', 'email', 'phone', 'role', 'member_type', 'member_code', 'is_deleted', 'email_verified_at', 'created_at')
+        $filters = $request->validate([
+            'role' => ['nullable', Rule::in(['student', 'teacher', 'staff', 'admin'])],
+            'search' => ['nullable', 'string', 'max:200'],
+            'status' => ['nullable', Rule::in(['active', 'unverified', 'locked'])],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+        $query = User::query()->select('id', 'name', 'email', 'phone', 'avatar_path', 'role', 'is_deleted', 'email_verified_at', 'created_at')
+            ->withCount(['reportedTickets', 'assignedTickets'])
             ->when($request->filled('role'), fn($query) => $query->where('role', $request->string('role')))
-            ->when($request->filled('member_type'), fn($query) => $query->where('role', $request->input('member_type') === 'lecturer' ? 'teacher' : 'student'))
-            ->when($request->input('status') === 'locked', fn($q) => $q->where('is_deleted', true))
-            ->when($request->input('status') === 'active', fn($q) => $q->where('is_deleted', false)->whereNotNull('email_verified_at'))
-            ->when($request->input('status') === 'unverified', fn($q) => $q->where('is_deleted', false)->whereNull('email_verified_at'))
             ->when($request->filled('search'), fn($query) => $query->where(fn($q) => $q
                 ->where('name', 'like', '%' . $request->string('search') . '%')
                 ->orWhere('email', 'like', '%' . $request->string('search') . '%')
-                ->orWhere('member_code', 'like', '%' . $request->string('search') . '%')
-                ->orWhere('phone', 'like', '%' . $request->string('search') . '%')))
-            ->orderBy('name')->paginate(25);
-        return response()->json($users);
+                ->orWhere('phone', 'like', '%' . $request->string('search') . '%')));
+        if (!empty($filters['status'])) {
+            match ($filters['status']) {
+                'locked' => $query->where('is_deleted', true),
+                'unverified' => $query->where('is_deleted', false)->whereNull('email_verified_at'),
+                'active' => $query->where('is_deleted', false)->whereNotNull('email_verified_at'),
+            };
+        }
+        return response()->json($query->orderBy('name')->paginate($filters['per_page'] ?? 25)->withQueryString());
     }
 
     public function staff(): JsonResponse
     {
-        return response()->json(['data' => User::with('categories:id,name,color')->where('role', 'staff')->where('is_deleted', false)->orderBy('name')->get(['id', 'name', 'email', 'phone'])]);
-    }
-
-    public function show(User $user): JsonResponse
-    {
-        $user->load('categories:id,name,color');
-        return response()->json(['data' => $user->only('id', 'name', 'email', 'phone', 'role', 'member_type', 'member_code', 'email_verified_at', 'is_deleted', 'created_at', 'categories')]);
+        return response()->json(['data' => User::with('categories:id,name,color')->where('role', 'staff')->where('is_deleted', false)->orderBy('name')->get(['id', 'name', 'email', 'phone', 'avatar_path'])]);
     }
 
     public function createStaff(Request $request): JsonResponse
@@ -147,6 +150,9 @@ class UserController extends Controller
             'category_ids.*' => ['required', 'integer', 'distinct', 'exists:categories,id'],
         ]);
 
+        if (! empty($data['password'])) {
+            PasswordPolicy::ensureDifferent($data['password'], $user->password);
+        }
         $user->fill([
             'name' => $data['name'],
             'phone' => $data['phone'] ?? null,
@@ -157,7 +163,6 @@ class UserController extends Controller
         $user->save();
         $user->categories()->sync($data['category_ids']);
 
-        if (! empty($data['password'])) $user->tokens()->delete();
         ActivityLog::record($request, 'staff.updated', $user, 'Updated staff account and issue categories.', [
             'category_ids' => array_map('intval', $data['category_ids']),
             'password_changed' => ! empty($data['password']),
@@ -169,58 +174,20 @@ class UserController extends Controller
         ]);
     }
 
-    public function confirmTeacher(Request $request, User $user): JsonResponse
-    {
-        abort_unless($request->user()->role === 'admin', 403);
-        $data = $request->validate(['is_teacher' => ['required', 'boolean']]);
-        DB::transaction(function () use ($request, $user, $data) {
-            $user = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
-            abort_unless(in_array($user->role, ['student', 'teacher'], true), 422, 'Chỉ xác nhận giảng viên cho tài khoản người dùng.');
-            abort_unless($user->email_verified_at && !$user->is_deleted && str_ends_with(strtolower($user->email), '@ut.edu.vn'), 422,
-                'Tài khoản cần xác thực email trường và không bị khóa.');
-            $role = $data['is_teacher'] ? 'teacher' : 'student';
-            $previous = $user->role;
-            if ($role === $previous) return;
-            $user->forceFill(['role' => $role, 'member_type' => $data['is_teacher'] ? 'lecturer' : 'student', 'remember_token' => Str::random(60)])->save();
-            $user->tokens()->delete();
-            if (Schema::hasTable('sessions')) DB::table('sessions')->where('user_id', $user->id)->delete();
-            ActivityLog::record($request, 'user.teacher_confirmed', $user, $data['is_teacher'] ? 'Admin xác nhận giảng viên.' : 'Admin bỏ xác nhận giảng viên.',
-                ['from_role' => $previous, 'to_role' => $role]);
-        });
-        return response()->json(['message' => $data['is_teacher'] ? 'Đã xác nhận giảng viên. Tài khoản cần đăng nhập lại.' : 'Đã chuyển về sinh viên. Tài khoản cần đăng nhập lại.',
-            'data' => $user->fresh()->only('id', 'name', 'email', 'role', 'member_type', 'member_code', 'email_verified_at', 'is_deleted')]);
-    }
-
-    public function destroy(Request $request, User $user): JsonResponse
-    {
-        abort_unless($request->user()->role === 'admin', 403);
-        abort_if($user->is($request->user()), 422, 'Không thể xóa tài khoản đang đăng nhập.');
-        abort_unless(in_array($user->role, ['student', 'teacher', 'staff'], true), 422, 'Chỉ được xóa tài khoản SV/GV hoặc KTV.');
-        DB::transaction(function () use ($request, $user) {
-            $user = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
-            if ($user->role === 'staff') {
-                abort_if($user->assignedTickets()->whereNotIn('status', ['resolved', 'closed'])->exists(), 422,
-                    'KTV còn phiếu chưa hoàn tất. Hãy phân công lại hoặc hoàn tất phiếu trước khi xóa.');
-                abort_if(\App\Models\TicketSchedule::where('staff_id', $user->id)->where('starts_at', '>', now())
-                    ->where('status', '!=', 'cancelled')->exists(), 422,
-                    'KTV còn lịch xử lý sắp tới. Hãy hủy hoặc phân công lại lịch trước khi xóa.');
-            }
-            $user->forceFill(['is_deleted' => true, 'remember_token' => Str::random(60)])->save();
-            $user->tokens()->delete();
-            if (Schema::hasTable('sessions')) DB::table('sessions')->where('user_id', $user->id)->delete();
-            DB::table('password_reset_tokens')->where('email', $user->email)->delete();
-            ActivityLog::record($request, 'user.deleted', $user, 'Admin xóa tài khoản; giữ lịch sử phiếu.', ['role' => $user->role]);
-            $user->delete();
-        });
-        return response()->json(['message' => 'Đã xóa tài khoản. Lịch sử phiếu được giữ lại.']);
-    }
-
     public function updateRole(Request $request, User $user): JsonResponse
     {
         abort_if($user->is($request->user()), 422, 'Không thể tự đổi vai trò tài khoản đang đăng nhập.');
-        $data = $request->validate(['role' => ['required', Rule::in(['admin', 'staff', 'student'])]]);
+        $data = $request->validate(['role' => ['required', Rule::in(['admin', 'staff', 'student', 'teacher'])]]);
         $previousRole = $user->role;
-        $user->update(['role' => $data['role']]);
+        DB::transaction(function () use ($user, $data): void {
+            $user->update(['role' => $data['role']]);
+
+            if ($data['role'] === 'teacher') {
+                $user->reportedTickets()
+                    ->whereIn('priority', ['low', 'normal'])
+                    ->update(['priority' => 'high']);
+            }
+        });
         ActivityLog::record($request, 'user.role_updated', $user, 'Changed a user role.', [
             'from_role' => $previousRole,
             'to_role' => $user->role,

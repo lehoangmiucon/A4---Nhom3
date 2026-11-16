@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TicketAttachment extends Model
 {
+    protected $appends = ['url'];
+
+    public function getUrlAttribute(): string
+    {
+        return url(\Illuminate\Support\Facades\Storage::disk('public')->url($this->path));
+    }
+
     protected $fillable = ['ticket_id', 'uploaded_by_id', 'path', 'original_name', 'attachment_type'];
 
     public function ticket(): BelongsTo
@@ -16,6 +23,6 @@ class TicketAttachment extends Model
 
     public function uploader(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'uploaded_by_id')->withTrashed();
+        return $this->belongsTo(User::class, 'uploaded_by_id');
     }
 }

@@ -7,9 +7,9 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Tài khoản của tôi · Helpdesk</title>
     <link rel="stylesheet" href="assets/css/customer.css?v=20261103-responsive1">
-    <link rel="stylesheet" href="assets/css/account.css?v=20261109">
-    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261105-staff-header2">
-    @include('shared.password-toggle')
+    <link rel="stylesheet" href="assets/css/account.css?v=20261110-avatar-picker1">
+    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261110-custom-select1">
+@include('shared.password-visibility-assets')
 </head>
 <body class="customer-role-page role-page account-page">
 <div class="role-shell">
@@ -25,12 +25,14 @@
             <a class="role-button secondary" href="index">← Quay lại tổng quan</a>
         </section>
 
-        @if(session('status'))<p class="web-account-notice" role="status">{{ session('status') }}</p>@endif
-        @if($errors->any())<div class="web-account-notice is-error" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
         <div class="account-layout">
             <section class="role-card account-profile-card">
                 <div class="account-card-heading">
-                    <span class="account-avatar">{{ mb_strtoupper(mb_substr($currentUser->name, 0, 1)) }}</span>
+                    @if($currentUser->avatar_path)
+                        <img class="account-avatar account-avatar-image" src="{{ url('/storage/'.$currentUser->avatar_path) }}" alt="Ảnh đại diện của {{ $currentUser->name }}">
+                    @else
+                        <span class="account-avatar">{{ mb_strtoupper(mb_substr($currentUser->name, 0, 1)) }}</span>
+                    @endif
                     <div>
                         <span class="role-kicker">HỒ SƠ CỦA BẠN</span>
                         <h2>{{ $currentUser->name }}</h2>
@@ -38,26 +40,23 @@
                     </div>
                 </div>
 
+                <form class="account-avatar-form" method="POST" action="{{ url('/account/profile') }}" enctype="multipart/form-data">
+                    @csrf
+                    <label for="customer-avatar-upload">Ảnh đại diện</label>
+                    <input id="customer-avatar-upload" class="account-avatar-file" name="avatar" type="file" accept="image/*" required>
+                    <small class="account-field-hint">Chọn ảnh JPG, PNG hoặc WebP, tối đa 5 MB. Email không thể chỉnh sửa.</small>
+                    @error('avatar')<small class="account-field-error">{{ $message }}</small>@enderror
+                    <button class="role-button account-submit" type="submit">Cập nhật ảnh đại diện</button>
+                </form>
                 <dl class="account-facts">
                     <div><dt>Họ và tên</dt><dd>{{ $currentUser->name }}</dd></div>
                     <div><dt>Email đăng nhập</dt><dd>{{ $currentUser->email }}</dd></div>
-                    <div><dt>Vai trò</dt><dd>{{ ['admin' => 'Quản lý', 'staff' => 'Nhân viên kỹ thuật', 'student' => 'Sinh viên', 'teacher' => 'Giảng viên'][$currentUser->role] ?? 'Người dùng' }}</dd></div>
+                    <div><dt>Vai trò</dt><dd>{{ ['admin' => 'Quản lý', 'staff' => 'Nhân viên kỹ thuật', 'student' => 'Sinh viên', 'teacher' => 'Giáo viên'][$currentUser->role] ?? 'Người dùng' }}</dd></div>
                     <div><dt>Email xác thực</dt><dd>{{ $currentUser->email_verified_at ? 'Đã xác thực' : 'Chưa xác thực' }}</dd></div>
                     <div><dt>Ngày tạo tài khoản</dt><dd>{{ $currentUser->created_at?->format('d/m/Y') ?? '—' }}</dd></div>
                 </dl>
-                <form class="account-password-form web-profile-form" action="{{ url('/account/profile') }}" method="post">
-                    @csrf
-                    <h2>Chỉnh sửa hồ sơ</h2>
-                    <label for="profile-name">Họ và tên</label>
-                    <input id="profile-name" name="name" value="{{ old('name', $currentUser->name) }}" maxlength="120" autocomplete="name" required>
-                    @if($currentUser->role === 'student')
-                    <label for="profile-code">Mã sinh viên (không bắt buộc)</label>
-                    <input id="profile-code" name="member_code" value="{{ old('member_code', $currentUser->member_code) }}" maxlength="80">
-                    @endif
-                    <label for="profile-phone">Số điện thoại <small>(không bắt buộc)</small></label>
-                    <input id="profile-phone" type="tel" name="phone" value="{{ old('phone', $currentUser->phone) }}" autocomplete="tel" pattern="\+?[0-9]{9,15}" maxlength="16">
-                    <button class="role-button account-submit" type="submit">Lưu hồ sơ</button>
-                </form>
+                @if(session('status'))<p class="account-readonly-note" role="status" data-auto-dismiss>{{ session('status') }}</p>@endif
+                <p class="account-readonly-note">Bạn có thể tự cập nhật ảnh đại diện và đổi mật khẩu tại đây. Email không thể chỉnh sửa.</p>
             </section>
 
             <section class="role-card account-password-card">
@@ -66,28 +65,26 @@
                     <div>
                         <span class="role-kicker">BẢO MẬT</span>
                         <h2>Đổi mật khẩu</h2>
-                        <p>Xác thực mã gửi đến email trường của bạn trước khi đổi mật khẩu.</p>
+                        <p>Nhập mật khẩu hiện tại để xác nhận thay đổi.</p>
                     </div>
                 </div>
 
-                <div class="account-code-recipient"><small>Email nhận mã</small><strong>{{ $currentUser->email }}</strong></div>
-                <form class="account-password-form" data-password-code-form action="{{ url('/account/password-code') }}" method="post">
-                    @csrf
-                    <button class="role-button secondary account-submit" type="submit">Gửi mã xác thực</button>
-                    <p data-account-feedback role="status" aria-live="polite" hidden></p>
-                </form>
-                <form class="account-password-form" data-password-reset-form action="{{ url('/account/password-confirm') }}" method="post">
-                    @csrf
-                    <label for="password-code">Mã xác thực trong email</label>
-                    <input id="password-code" name="token" maxlength="6" minlength="6" autocomplete="one-time-code" placeholder="Nhập mã xác thực" required>
+                <form class="account-password-form" data-api-endpoint="account/password" data-api-method="POST">
+                    <label for="current-password">Mật khẩu hiện tại</label>
+                    <input id="current-password" type="password" name="current_password" autocomplete="current-password" required>
+                    @error('current_password')<small class="helpdesk-password-error">{{ $message }}</small>@enderror
+
                     <label for="new-password">Mật khẩu mới</label>
                     <input id="new-password" type="password" name="password" autocomplete="new-password" minlength="8" required>
+                    @error('password')<small class="helpdesk-password-error">{{ $message }}</small>@enderror
                     <small class="account-field-hint">Mật khẩu mới cần có ít nhất 8 ký tự.</small>
+
                     <label for="password-confirmation">Xác nhận mật khẩu mới</label>
                     <input id="password-confirmation" type="password" name="password_confirmation" autocomplete="new-password" minlength="8" required>
-                    <p data-account-feedback role="status" aria-live="polite" hidden></p>
-                    <button class="role-button account-submit" type="submit">Đổi mật khẩu</button>
-                    <small class="account-field-hint">Đổi mật khẩu thành công sẽ yêu cầu đăng nhập lại.</small>
+                    @error('password_confirmation')<small class="helpdesk-password-error">{{ $message }}</small>@enderror
+
+                    <p class="api-feedback" data-api-feedback role="status" aria-live="polite" hidden></p>
+                    <button class="role-button account-submit" type="submit">Lưu mật khẩu mới</button>
                 </form>
             </section>
         </div>
@@ -95,6 +92,6 @@
         <footer class="role-footer">Helpdesk trường học · Quản lý tài khoản cá nhân</footer>
     </main>
 </div>
-<script src="{{ url('/shared/js/account-security.js?v=20261109') }}" defer></script>
+<script src="../admin/assets/js/api-client.js?v=20261110-report-toast-center1"></script>
 </body>
 </html>

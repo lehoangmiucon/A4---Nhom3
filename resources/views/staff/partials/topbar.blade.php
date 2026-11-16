@@ -10,12 +10,15 @@
             @if(($unreadNotificationCount ?? 0) > 0)<span class="role-nav-notification-badge" aria-label="{{ $unreadNotificationCount }} unread notifications">{{ min($unreadNotificationCount, 99) }}{{ $unreadNotificationCount > 99 ? '+' : '' }}</span>
             @endif
         </a>
-        <a class="{{ ($pagePath ?? '') === 'account' ? 'current' : '' }}" href="{{ url('/staff/account') }}">Tài khoản</a>
     </nav>
 
     <section class="role-account" aria-label="Tài khoản đang đăng nhập">
         <a class="role-account-profile {{ ($pagePath ?? '') === 'account' ? 'is-current' : '' }}" href="account" aria-label="Xem thông tin tài khoản">
-            <span class="role-account-icon" aria-hidden="true">{{ mb_strtoupper(mb_substr($currentUser->name, 0, 1)) }}</span>
+            @if($currentUser->avatar_path)
+                <img class="role-account-icon" style="object-fit:cover" src="{{ url('/storage/'.$currentUser->avatar_path) }}" alt="">
+            @else
+                <span class="role-account-icon" aria-hidden="true">{{ mb_strtoupper(mb_substr($currentUser->name, 0, 1)) }}</span>
+            @endif
             <span class="role-account-details">
                 <strong>{{ $currentUser->name }}</strong>
                 <small>{{ $currentUser->email }}</small>
@@ -28,4 +31,5 @@
     </section>
 </header>
 <script src="{{ url('/shared/js/logout.js?v=20261106-csrf1') }}" defer></script>
-<script src="{{ url('/shared/js/page-feedback.js?v=20261106-fast1') }}" defer></script>
+<script src="{{ url('/shared/js/page-feedback.js?v=20261111-feedback-top1') }}" defer></script>
+<script src="{{ url('/admin/assets/js/native-selects.js?v=20261111-categorymenu2') }}" defer></script>

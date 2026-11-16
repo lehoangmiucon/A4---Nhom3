@@ -38,7 +38,7 @@ Tổng quan · Helpdesk trường học
                         </div>
                         <form class="period-filter dashboard-period-filter" method="GET">
                             <label for="dashboard-period">Xem thống kê theo</label>
-                            <select class="period-select" id="dashboard-period" name="period" onchange="this.form.submit()">
+                            <select class="period-select" id="dashboard-period" name="period">
                                 @foreach($dashboardPeriodOptions as $periodValue => $periodLabel)
                                     <option value="{{ $periodValue }}" @selected($dashboardPeriod === $periodValue)>{{ $periodLabel }}</option>
                                 @endforeach
@@ -46,7 +46,7 @@ Tổng quan · Helpdesk trường học
                         </form>
                     </section>
                     <section
-                        class="metric-grid"
+                        class="metric-grid dashboard-metric-grid"
                         aria-label="Tổng hợp phiếu sự cố"
                     >
                         <a class="metric-card metric-card-link" href="pages/incidents?focus=today" aria-label="Xem các phiếu sự cố được gửi hôm nay">
@@ -99,6 +99,17 @@ Tổng quan · Helpdesk trường học
                             </div>
                             <div class="metric-progress">
                                 <i style="width: {{ $dashboardTotal ? round($dashboardInProgressCount / $dashboardTotal * 100) : 0 }}%; background: #7049c6"></i>
+                            </div>
+                        </a>
+                        <a class="metric-card metric-card-link teacher-metric-card" href="pages/incidents?reporter_role=teacher&amp;period={{ $dashboardPeriod }}" aria-label="Xem báo cáo giáo viên {{ $dashboardPeriodTitle }}">
+                            <div class="metric-top">
+                                <span>Báo cáo giáo viên</span>
+                                <span class="metric-icon"><i class="fa-solid fa-chalkboard-user" aria-hidden="true"></i></span>
+                            </div>
+                            <div class="metric-value">{{ $dashboardTeacherCount }}</div>
+                            <div class="metric-note">Phiếu ưu tiên cao từ giáo viên {{ $dashboardPeriodTitle }}</div>
+                            <div class="metric-progress">
+                                <i style="width: {{ $dashboardTotal ? round($dashboardTeacherCount / $dashboardTotal * 100) : 0 }}%; background: #c46b1a"></i>
                             </div>
                         </a>
                     </section>
@@ -193,7 +204,7 @@ Tổng quan · Helpdesk trường học
                                     </tr>
                                 </thead>
                                 <tbody>@forelse($recentTickets as $ticket)
-<tr><td><a class="ticket-code" href="pages/ticket-detail?ticket={{ $ticket->id }}">{{ $ticket->ticket_number }}</a></td><td><span class="issue-title">{{ $ticket->title }}</span><span class="issue-sub">{{ $ticket->equipment_label }}</span></td><td>{{ $ticket->room?->name ?? $ticket->room_label }}</td><td><span class="person-cell">{{ $ticket->reporter_name }}</span></td><td><span class="status-badge ticket-status ticket-status-{{ str_replace('_', '-', $ticket->status) }}">{{ $statusLabels[$ticket->status] ?? $ticket->status }}</span></td><td>{{ $ticket->created_at->format("H:i d/m") }}</td><td><a class="button button-secondary incident-detail-button" href="pages/ticket-detail?ticket={{ $ticket->id }}"><i class="fa-solid fa-eye" aria-hidden="true"></i> Xem chi ti&#7871;t</a></td></tr>
+<tr><td><a class="ticket-code" href="pages/ticket-detail?ticket={{ $ticket->id }}">{{ $ticket->ticket_number }}</a></td><td><span class="issue-title">{{ $ticket->title }}</span><span class="issue-sub">@include('shared.ticket-category-badge', ['category' => $ticket->category, 'label' => $ticket->equipment_label])</span></td><td>{{ $ticket->room?->name ?? $ticket->room_label }}</td><td><span class="person-cell">{{ $ticket->reporter_name }}</span></td><td><span class="status-badge ticket-status ticket-status-{{ str_replace('_', '-', $ticket->status) }}">{{ $statusLabels[$ticket->status] ?? $ticket->status }}</span></td><td>{{ $ticket->created_at->format("H:i d/m") }}</td><td><a class="button button-secondary incident-detail-button" href="pages/ticket-detail?ticket={{ $ticket->id }}"><i class="fa-solid fa-eye" aria-hidden="true"></i> Xem chi ti&#7871;t</a></td></tr>
 @empty
 <tr><td colspan="7">Chưa có phiếu sự cố.</td></tr>
 @endforelse</tbody>
@@ -242,5 +253,6 @@ Tổng quan · Helpdesk trường học
 @endsection
 
 @section('scripts')
-<script src="assets/js/api-client.js?v=20261106-fast-actions1"></script>
+<script src="assets/js/api-client.js?v=20261110-report-toast-center1"></script>
+<script src="{{ url('/admin/assets/js/dashboard-period.js?v=20261109-week-ajax1') }}"></script>
 @endsection
