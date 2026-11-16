@@ -211,6 +211,8 @@ class OpenApiDocument
             'ApiScheduleController@index' => 'Mặc định ẩn lịch hủy. Staff luôn chỉ xem lịch của mình; from/to dùng YYYY-MM-DD.',
             'CategoryController@destroy' => 'Danh mục có liên kết phiếu, thiết bị hoặc chuyên môn nhân viên trả 422.',
             'AccountController@updateProfile' => 'PATCH nhận JSON để sửa tên. POST multipart hỗ trợ avatar tối đa 5 MB.',
+            'UserController@updateStaff' => 'Chỉ admin. Gửi mật khẩu mới sẽ thu hồi toàn bộ Bearer token và phiên đăng nhập của nhân viên; nhân viên phải đăng nhập lại. Bỏ trống password để chỉ sửa thông tin, giữ nguyên đăng nhập.',
+            'UserController@updateStaff' => 'Chỉ admin. Gửi mật khẩu mới sẽ thu hồi toàn bộ Bearer token và phiên đăng nhập của nhân viên; nhân viên phải đăng nhập lại. Bỏ trống password để chỉ sửa thông tin, giữ nguyên đăng nhập.',
             default => '',
         };
     }

@@ -622,6 +622,7 @@ class MobileApiTest extends TestCase
     public function test_full_mobile_workflow_upload_assign_acknowledge_resolve_close_and_notifications(): void
     {
         Storage::fake('public');
+        Storage::fake('repair-evidence');
         $teacher = $this->user('teacher');
         $staff = $this->user('staff');
         $admin = $this->user('admin');
@@ -655,7 +656,8 @@ class MobileApiTest extends TestCase
         $this->assertSame(basename($repairImage->path), $repairImage->original_name);
         $this->assertNotSame($reportImage->original_name, $repairImage->original_name);
         Storage::disk('public')->assertExists($reportImage->path);
-        Storage::disk('public')->assertExists($repairImage->path);
+        Storage::disk('public')->assertMissing($repairImage->path);
+        Storage::disk('repair-evidence')->assertExists($repairImage->path);
         $this->token($admin)->postJson("/api/admin/tickets/{$id}/close")->assertOk()->assertJsonPath('data.status', 'closed');
         $this->token($teacher)->getJson('/api/notifications')->assertOk()
             ->assertJsonStructure(['unread_count', 'data' => [['payload', 'ticket_id']]]);

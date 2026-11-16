@@ -150,18 +150,26 @@ class UserController extends Controller
             'category_ids.*' => ['required', 'integer', 'distinct', 'exists:categories,id'],
         ]);
 
-        if (! empty($data['password'])) {
-            PasswordPolicy::ensureDifferent($data['password'], $user->password);
-        }
-        $user->fill([
-            'name' => $data['name'],
-            'phone' => $data['phone'] ?? null,
-        ]);
-        if (! empty($data['password'])) {
-            $user->password = Hash::make($data['password']);
-        }
-        $user->save();
-        $user->categories()->sync($data['category_ids']);
+        $passwordChanged = ! empty($data['password']);
+        DB::transaction(function () use ($user, $data, $passwordChanged): void {
+            // Token issuance takes the same lock before checking credentials.
+            $lockedUser = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            abort_unless($lockedUser->role === 'staff', 404);
+            if ($passwordChanged) {
+                PasswordPolicy::ensureDifferent($data['password'], $lockedUser->password);
+                $lockedUser->password = $data['password'];
+                $lockedUser->setRememberToken(Str::random(60));
+            }
+            $lockedUser->fill(['name' => $data['name'], 'phone' => $data['phone'] ?? null])->save();
+            $lockedUser->categories()->sync($data['category_ids']);
+            if ($passwordChanged) {
+                $lockedUser->tokens()->delete();
+                if (config('session.driver') === 'database') {
+                    DB::connection(config('session.connection'))->table(config('session.table', 'sessions'))
+                        ->where('user_id', $lockedUser->id)->delete();
+                }
+            }
+        });
 
         ActivityLog::record($request, 'staff.updated', $user, 'Updated staff account and issue categories.', [
             'category_ids' => array_map('intval', $data['category_ids']),
@@ -169,7 +177,9 @@ class UserController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Đã cập nhật thông tin, mật khẩu và danh mục xử lý của nhân viên.',
+            'message' => $passwordChanged
+                ? 'Đã đổi mật khẩu và đăng xuất nhân viên khỏi các thiết bị.'
+                : 'Đã cập nhật thông tin và danh mục xử lý của nhân viên.',
             'data' => $user->fresh()->load('categories:id,name,color')->only('id', 'name', 'email', 'role', 'is_deleted', 'categories'),
         ]);
     }

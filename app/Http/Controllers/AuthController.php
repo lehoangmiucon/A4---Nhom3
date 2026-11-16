@@ -164,18 +164,24 @@ class AuthController extends Controller
     {
         $credentials = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
         $purger->handle();
-        if (!Auth::attempt($credentials)) {
-            throw ValidationException::withMessages(['email' => 'Email hoặc mật khẩu không chính xác.']);
-        }
+        $user = DB::transaction(function () use ($credentials) {
+            $lockedUser = User::where('email', $credentials['email'])->lockForUpdate()->first();
+            if (! $lockedUser || ! Auth::guard('web')->attempt($credentials)) {
+                throw ValidationException::withMessages(['email' => 'Email hoặc mật khẩu không chính xác.']);
+            }
+            $user = Auth::guard('web')->user();
+            if ($user->is_deleted || ! $user->email_verified_at) {
+                Auth::guard('web')->logout();
+                throw ValidationException::withMessages(['email' => $user->is_deleted
+                    ? 'Tai khoan da bi khoa. Vui long lien he quan ly.'
+                    : 'Vui lòng xác thực email bằng OTP trước khi đăng nhập.']);
+            }
+
+            return $user;
+        });
         $request->session()->regenerate();
-        $user = $request->user();
-        if ($user->is_deleted) {
-            Auth::logout();
-            throw ValidationException::withMessages(['email' => 'Tai khoan da bi khoa. Vui long lien he quan ly.']);
-        }
-        if (!$user->email_verified_at) {
-            Auth::logout();
-            throw ValidationException::withMessages(['email' => 'Vui lòng xác thực email bằng OTP trước khi đăng nhập.']);
+        if ($user->role === 'staff') {
+            $request->session()->put('staff_password_hash', Auth::guard('web')->hashPasswordForCookie($user->getAuthPassword()));
         }
 
         $defaultRedirect = match ($user->role) {
@@ -196,26 +202,29 @@ class AuthController extends Controller
             'device_name' => ['required', 'string', 'max:100'],
         ]);
 
-        $user = User::where('email', Str::lower($data['email']))->first();
-        if (!$user || !Hash::check($data['password'], $user->password)) {
-            throw ValidationException::withMessages(['email' => 'Email hoặc mật khẩu không chính xác.']);
-        }
-        if ($user->is_deleted) {
-            throw ValidationException::withMessages(['email' => 'Tai khoan da bi khoa. Vui long lien he quan ly.']);
-        }
-        if (!$user->email_verified_at) {
-            throw ValidationException::withMessages(['email' => 'Vui lòng xác thực email bằng OTP trước khi đăng nhập.']);
-        }
+        return DB::transaction(function () use ($data) {
+            // Serialize credential validation and issuance with admin password resets.
+            $user = User::where('email', Str::lower($data['email']))->lockForUpdate()->first();
+            if (! $user || ! Hash::check($data['password'], $user->password)) {
+                throw ValidationException::withMessages(['email' => 'Email hoặc mật khẩu không chính xác.']);
+            }
+            if ($user->is_deleted) {
+                throw ValidationException::withMessages(['email' => 'Tai khoan da bi khoa. Vui long lien he quan ly.']);
+            }
+            if (! $user->email_verified_at) {
+                throw ValidationException::withMessages(['email' => 'Vui lòng xác thực email bằng OTP trước khi đăng nhập.']);
+            }
 
-        $user->tokens()->where('name', $data['device_name'])->delete();
-        $token = $user->createToken($data['device_name'], ['*']);
+            $user->tokens()->where('name', $data['device_name'])->delete();
+            $token = $user->createToken($data['device_name'], ['*']);
 
-        return response()->json([
-            'message' => 'Đăng nhập API thành công.',
-            'token_type' => 'Bearer',
-            'access_token' => $token->plainTextToken,
-            'user' => $user->only('id', 'name', 'email', 'role'),
-        ]);
+            return response()->json([
+                'message' => 'Đăng nhập API thành công.',
+                'token_type' => 'Bearer',
+                'access_token' => $token->plainTextToken,
+                'user' => $user->only('id', 'name', 'email', 'role'),
+            ]);
+        });
     }
 
     public function tokenLogout(Request $request): JsonResponse

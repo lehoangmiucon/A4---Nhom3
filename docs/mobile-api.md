@@ -142,6 +142,17 @@ Toàn bộ endpoint trong bảng yêu cầu admin.
 | GET | /admin/locations/summary | Số tòa nhà và phòng |
 
 Lịch của một nhân viên: /admin/schedules?staff_id={id}.
+
+### Admin đổi mật khẩu nhân viên (SEC-02)
+
+`PUT /admin/staff/{id}` vẫn nhận `name`, `category_ids`, tùy chọn `phone`, `password` và yêu cầu quyền admin. Khi gửi mật khẩu mới hợp lệ, khác mật khẩu hiện tại, hệ thống thu hồi **toàn bộ Bearer token** của nhân viên, xoay `remember_token` và vô hiệu hóa các phiên web. Lưu hồ sơ, mật khẩu, chuyên môn và xóa token trong cùng transaction; lỗi thu hồi sẽ rollback thay đổi.
+
+Token cũ gọi API từ request tiếp theo nhận **401**; app cần xóa thông tin đăng nhập cục bộ và đưa người dùng về màn hình đăng nhập. Đăng nhập lại bằng mật khẩu mới để nhận token mới. Thông báo thành công là “Đã đổi mật khẩu và đăng xuất nhân viên khỏi các thiết bị.”
+
+Không gửi `password`, hoặc gửi rỗng/null, chỉ cập nhật hồ sơ/chuyên môn và giữ nguyên đăng nhập. Mật khẩu không hợp lệ hoặc trùng mật khẩu hiện tại trả 422, giữ nguyên mật khẩu/token. Phiên và token của admin hoặc tài khoản khác không bị thu hồi. Đây là hành vi admin đặt lại mật khẩu; người dùng tự đổi mật khẩu vẫn áp dụng quy tắc giữ phiên/token hiện tại của endpoint tương ứng.
+
+Khi triển khai bản sửa, phiên web cũ của staff chưa có dấu kiểm tra thông tin đăng nhập phải đăng nhập lại một lần. Xem [hướng dẫn SEC-02](SEC-02-staff-password-revocation.md) về triển khai và kiểm chứng.
+
 Chi tiết người dùng trả data.user, reported_counts, assigned_counts, schedules_count.
 status lọc tài khoản: active|unverified|locked.
 API cũ /admin/tickets/filter, /admin/team/filter, /admin/schedules/filter vẫn trả ID cho web;

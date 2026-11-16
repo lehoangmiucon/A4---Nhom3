@@ -29,6 +29,8 @@ Khi cập nhật hệ thống đã có ảnh sửa chữa, chạy `php artisan a
 
 Khi `MAIL_MAILER=log`, mã OTP được ghi vào log Laravel để phát triển trên máy. Muốn gửi email thật, cấu hình SMTP trong `.env`.
 
+SEC-02: admin đổi mật khẩu nhân viên sẽ thu hồi toàn bộ Bearer token và vô hiệu hóa phiên staff. Khi cập nhật bản sửa, phiên web staff cũ cần đăng nhập lại một lần. Xem [hướng dẫn triển khai và kiểm chứng](docs/SEC-02-staff-password-revocation.md).
+
 ## Trợ lý AI trên trang báo sự cố
 
 1. Thêm `OPENAI_API_KEY` vào `.env` để Laravel gọi OpenAI Responses API. Có thể đổi `OPENAI_MODEL` trong `.env`, mặc định là `gpt-4.1-mini`. Nếu đã chạy `config:cache`, chạy `php artisan config:clear` sau khi sửa cấu hình.
