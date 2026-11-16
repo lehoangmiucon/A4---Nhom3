@@ -3,6 +3,7 @@
 @section('title', 'Đội ngũ · Helpdesk trường học')
 
 @section('content')
+@include('shared.password-visibility-assets')
 <section class="page-title-row">
     <div>
         <p class="eyebrow">NHÂN SỰ HỖ TRỢ</p>

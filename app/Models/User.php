@@ -13,6 +13,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
+    protected $appends = ['avatar_url'];
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->avatar_path
+            ? url(\Illuminate\Support\Facades\Storage::disk('public')->url($this->avatar_path))
+            : null;
+    }
+
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -25,6 +34,7 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
+        'avatar_path',
         'email_verified_at',
         'role',
         'is_deleted',

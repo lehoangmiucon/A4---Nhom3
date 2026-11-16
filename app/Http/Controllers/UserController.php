@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\PasswordPolicy;
+
 use App\Models\User;
 use App\Models\ActivityLog;
 use Illuminate\Http\JsonResponse;
@@ -32,16 +34,16 @@ class UserController extends Controller
             };
         }
         if (!empty($filters['category'])) {
-            $query->whereHas('categories', fn ($categories) => $categories->whereKey($filters['category']));
+            $query->whereHas('categories', fn($categories) => $categories->whereKey($filters['category']));
         }
         if (!empty($filters['search'])) {
             $search = trim($filters['search']);
             $digits = preg_replace('/\D+/', '', $search);
-            $query->where(fn ($users) => $users
+            $query->where(fn($users) => $users
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%")
                 ->orWhere('phone', 'like', "%{$search}%")
-                ->when($digits !== '', fn ($users) => $users->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', '') LIKE ?", ["%{$digits}%"])));
+                ->when($digits !== '', fn($users) => $users->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', '') LIKE ?", ["%{$digits}%"])));
         }
         $ids = $query->orderBy('name')->pluck('id');
         return response()->json(['data' => ['ids' => $ids, 'count' => $ids->count()]]);
@@ -49,19 +51,32 @@ class UserController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $users = User::query()->select('id', 'name', 'email', 'phone', 'role', 'is_deleted', 'email_verified_at', 'created_at')
+        $filters = $request->validate([
+            'role' => ['nullable', Rule::in(['student', 'teacher', 'staff', 'admin'])],
+            'search' => ['nullable', 'string', 'max:200'],
+            'status' => ['nullable', Rule::in(['active', 'unverified', 'locked'])],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+        $query = User::query()->select('id', 'name', 'email', 'phone', 'avatar_path', 'role', 'is_deleted', 'email_verified_at', 'created_at')
+            ->withCount(['reportedTickets', 'assignedTickets'])
             ->when($request->filled('role'), fn($query) => $query->where('role', $request->string('role')))
             ->when($request->filled('search'), fn($query) => $query->where(fn($q) => $q
                 ->where('name', 'like', '%' . $request->string('search') . '%')
                 ->orWhere('email', 'like', '%' . $request->string('search') . '%')
-                ->orWhere('phone', 'like', '%' . $request->string('search') . '%')))
-            ->orderBy('name')->paginate(25);
-        return response()->json($users);
+                ->orWhere('phone', 'like', '%' . $request->string('search') . '%')));
+        if (!empty($filters['status'])) {
+            match ($filters['status']) {
+                'locked' => $query->where('is_deleted', true),
+                'unverified' => $query->where('is_deleted', false)->whereNull('email_verified_at'),
+                'active' => $query->where('is_deleted', false)->whereNotNull('email_verified_at'),
+            };
+        }
+        return response()->json($query->orderBy('name')->paginate($filters['per_page'] ?? 25)->withQueryString());
     }
 
     public function staff(): JsonResponse
     {
-        return response()->json(['data' => User::with('categories:id,name,color')->where('role', 'staff')->where('is_deleted', false)->orderBy('name')->get(['id', 'name', 'email', 'phone'])]);
+        return response()->json(['data' => User::with('categories:id,name,color')->where('role', 'staff')->where('is_deleted', false)->orderBy('name')->get(['id', 'name', 'email', 'phone', 'avatar_path'])]);
     }
 
     public function createStaff(Request $request): JsonResponse
@@ -135,6 +150,9 @@ class UserController extends Controller
             'category_ids.*' => ['required', 'integer', 'distinct', 'exists:categories,id'],
         ]);
 
+        if (! empty($data['password'])) {
+            PasswordPolicy::ensureDifferent($data['password'], $user->password);
+        }
         $user->fill([
             'name' => $data['name'],
             'phone' => $data['phone'] ?? null,
@@ -159,9 +177,17 @@ class UserController extends Controller
     public function updateRole(Request $request, User $user): JsonResponse
     {
         abort_if($user->is($request->user()), 422, 'Không thể tự đổi vai trò tài khoản đang đăng nhập.');
-        $data = $request->validate(['role' => ['required', Rule::in(['admin', 'staff', 'student'])]]);
+        $data = $request->validate(['role' => ['required', Rule::in(['admin', 'staff', 'student', 'teacher'])]]);
         $previousRole = $user->role;
-        $user->update(['role' => $data['role']]);
+        DB::transaction(function () use ($user, $data): void {
+            $user->update(['role' => $data['role']]);
+
+            if ($data['role'] === 'teacher') {
+                $user->reportedTickets()
+                    ->whereIn('priority', ['low', 'normal'])
+                    ->update(['priority' => 'high']);
+            }
+        });
         ActivityLog::record($request, 'user.role_updated', $user, 'Changed a user role.', [
             'from_role' => $previousRole,
             'to_role' => $user->role,

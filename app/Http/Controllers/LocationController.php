@@ -13,7 +13,9 @@ class LocationController extends Controller
 {
     public function buildings(): JsonResponse
     {
-        return response()->json(['data' => Building::with('rooms')->withCount('rooms')->orderBy('code')->get()]);
+        return response()->json(['data' => Building::with(['rooms' => fn ($rooms) =>
+            $rooms->withCount('tickets')
+        ])->withCount('rooms')->orderBy('code')->get()]);
     }
 
     public function createBuilding(Request $request): JsonResponse

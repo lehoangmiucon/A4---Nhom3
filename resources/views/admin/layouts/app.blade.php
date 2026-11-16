@@ -13,17 +13,18 @@
         };
     </script>
     <title>@yield('title', 'Helpdesk quản trị')</title>
-    <link rel="stylesheet" href="{{ url('/admin/assets/css/style.css?v=20261106-local-fonts1') }}">
-    <link rel="stylesheet" href="{{ url('/admin/assets/css/extra.css?v=20261106-evidence-layout9') }}">
+    <link rel="stylesheet" href="{{ url('/admin/assets/css/style.css?v=20261103-admin-layout1') }}">
+    <link rel="stylesheet" href="{{ url('/admin/assets/css/extra.css?v=20261114-hide-notification-scrollbar1') }}">
     @if(in_array($pagePath ?? '', ['pages/categories', 'pages/team', 'pages/ticket-review', 'pages/notifications'], true))
         <link rel="stylesheet" href="{{ url('/admin/assets/css/roles.css?v=20261106-local-fonts1') }}">
     @endif
     <link rel="stylesheet" href="{{ url('/admin/assets/css/ticket-status.css?v=20261104-status2') }}">
     @if(($pagePath ?? '') === 'pages/notifications')
-        <link rel="stylesheet" href="{{ url('/admin/assets/css/notifications.css?v=20261104-grouped1') }}">
+        <link rel="stylesheet" href="{{ url('/admin/assets/css/notifications.css?v=20261110-read-all1') }}">
     @endif
     <link rel="stylesheet" href="{{ url('/shared/fontawesome/css/all.min.css?v=7.3.1') }}" crossorigin="anonymous">
     @stack('styles')
+    <link rel="stylesheet" href="{{ url('/shared/css/ticket-category.css?v=20261111-color1') }}">
 </head>
 <body>
     <input class="nav-toggle" type="checkbox" id="nav-toggle" aria-hidden="true">
@@ -41,6 +42,7 @@
     @yield('scripts')
     <script src="{{ url('/admin/assets/js/image-lightbox.js?v=20261104-lightbox1') }}"></script>
     <script src="{{ url('/admin/assets/js/period-select.js?v=20261103-period-menu2') }}"></script>
-    <script src="{{ url('/admin/assets/js/notification-groups.js?v=20261104-popover1') }}"></script>
+    <script src="{{ url('/admin/assets/js/notification-groups.js?v=20261110-read-all1') }}"></script>
+    <script src="{{ url('/admin/assets/js/native-selects.js?v=20261111-categorymenu2') }}"></script>
 </body>
 </html>

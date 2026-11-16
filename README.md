@@ -21,12 +21,27 @@ php artisan key:generate
 5. Chạy `php artisan storage:link` để truy cập ảnh minh chứng.
 6. Trỏ document root của Apache vào thư mục `public`, hoặc dùng `php artisan serve`.
 7. Đăng ký tài khoản, xác thực OTP rồi cấp quyền admin cho tài khoản đầu tiên bằng `php artisan helpdesk:make-admin email@domain.test`.
+8. Mở thêm một cửa sổ PowerShell và chạy `php artisan schedule:work` để scheduler tự dọn tài khoản chưa xác thực sau 24 giờ khi đang phát triển local.
 
 Repository chứa mã nguồn và migration; `.env`, `vendor`, cache, database cục bộ và ảnh do người dùng tải lên không được đưa lên Git. GitHub Pages chỉ phục vụ trang tĩnh, không chạy được backend Laravel/PHP của dự án.
 
 Khi `MAIL_MAILER=log`, mã OTP được ghi vào log Laravel để phát triển trên máy. Muốn gửi email thật, cấu hình SMTP trong `.env`.
 
+## Trợ lý AI trên trang báo sự cố
+
+1. Thêm `OPENAI_API_KEY` vào `.env` để Laravel gọi OpenAI Responses API. Có thể đổi `OPENAI_MODEL` trong `.env`, mặc định là `gpt-4.1-mini`. Nếu đã chạy `config:cache`, chạy `php artisan config:clear` sau khi sửa cấu hình.
+2. Đăng nhập bằng tài khoản sinh viên hoặc giảng viên. Mở `/customer/portal` và chọn **Hỏi AI**. Thử nhắn “Máy chiếu phòng A203 bật lên nhưng không thấy hình” với mã phòng có trong hệ thống.
+3. Khi có bản nháp, chọn **Điền nháp vào phiếu**, kiểm tra thông tin và gửi bằng nút **Gửi báo cáo sự cố**. Nếu còn thiếu phòng hoặc danh mục, chọn trực tiếp trong form. Vị trí đang chọn trên form, kể cả vị trí từ QR, được ưu tiên giữ lại.
+
+Chat gửi một phần hội thoại gần nhất, danh mục sự cố và mã/tên phòng đang chọn (nếu có) đến OpenAI. Lịch sử hiển thị trong trang hiện tại. Khóa API chỉ nằm phía máy chủ. Khi thiếu khóa hoặc kết nối AI gặp lỗi, người dùng vẫn có thể điền form trực tiếp.
+
 ## Luồng API hiện có
+
+Swagger UI để xem và gọi thử API: mở /api. Xem [hướng dẫn Swagger](docs/swagger.md).
+
+Tài liệu endpoint dùng chung cho website và app mobile: [docs/mobile-api.md](docs/mobile-api.md).
+API có đăng ký/OTP, hồ sơ và ảnh đại diện, dashboard theo vai trò, danh sách lịch/phiếu phân trang,
+chi tiết người dùng/đội ngũ, địa điểm và thông báo. Mobile đăng nhập lấy Bearer token qua /api/auth/login.
 
 - Đăng ký sinh viên, xác thực/gửi lại OTP, đăng nhập và đăng xuất bằng session cookie.
 - Tra cứu phòng QR, tạo phiếu có ảnh; sinh viên chỉ xem phiếu của mình.

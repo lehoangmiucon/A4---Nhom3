@@ -16,10 +16,13 @@ class NotificationController extends Controller
             'title' => $notification->data['title'] ?? 'Cập nhật Helpdesk',
             'body' => $notification->data['message'] ?? '',
             'status' => $notification->data['status'] ?? null,
+            'payload' => $notification->data,
             'created_at' => $notification->created_at,
             'read_at' => $notification->read_at,
         ]);
-        return response()->json($page);
+        return response()->json(array_merge($page->toArray(), [
+            'unread_count' => $request->user()->unreadNotifications()->count(),
+        ]));
     }
 
     public function read(Request $request, string $id): JsonResponse
@@ -38,6 +41,16 @@ class NotificationController extends Controller
 
         return response()->json([
             'message' => 'Đã đánh dấu các cập nhật của phiếu là đã đọc.',
+            'updated' => $updated,
+        ]);
+    }
+
+    public function readAll(Request $request): JsonResponse
+    {
+        $updated = $request->user()->unreadNotifications()->update(['read_at' => now()]);
+
+        return response()->json([
+            'message' => 'Đã đánh dấu tất cả thông báo là đã đọc.',
             'updated' => $updated,
         ]);
     }

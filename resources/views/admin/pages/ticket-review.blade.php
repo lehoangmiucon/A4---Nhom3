@@ -75,5 +75,5 @@
 @endsection
 
 @section('scripts')
-<script src="../assets/js/api-client.js?v=20261106-fast-actions1"></script>
+<script src="../assets/js/api-client.js?v=20261110-report-toast-center1"></script>
 @endsection

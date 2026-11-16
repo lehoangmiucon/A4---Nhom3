@@ -9,8 +9,9 @@
     <title>Công việc kỹ thuật · Helpdesk</title>
     <link rel="stylesheet" href="assets/css/staff.css?v=20261106-local-fonts1">
     <link rel="stylesheet" href="../admin/assets/css/ticket-status.css?v=20261104-status1">
-    <link rel="stylesheet" href="assets/css/dashboard-refresh.css?v=20261106-period2">
-    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261104-3">
+    <link rel="stylesheet" href="assets/css/dashboard-refresh.css?v=20261111-categoryfilter1">
+    <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261110-pagination1">
+    <link rel="stylesheet" href="{{ url('/shared/css/ticket-category.css?v=20261111-color1') }}">
 </head>
 <body class="staff-role-page role-page staff-dashboard-page">
 <div class="role-shell">
@@ -45,6 +46,15 @@
                     <button type="button" data-staff-filter="in_progress" role="tab" aria-selected="false">Đang xử lý <span>{{ $tickets->where('status', 'in_progress')->count() }}</span></button>
                     <button type="button" data-staff-filter="completed" role="tab" aria-selected="false">Đã hoàn thành <span>{{ $tickets->whereIn('status', ['resolved', 'closed'])->count() }}</span></button>
                 </div>
+                <label class="staff-category-filter" for="staff-category-filter">
+                    <span>Danh mục lỗi</span>
+                    <select id="staff-category-filter">
+                        <option value="">Tất cả danh mục</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}" data-color="{{ $category->color }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
                 <p class="api-feedback" id="staff-list-error" role="status" aria-live="polite" hidden></p>
                 <div class="staff-ticket-list" id="staff-ticket-list">
                     @forelse($tickets as $ticket)
@@ -53,14 +63,14 @@
                             $nextSchedule = $ticket->schedules->first();
                             $ticketFilter = in_array($ticket->status, ['new', 'reopened', 'assigned'], true) ? 'assigned' : (in_array($ticket->status, ['resolved', 'closed'], true) ? 'completed' : $ticket->status);
                         @endphp
-                        <article class="staff-ticket-item" data-ticket-status="{{ $ticketFilter }}" style="--category-color: {{ $categoryColor }}">
+                        <article class="staff-ticket-item" data-ticket-status="{{ $ticketFilter }}" data-ticket-category="{{ $ticket->category_id ?? '' }}" style="--category-color: {{ $categoryColor }}">
                             <div class="staff-ticket-item-top">
                                 <a class="staff-ticket-number" href="ticket-detail?ticket={{ $ticket->id }}">{{ $ticket->ticket_number }}</a>
                                 <span class="role-badge ticket-status ticket-status-{{ str_replace('_', '-', $ticket->status) }}">{{ $statusLabels[$ticket->status] ?? $ticket->status }}</span>
                             </div>
                             <h3><a href="ticket-detail?ticket={{ $ticket->id }}">{{ $ticket->title }}</a></h3>
                             <div class="staff-ticket-meta">
-                                <span class="staff-category-tag"><i></i>{{ $ticket->category?->name ?? 'Chưa phân loại' }}</span>
+                                @include('shared.ticket-category-badge', ['category' => $ticket->category, 'label' => $ticket->category?->name])
                                 <span>{{ $ticket->room?->building?->name }} · {{ $ticket->room?->name }}</span>
                             </div>
                             <div class="staff-ticket-bottom">
@@ -138,24 +148,62 @@
 </div>
 <script src="assets/js/staff.js?v=20261106-cleanup1"></script>
 <script>
-document.querySelectorAll('[data-staff-filter]').forEach(function (button) {
-    button.addEventListener('click', function () {
-        var filter = button.dataset.staffFilter;
-        var visible = 0;
-        document.querySelectorAll('.staff-ticket-item').forEach(function (card) {
-            var show = filter === 'all' || card.dataset.ticketStatus === filter;
-            card.hidden = !show;
-            if (show) visible++;
+(function () {
+    var cards = Array.from(document.querySelectorAll('.staff-ticket-item'));
+    var list = document.getElementById('staff-ticket-list');
+    if (!list || !cards.length) return;
+    var pageSize = 15;
+    var page = 1;
+    var filter = 'all';
+    var categoryFilter = document.getElementById('staff-category-filter');
+    var nav = document.createElement('nav');
+    nav.className = 'ticket-pagination staff-ticket-pagination';
+    nav.setAttribute('aria-label', 'Phân trang phiếu kỹ thuật');
+    nav.innerHTML = '<span></span><div class="ticket-pagination-links"></div>';
+    list.after(nav);
+    function render() {
+        var selectedCategory = categoryFilter ? categoryFilter.value : '';
+        var matching = cards.filter(function (card) {
+            return (filter === 'all' || card.dataset.ticketStatus === filter)
+                && (!selectedCategory || card.dataset.ticketCategory === selectedCategory);
         });
-        document.querySelectorAll('[data-staff-filter]').forEach(function (tab) {
-            var active = tab === button;
-            tab.classList.toggle('is-active', active);
-            tab.setAttribute('aria-selected', active ? 'true' : 'false');
-        });
+        var pages = Math.max(1, Math.ceil(matching.length / pageSize));
+        page = Math.min(page, pages);
+        var first = (page - 1) * pageSize;
+        var shown = new Set(matching.slice(first, first + pageSize));
+        cards.forEach(function (card) { card.hidden = !shown.has(card); });
         var empty = document.getElementById('staff-filter-empty');
-        if (empty) empty.hidden = visible !== 0;
+        if (empty) empty.hidden = matching.length !== 0;
+        nav.querySelector('span').textContent = matching.length ? 'Hiển thị ' + (first + 1) + '–' + Math.min(first + pageSize, matching.length) + ' / ' + matching.length + ' phiếu' : 'Hiển thị 0 phiếu';
+        var links = nav.querySelector('.ticket-pagination-links');
+        links.replaceChildren();
+        if (pages < 2) return;
+        function button(label, target, disabled, active) {
+            var item = document.createElement('button');
+            item.type = 'button'; item.textContent = label; item.disabled = disabled;
+            if (active) { item.className = 'current'; item.setAttribute('aria-current', 'page'); }
+            item.addEventListener('click', function () { page = target; render(); });
+            links.append(item);
+        }
+        button('‹', page - 1, page === 1, false);
+        for (var number = Math.max(1, page - 2); number <= Math.min(pages, page + 2); number++) button(String(number), number, false, number === page);
+        button('›', page + 1, page === pages, false);
+    }
+    document.querySelectorAll('[data-staff-filter]').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            filter = tab.dataset.staffFilter;
+            page = 1;
+            document.querySelectorAll('[data-staff-filter]').forEach(function (item) {
+                var active = item === tab;
+                item.classList.toggle('is-active', active);
+                item.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            render();
+        });
     });
-});
+    if (categoryFilter) categoryFilter.addEventListener('change', function () { page = 1; render(); });
+    render();
+})();
 </script>
 </body>
 </html>

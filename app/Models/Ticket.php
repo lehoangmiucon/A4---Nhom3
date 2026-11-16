@@ -3,20 +3,52 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ticket extends Model
 {
     protected $fillable = [
-        'ticket_number', 'reporter_id', 'reporter_name', 'reporter_email', 'reporter_phone',
-        'room_id', 'room_label', 'building_label', 'equipment_id', 'equipment_label', 'category_id', 'assigned_to_id',
-        'title', 'description', 'priority', 'status', 'resolution_note', 'resolved_at', 'closed_at',
+        'ticket_number',
+        'reporter_id',
+        'reporter_name',
+        'reporter_email',
+        'reporter_phone',
+        'room_id',
+        'room_label',
+        'building_label',
+        'equipment_id',
+        'equipment_label',
+        'category_id',
+        'assigned_to_id',
+        'title',
+        'description',
+        'priority',
+        'status',
+        'resolution_note',
+        'resolved_at',
+        'closed_at',
     ];
 
     protected function casts(): array
     {
         return ['resolved_at' => 'datetime', 'closed_at' => 'datetime'];
+    }
+
+    public function scopePendingAssignment(Builder $query): Builder
+    {
+        return $query->whereIn('status', ['new', 'reopened'])->whereNull('assigned_to_id');
+    }
+
+    public function getPriorityLabelAttribute(): string
+    {
+        return match ($this->priority) {
+            'low' => 'Thấp',
+            'high' => 'Cao',
+            'urgent' => 'Khẩn cấp',
+            default => 'Bình thường',
+        };
     }
 
     public function reporter(): BelongsTo
