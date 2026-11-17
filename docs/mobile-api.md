@@ -31,6 +31,8 @@ http://<IP-máy-chủ>:8888/Laravelpro/helpdesk/public/api.
 | PATCH / POST | /account/profile | name, avatar (multipart, ảnh tối đa 5 MB) |
 | POST | /account/password | current_password, password, password_confirmation |
 
+Đổi mật khẩu được giới hạn **5 yêu cầu/phút cho mỗi tài khoản**. `POST /api/account/password` và `POST /account/password` trên web dùng chung bộ đếm, không tách theo token, thiết bị hay IP; tài khoản khác có bộ đếm riêng. Mọi yêu cầu qua middleware đều tính lượt, kể cả dữ liệu sai hoặc đổi mật khẩu thành công. Từ yêu cầu thứ 6 trong cửa sổ 60 giây trả **429**, có header `Retry-After` cho biết số giây cần chờ. App hiển thị thời gian chờ, không tự gửi lại liên tục; lỗi 429 không làm thay đổi mật khẩu hoặc thu hồi token.
+
 Chỉ tự đăng ký yêu cầu email @ut.edu.vn và luôn tạo vai trò student; client không tự cấp quyền teacher/admin.
 Admin cấp quyền hoặc tạo tài khoản nhân viên/quản lý qua API quản lý.
 Quên mật khẩu áp dụng mọi email tài khoản đã xác thực và còn hoạt động.

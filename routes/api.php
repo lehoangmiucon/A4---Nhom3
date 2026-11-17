@@ -34,7 +34,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::patch('/account/profile', [AccountController::class, 'updateProfile']);
     Route::post('/account/profile', [AccountController::class, 'updateProfile']);
     Route::get('/buildings', [ApiDirectoryController::class, 'buildingOptions']);
-    Route::post('/account/password', [AuthController::class, 'changePassword']);
+    Route::post('/account/password', [AuthController::class, 'changePassword'])->middleware('throttle:password-change');
     Route::get('/tickets', [TicketController::class, 'index']);
     Route::patch('/tickets/{ticket}', [TicketController::class, 'updateReport']);
     Route::post('/tickets/{ticket}', [TicketController::class, 'updateReport']);

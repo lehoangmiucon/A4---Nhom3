@@ -29,7 +29,8 @@ Route::get('/login', fn () => redirect(url('/auth/login')))->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
 Route::middleware(['auth', 'account.active'])->group(function () {
     Route::post('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
-    Route::post('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
+    Route::post('/account/password', [AccountController::class, 'updatePassword'])
+        ->middleware('throttle:password-change')->name('account.password.update');
 });
 
 Route::post('/customer/portal/chat', HelpdeskChatController::class)

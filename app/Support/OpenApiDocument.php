@@ -201,6 +201,7 @@ class OpenApiDocument
             'AuthController@verifyOtp', 'AuthController@resendOtp' => 'OTP lấy từ email, hiệu lực 5 phút; gửi lại cách nhau tối thiểu 60 giây.',
             'AuthController@sendPasswordResetOtp' => 'Áp dụng mọi email tài khoản hoạt động đã xác thực, không giới hạn email trường.',
             'AuthController@resetPasswordWithOtp' => 'Đặt lại mật khẩu thu hồi các token cũ. Đăng nhập lại sau khi thành công.',
+            'AuthController@changePassword' => 'Tối đa 5 yêu cầu mỗi phút cho mỗi tài khoản, dùng chung bộ đếm với POST /account/password trên web. Vượt giới hạn trả 429 và Retry-After (giây); chờ hết hạn trước khi thử lại.',
             'TicketController@index', 'TicketController@show' => 'Admin xem tất cả; staff xem phiếu được giao; student/teacher xem phiếu của mình. Customer không nhận ảnh sửa chữa nội bộ.',
             'TicketController@store' => 'Giáo viên được ưu tiên high. Nếu phòng/danh mục đã có phiếu đang xử lý, trả 200 và ticket_number thay vì tạo trùng.',
             'TicketController@updateReport' => 'Chỉ người báo student/teacher và chỉ khi trạng thái new. Dùng POST multipart khi gửi ảnh.',
