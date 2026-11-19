@@ -25,13 +25,17 @@ php artisan key:generate
 
 Repository chứa mã nguồn và migration; `.env`, `vendor`, cache, database cục bộ và ảnh do người dùng tải lên không được đưa lên Git. GitHub Pages chỉ phục vụ trang tĩnh, không chạy được backend Laravel/PHP của dự án.
 
-Khi cập nhật hệ thống đã có ảnh sửa chữa, chạy `php artisan attachments:privatize-repairs --dry-run` rồi `php artisan attachments:privatize-repairs` trên từng máy lưu ảnh. Xem [hướng dẫn khắc phục SEC-01](docs/SEC-01-repair-evidence.md) về chặn URL cũ, chuyển ảnh và kiểm tra sau triển khai. Trạng thái các phát hiện nằm trong [báo cáo bảo mật](docs/SECURITY_AUDIT.md).
+Khi cập nhật hệ thống đã có ảnh sửa chữa, chạy `php artisan attachments:privatize-repairs --dry-run` rồi `php artisan attachments:privatize-repairs` trên từng máy lưu ảnh. Xem [hướng dẫn khắc phục SEC-01](docs/SEC-01-repair-evidence.md) về chặn URL cũ, chuyển ảnh và kiểm tra sau triển khai. Trạng thái các phát hiện nằm trong [báo cáo bảo mật](<tài liệu cá nhân/SECURITY_AUDIT.md>).
 
 Khi `MAIL_MAILER=log`, mã OTP được ghi vào log Laravel để phát triển trên máy. Muốn gửi email thật, cấu hình SMTP trong `.env`.
 
 SEC-02: admin đổi mật khẩu nhân viên sẽ thu hồi toàn bộ Bearer token và vô hiệu hóa phiên staff. Khi cập nhật bản sửa, phiên web staff cũ cần đăng nhập lại một lần. Xem [hướng dẫn triển khai và kiểm chứng](docs/SEC-02-staff-password-revocation.md).
 
 ## Trợ lý AI trên trang báo sự cố
+
+Bộ tài liệu phát triển chính thức của tính năng: [Tài liệu AI](<docs/tài liệu AI/README.md>), gồm yêu cầu có mã, kiến trúc, dữ liệu/API, an toàn, quy trình task, ma trận kiểm thử và hướng dẫn vibe coding. Khi triển khai dùng bộ này cùng tasks/todo.md; tài liệu cá nhân cũ giữ để tham khảo lịch sử.
+
+Hướng triển khai được chọn là dùng API AI trả theo mức sử dụng thay vì tự vận hành hoặc fine-tune mô hình. Tích hợp hiện tại sử dụng OpenAI; xem [quyết định kiến trúc và các bước cấu hình](<tài liệu cá nhân/decisions/001-hosted-ai-api.md>). Chat hiện hỗ trợ trả lời và soạn nháp. Đã có API nền tảng M1a để lưu/đọc lại phiên; cần triển khai migration trước khi dùng. UI khôi phục phiên, chat theo phiên và tự động chuyển cấp chưa tích hợp. Xem [kế hoạch thực thi](tasks/plan.md) và [kiểm chứng M1a](tasks/verification-m1a.md).
 
 1. Thêm `OPENAI_API_KEY` vào `.env` để Laravel gọi OpenAI Responses API. Có thể đổi `OPENAI_MODEL` trong `.env`, mặc định là `gpt-4.1-mini`. Nếu đã chạy `config:cache`, chạy `php artisan config:clear` sau khi sửa cấu hình.
 2. Đăng nhập bằng tài khoản sinh viên hoặc giảng viên. Mở `/customer/portal` và chọn **Hỏi AI**. Thử nhắn “Máy chiếu phòng A203 bật lên nhưng không thấy hình” với mã phòng có trong hệ thống.

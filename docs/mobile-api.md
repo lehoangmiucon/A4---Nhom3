@@ -16,6 +16,27 @@ http://<IP-máy-chủ>:8888/Laravelpro/helpdesk/public/api.
 - avatar_url của tài khoản và url của ảnh phiếu là URL đầy đủ; password và remember_token được ẩn.
 - Ngày lọc dùng YYYY-MM-DD; timestamp dùng ISO 8601. period=day|week|month|year theo múi giờ cấu hình máy chủ: ngày hiện tại, tuần từ thứ Hai đến hết thứ Bảy, tháng từ ngày 1 đến hết ngày cuối tháng, năm từ 1/1 đến hết 31/12. Không lấy 7/30/365 ngày lùi từ hôm nay.
 
+## Phiên hỗ trợ AI — nền tảng M1a
+
+Đã có API lưu mô tả ban đầu và đọc lại phiên; chưa có gửi tin tiếp, gọi AI theo phiên hoặc tự chuyển cấp. Giao diện chat hiện tại chưa chuyển sang các endpoint này. Migration mới cần được triển khai trước khi sử dụng API trên database thật. Không cần khóa AI cho bốn endpoint bên dưới.
+
+| Method | Endpoint | Dữ liệu / kết quả |
+| --- | --- | --- |
+| POST | /support-sessions | room_id, equipment_id tùy chọn, description tối đa 1.000 ký tự; bắt buộc header Idempotency-Key |
+| GET | /support-sessions | status tùy chọn; page; per_page 1–50, mặc định 20; mới nhất trước |
+| GET | /support-sessions/{supportSession} | Đọc lại phiên, mã tin đầu và nhãn phòng/thiết bị |
+| GET | /support-sessions/{supportSession}/messages | Tin cũ đến mới; page, per_page 1–50; after_id để lấy các tin sau một ID |
+
+Chỉ student/teacher đang hoạt động và đã xác thực email được sử dụng. Chỉ chủ phiên xem được; phiên người khác và ID không tồn tại cùng trả 404. Admin/staff chưa có quyền xem phiên ở M1a. Server xác định người báo; không nhận user_id, status, version hoặc messages do client gán khi tạo.
+
+Tạo Idempotency-Key một lần cho mỗi ý định tạo phiên và giữ nguyên khi mạng yếu/gửi lại. Khóa dài tối đa 128 ký tự ASCII gồm chữ, số, dấu chấm, gạch dưới, hai chấm hoặc gạch ngang. Hai yêu cầu khác nhau phải dùng khóa khác nhau. Server lưu khóa dạng SHA-256; unique constraint và khóa giao dịch bảo vệ bản ghi. Cùng khóa/cùng nội dung trả nguyên dữ liệu tạo ban đầu và HTTP 201, không tạo phiên/tin thứ hai. Khác nội dung trả 422 với error.code IDEMPOTENCY_KEY_REUSED. GET chi tiết là trạng thái hiện tại; phản hồi replay là snapshot khi tạo, có thể khác nếu phòng/thiết bị đã bị xóa.
+
+Phiên mới có status=collecting, version=1, initial_message_id, room_id, equipment_id, các nhãn snapshot, handoff=null và permitted_actions=[] vì chưa triển khai hành động agent. Không suy luận rằng đã tạo phiếu từ việc tạo phiên.
+
+Phản hồi endpoint mới dùng data và meta.request_id; danh sách có meta.pagination với current_page, per_page, total, last_page. Lỗi dùng error.code, error.message, error.details và meta.request_id. Mã lỗi hiện có: UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, VALIDATION_ERROR, IDEMPOTENCY_KEY_REUSED, RATE_LIMITED, SERVICE_UNAVAILABLE. Nội dung trả có Cache-Control: no-store. POST tạo phiên giới hạn 30 yêu cầu/phút/tài khoản; khi 429 tuân theo Retry-After, không tạo key mới chỉ để lách giới hạn.
+
+Mô tả được lưu thành một tin role=user ở server trong cùng giao dịch với phiên và kết quả idempotency. Phòng bắt buộc tồn tại khi tạo ý định mới; thiết bị phải thuộc phòng. Khi xóa phòng hoặc thiết bị, FK được null và nhãn snapshot vẫn còn; không mất hội thoại. Xóa vật lý tài khoản có dữ liệu hỗ trợ bị FK chặn; quy trình retention/ẩn danh sẽ được triển khai riêng.
+
 ## Đăng ký, OTP, tài khoản
 
 | Method | Endpoint | Dữ liệu |

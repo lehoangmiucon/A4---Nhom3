@@ -19,6 +19,7 @@ class OpenApiDocument
         '09 - Admin - Danh mục lỗi',
         '10 - Admin - Địa điểm',
         '11 - Thông báo',
+        '12 - Phiên hỗ trợ',
     ];
     private const STATUSES = ['new', 'assigned', 'in_progress', 'resolved', 'closed', 'reopened'];
     private const ROLES = ['student', 'teacher', 'staff', 'admin'];
@@ -54,6 +55,11 @@ class OpenApiDocument
                     $parameters[] = ['name' => $parameter, 'in' => 'path', 'required' => true, 'schema' => $schema];
                 }
                 if ($method === 'GET') $parameters = array_merge($parameters, $this->queries($action));
+                if ($action === 'SupportSessionController@store') {
+                    $parameters[] = ['name' => 'Idempotency-Key', 'in' => 'header', 'required' => true,
+                        'description' => 'Tạo một lần cho một ý định, giữ nguyên khi gửi lại. Cùng khóa với nội dung khác trả 422.',
+                        'schema' => ['type' => 'string', 'maxLength' => 128, 'pattern' => '^[a-zA-Z0-9._:-]+$']];
+                }
                 if ($parameters) $operation['parameters'] = $parameters;
                 $body = $this->body($action, $method);
                 if ($body) $operation['requestBody'] = $body;
@@ -94,6 +100,7 @@ class OpenApiDocument
     private function tag(string $path, string $action): string
     {
         $tags = self::TAGS;
+        if (str_starts_with($path, '/support-sessions')) return $tags[11];
         if ($action === 'RepairEvidenceController@show') return $tags[4];
         if (str_starts_with($path, '/auth/')) return $tags[0];
         if ($path === '/me' || str_starts_with($path, '/account/')) return $tags[1];
@@ -122,6 +129,10 @@ class OpenApiDocument
             if ($uploadLabel) return $uploadLabel;
         }
         $labels = [
+            'SupportSessionController@store' => 'Lưu phiên hỗ trợ và mô tả ban đầu',
+            'SupportSessionController@index' => 'Danh sách phiên hỗ trợ của tôi',
+            'SupportSessionController@show' => 'Đọc lại phiên hỗ trợ của tôi',
+            'SupportSessionController@messages' => 'Đọc lịch sử tin nhắn đã lưu',
             'RepairEvidenceController@show' => 'Xem ảnh minh chứng sửa chữa nội bộ',
             'AuthController@register' => 'Đăng ký sinh viên',
             'AuthController@verifyOtp' => 'Xác thực OTP email',
@@ -196,6 +207,8 @@ class OpenApiDocument
     private function notes(string $action): string
     {
         return match ($action) {
+            'SupportSessionController@store' => 'Chỉ student/teacher đã xác thực email và đang hoạt động. Chưa gọi AI hoặc tạo phiếu. Cùng khóa và nội dung trả lại dữ liệu tạo phiên ban đầu với HTTP 201. Khóa chỉ lưu dạng băm.',
+            'SupportSessionController@index', 'SupportSessionController@show', 'SupportSessionController@messages' => 'Chỉ chủ phiên đang hoạt động và đã xác thực email. Phiên người khác trả 404. Phản hồi có data và meta.request_id; danh sách có meta.pagination. M1a chỉ lưu/đọc phiên, chưa gửi tin tiếp hoặc chuyển cấp.',
             'RepairEvidenceController@show' => 'Trả dữ liệu ảnh, chỉ admin hoặc staff đang được giao phiếu được xem. Gửi Bearer token trong header khi tải ảnh; không đặt token trong URL. Không lưu cache ảnh.',
             'AuthController@register' => 'Chỉ email @ut.edu.vn. Luôn tạo student; vai trò teacher do quản lý cấp.',
             'AuthController@verifyOtp', 'AuthController@resendOtp' => 'OTP lấy từ email, hiệu lực 5 phút; gửi lại cách nhau tối thiểu 60 giây.',
@@ -231,6 +244,16 @@ class OpenApiDocument
             'reporter_role' => $this->enum(self::ROLES), 'priority' => $this->enum(['low', 'normal', 'high', 'urgent']), 'period' => $period,
         ] + $dates;
         $properties = match ($action) {
+            'SupportSessionController@index' => [
+                'status' => $this->enum(\App\Models\SupportSession::STATUSES),
+                'page' => ['type' => 'integer', 'minimum' => 1],
+                'per_page' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 50, 'default' => 20],
+            ],
+            'SupportSessionController@messages' => [
+                'after_id' => ['type' => 'integer', 'minimum' => 0],
+                'page' => ['type' => 'integer', 'minimum' => 1],
+                'per_page' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 50, 'default' => 20],
+            ],
             'TicketController@index' => $tickets + $page,
             'TicketController@filterIncidents' => $tickets,
             'ApiScheduleController@index' => $dates + [
@@ -271,6 +294,11 @@ class OpenApiDocument
         ];
         $staff = ['name' => $this->string('Nhân viên kiểm thử'), 'email' => $email, 'phone' => ['type' => 'string'], 'password' => $password, 'category_ids' => $ids];
         [$properties, $required] = match ($action) {
+            'SupportSessionController@store' => [[
+                'room_id' => $this->id(),
+                'equipment_id' => $this->id() + ['nullable' => true],
+                'description' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 1000],
+            ], ['room_id', 'description']],
             'AuthController@register' => [
                 ['name' => $this->string('Sinh viên kiểm thử'), 'email' => array_replace($email, ['example' => 'sinhvien@ut.edu.vn']), 'password' => $password, 'password_confirmation' => $password],
                 ['name', 'email', 'password', 'password_confirmation'],
@@ -318,7 +346,7 @@ class OpenApiDocument
 
     private function responses(string $action): array
     {
-        $created = in_array($action, ['AuthController@register', 'TicketController@store', 'UserController@createStaff', 'UserController@createTeamAccount', 'CategoryController@store', 'LocationController@createBuilding', 'LocationController@createRoom']);
+        $created = in_array($action, ['SupportSessionController@store', 'AuthController@register', 'TicketController@store', 'UserController@createStaff', 'UserController@createTeamAccount', 'CategoryController@store', 'LocationController@createBuilding', 'LocationController@createRoom']);
         // Keep the required OpenAPI response declaration without generating
         // example JSON that could be mistaken for data returned by the API.
         // Swagger's Server response shows the actual status and body, including errors.

@@ -11,6 +11,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ApiDashboardController;
 use App\Http\Controllers\ApiDirectoryController;
 use App\Http\Controllers\ApiScheduleController;
+use App\Http\Controllers\SupportSessionController;
 use Illuminate\Support\Facades\Route;
 
 // Sanctum accepts stateful website sessions and Bearer tokens from mobile clients.
@@ -27,6 +28,13 @@ Route::get('/categories', [CategoryController::class, 'options']);
 Route::post('/tickets', [TicketController::class, 'store'])->middleware(['auth:sanctum', 'account.active']);
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::prefix('support-sessions')->middleware('role:student,teacher')->group(function () {
+        Route::post('/', [SupportSessionController::class, 'store'])->middleware('throttle:30,1');
+        Route::get('/', [SupportSessionController::class, 'index']);
+        Route::get('/{supportSession}', [SupportSessionController::class, 'show'])->whereNumber('supportSession');
+        Route::get('/{supportSession}/messages', [SupportSessionController::class, 'messages'])->whereNumber('supportSession');
+    });
+
     Route::get('/tickets/{ticket}/attachments/{attachment}', [\App\Http\Controllers\RepairEvidenceController::class, 'show'])
         ->whereNumber(['ticket', 'attachment'])->name('tickets.attachments.show');
     Route::get('/me', [AccountController::class, 'profile']);

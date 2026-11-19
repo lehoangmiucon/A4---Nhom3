@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:helpdesk:ai-decision:1",
+  "title": "AI decision v1",
+  "description": "Application contract. Provider-specific schema conversion does not replace backend semantic authorization.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "action",
+    "question_code",
+    "guide_step_id",
+    "handoff_reason",
+    "summary"
+  ],
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": [
+        "ask_question",
+        "suggest_step",
+        "request_handoff",
+        "request_resolution"
+      ]
+    },
+    "question_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "guide_step_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "handoff_reason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        null,
+        "user_requested",
+        "cannot_perform",
+        "no_eligible_guide",
+        "safety_risk",
+        "limits_reached",
+        "provider_unavailable"
+      ]
+    },
+    "summary": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 2000
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "ask_question"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "question_code": {
+            "type": "string"
+          },
+          "guide_step_id": {
+            "type": "null"
+          },
+          "handoff_reason": {
+            "type": "null"
+          },
+          "summary": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "suggest_step"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "question_code": {
+            "type": "null"
+          },
+          "guide_step_id": {
+            "type": "string"
+          },
+          "handoff_reason": {
+            "type": "null"
+          },
+          "summary": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "request_handoff"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "question_code": {
+            "type": "null"
+          },
+          "guide_step_id": {
+            "type": "null"
+          },
+          "handoff_reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "request_resolution"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "question_code": {
+            "type": "null"
+          },
+          "guide_step_id": {
+            "type": "null"
+          },
+          "handoff_reason": {
+            "type": "null"
+          },
+          "summary": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}
