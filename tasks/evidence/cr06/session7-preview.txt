@@ -1,0 +1,31 @@
+Phòng: A203 — Phòng A.203
+Thiết bị/danh mục: Điện & chiếu sáng
+CẦN ĐỐI CHIẾU DANH MỤC: Lời báo đề cập Máy chiếu, trong khi danh mục đang chọn là Điện & chiếu sáng. KTV xác nhận lại trước khi phân loại/xử lý.
+
+TỔNG HỢP TỪ LỜI BÁO — CHƯA ĐƯỢC KTV XÁC MINH
+Sự cố được báo: «phòng mình bị hư máy chiéu , mình bật mà nó không lên '». Thông tin bổ sung gần nhất: «nguồn điện oke hêt rồi»; «không tháy sáng đèn».
+
+KIỂM TRA/KẾT QUẢ NGƯỜI DÙNG ĐÃ NÊU
+- kiểm tra rồi
+- kiểm tra rồi đã cấm điện
+- nguồn điện oke hêt rồi
+
+GỢI Ý KIỂM TRA BAN ĐẦU — MẪU HỆ THỐNG
+- KTV xác minh khả năng khởi động và trạng thái đèn báo của máy chiếu tại phòng.
+- Kiểm tra đường cấp nguồn và kết nối nguồn theo quy trình kỹ thuật; xác minh trực tiếp, chưa kết luận hỏng bộ nguồn từ lời báo.
+
+LỜI BÁO GỐC — NGUỒN ĐỐI CHIẾU
+tôi cần bạn giúp
+
+phòng mình bị hư máy chiéu , mình bật mà nó không lên 
+'
+
+kiểm tra rồi
+
+kiểm tra rồi đã cấm điện
+
+nguồn điện oke hêt rồi
+
+không tháy sáng đèn
+
+Nguồn: hội thoại hỗ trợ #7. Hội thoại đầy đủ được lưu trong báo cáo hỗ trợ. Gợi ý không phải kết luận nguyên nhân hoặc xác nhận đã sửa.

@@ -1,6 +1,9 @@
 (() => {
     const panel = document.getElementById("portal-chat");
-    const launch = document.getElementById("portal-chat-launch");
+    if (!panel) return;
+    const embedded = panel.dataset.embedded === "true";
+    const hostPanel = embedded ? document.getElementById("support-session-panel") : panel;
+    const launch = document.getElementById(embedded ? "support-session-launch" : "portal-chat-launch");
     const close = document.getElementById("portal-chat-close");
     const form = document.getElementById("portal-chat-form");
     const input = document.getElementById("portal-chat-input");
@@ -17,52 +20,68 @@
     const roomId = document.getElementById("room-id");
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
 
-    const nativePopover = typeof panel.hidePopover === "function" && "popoverTargetElement" in launch;
+    const nativePopover = typeof hostPanel.hidePopover === "function" && "popoverTargetElement" in launch;
     const scrollToLatest = () => { log.scrollTop = log.scrollHeight; };
-    const isOpen = () => nativePopover ? panel.matches(":popover-open") : panel.classList.contains("is-open");
+    const isOpen = () => nativePopover ? hostPanel.matches(":popover-open") : hostPanel.classList.contains("is-open");
     const hideChat = () => {
-        if (nativePopover) panel.hidePopover();
-        else panel.classList.remove("is-open");
+        if (nativePopover) hostPanel.hidePopover();
+        else hostPanel.classList.remove("is-open");
         launch.setAttribute("aria-expanded", "false");
     };
 
-    close.addEventListener("click", (event) => {
-        event.preventDefault();
-        hideChat();
-        launch.focus();
-    });
-
-    if (nativePopover) {
-        panel.addEventListener("toggle", () => {
-            launch.setAttribute("aria-expanded", String(isOpen()));
-            if (isOpen()) scrollToLatest();
-        });
-    } else {
-        panel.removeAttribute("popover");
-        launch.addEventListener("click", () => {
-            const open = panel.classList.toggle("is-open");
-            launch.setAttribute("aria-expanded", String(open));
-            if (open) {
-                input.focus();
-                scrollToLatest();
-            }
-        });
-        document.addEventListener("keydown", (event) => {
-            if (event.key !== "Escape" || !isOpen()) return;
-            const focusWasInside = panel.contains(document.activeElement);
+    if (!embedded) {
+        close.addEventListener("click", (event) => {
+            event.preventDefault();
             hideChat();
-            if (focusWasInside) launch.focus();
+            launch.focus();
         });
-        document.addEventListener("click", (event) => {
-            if (isOpen() && !panel.contains(event.target) && !launch.contains(event.target)) hideChat();
-        });
+
+        if (nativePopover) {
+            panel.addEventListener("toggle", () => {
+                launch.setAttribute("aria-expanded", String(isOpen()));
+                if (isOpen()) scrollToLatest();
+            });
+        } else {
+            panel.removeAttribute("popover");
+            launch.addEventListener("click", () => {
+                const open = panel.classList.toggle("is-open");
+                launch.setAttribute("aria-expanded", String(open));
+                if (open) {
+                    input.focus();
+                    scrollToLatest();
+                }
+            });
+            document.addEventListener("keydown", (event) => {
+                if (event.key !== "Escape" || !isOpen()) return;
+                const focusWasInside = panel.contains(document.activeElement);
+                hideChat();
+                if (focusWasInside) launch.focus();
+            });
+            document.addEventListener("click", (event) => {
+                if (isOpen() && !panel.contains(event.target) && !launch.contains(event.target)) hideChat();
+            });
+        }
+        launch.setAttribute("aria-expanded", "false");
+        launch.hidden = false;
     }
-    launch.setAttribute("aria-expanded", "false");
-    launch.hidden = false;
 
     let history = [];
     let latestDraft = null;
     const lastFilled = new Map();
+    let loggedOut = false;
+    let pendingRequest = null;
+    document.addEventListener("submit", (event) => {
+        if (!event.target.closest("form[data-logout-form]")) return;
+        loggedOut = true;
+        pendingRequest?.abort();
+        history = [];
+        latestDraft = null;
+        lastFilled.clear();
+        log.replaceChildren();
+        input.value = "";
+        status.textContent = "";
+        draftButton.hidden = true;
+    });
 
     const append = (role, content) => {
         const message = document.createElement("p");
@@ -84,7 +103,7 @@
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         const content = input.value.trim();
-        if (!content || send.disabled) return;
+        if (!content || send.disabled || loggedOut) return;
 
         const userMessage = append("user", content);
         const messages = [...history, { role: "user", content }];
@@ -96,12 +115,15 @@
         setStatus("Trợ lý đang trả lời…");
 
         try {
+            pendingRequest = new AbortController();
             const response = await fetch(panel.dataset.endpoint, {
                 method: "POST",
                 credentials: "same-origin",
                 headers: { Accept: "application/json", "Content-Type": "application/json", "X-CSRF-TOKEN": csrf },
                 body: JSON.stringify({ messages, room_id: roomId.value || null }),
+                signal: pendingRequest.signal,
             });
+            if (loggedOut) return;
 
             if ([401, 403, 419].includes(response.status)) {
                 setStatus("Phiên đăng nhập không còn hợp lệ. Hãy đăng nhập lại để tiếp tục chat.");
@@ -109,6 +131,7 @@
                 setStatus("Bạn gửi tin nhắn hơi nhanh. Hãy chờ một lúc rồi thử lại.");
             } else {
                 const result = await response.json();
+                if (loggedOut) return;
                 if (response.ok && typeof result.reply === "string") {
                     append("assistant", result.reply);
                     history = [...messages, { role: "assistant", content: result.reply }].slice(-8);
@@ -120,8 +143,10 @@
                 setStatus(response.status === 503 && result.message ? result.message : "Gửi tin nhắn thất bại. Hãy thử lại.");
             }
         } catch {
+            if (loggedOut) return;
             setStatus("Gửi tin nhắn thất bại. Hãy thử lại.");
         } finally {
+            pendingRequest = null;
             input.readOnly = false;
             send.disabled = false;
             draftButton.disabled = false;

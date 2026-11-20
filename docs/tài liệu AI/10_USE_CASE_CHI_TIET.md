@@ -1,6 +1,6 @@
 # 10 — Đặc tả use case
 
-> Baseline AI-SDLC-1.1. Các luồng là TARGET, trừ nhánh M1a được ghi CURRENT_CODE. Chưa phải bằng chứng đã triển khai.
+> Thiết kế AI-SDLC-1.1, đồng bộ 1.2 đến CR-13. Luồng guide/outbox/acknowledgement/Flutter là TARGET; phần CURRENT_CODE ghi tại từng UC bên dưới và contract 03. Không coi mọi luồng ở đây đã triển khai.
 > Luật và thứ tự ưu tiên: [11](11_QUY_TAC_NGHIEP_VU.md). Quyền: [12](12_MA_TRAN_PHAN_QUYEN.md). API: [03](03_DU_LIEU_VA_API.md).
 
 ## 1. Quy ước dùng chung
@@ -37,7 +37,7 @@ Trong bảng, danh sách rút gọn AI-FR-001/002/003 tương ứng ba ID đầy
 - Actor: chủ phiên student/teacher.
 - Trigger: chọn phòng và gửi mô tả hoặc mở lại một phiên trong danh sách.
 - Tiền điều kiện: email đã xác thực, active; phòng tồn tại; thiết bị nếu chọn thuộc phòng; mô tả hợp lệ.
-- CURRENT_CODE: API tạo/list/detail/messages M1a. TARGET: giao diện thao tác và tiếp tục hội thoại.
+- CURRENT_CODE: API M1a và portal CR-01–13 đã có list/đọc lại/chat server. Nhánh chính 9 bước dưới mô tả M1a; POST support-conversations cho intake thiếu phòng riêng theo contract 03, không bắt body của M1a áp vào chat. CR-11 xóa mềm chỉ phiên handed_off có ticket closed. Các thao tác guide/follow-up còn TARGET.
 - Luồng chính: (1) xác nhận phòng; (2) nhập mô tả; (3) client tạo key cho intent; (4) backend kiểm tra quyền/input; (5) khóa theo actor, tìm replay; (6) ghi phiên, tin đầu và kết quả idempotency; (7) commit; (8) trả 201; (9) đọc lại bằng API lịch sử.
 - Nhánh A: key/payload trùng → replay snapshot, không thêm phiên/tin.
 - Nhánh B: key khác payload → 422; key thiếu/sai định dạng → 422.
@@ -47,6 +47,8 @@ Trong bảng, danh sách rút gọn AI-FR-001/002/003 tương ứng ba ID đầy
 - Bằng chứng: SupportSessionTest hiện có; UI cần TC-004/018. Event TARGET: support.session_created.
 
 ## UC-02 — Làm rõ sự cố
+
+CURRENT_CODE CR-12/13: backend hỏi phòng/công việc/mô tả còn thiếu, không gọi model cho intake; projection quan sát chọn câu hỏi theo nhánh, giữ kết quả/unknowns và mã câu hỏi trong receipt. Không lấy lời AI làm kết quả. Hết câu hỏi đề nghị KTV, không tự tạo phiếu. Các bước model chọn question_code/guide bên dưới là TARGET M3.
 
 - Actor: chủ phiên; actor phụ provider qua gateway.
 - Trigger: chọn tiếp tục hỗ trợ hoặc trả lời câu hỏi.
@@ -59,7 +61,9 @@ Trong bảng, danh sách rút gọn AI-FR-001/002/003 tương ứng ba ID đầy
 - Hậu điều kiện: facts/câu hỏi được lưu; không có bước thao tác chưa đủ điều kiện.
 - Bằng chứng: TC-007/021/025. Event TARGET: support.question_presented.
 
-## UC-03 — Hướng dẫn và nhận kết quả
+## UC-03 — Hướng dẫn và nhận kết quả — TARGET guide/attempt
+
+CR-13 chỉ có tập câu hỏi quan sát và projection từ tin server, chưa có support_step_attempts/step-results hay thẻ published guide; không đánh dấu UC-03 hoàn tất từ test quan sát.
 
 - Actor: chủ phiên.
 - Trigger: đủ facts để chọn bước, hoặc người dùng trả lời một bước đang chờ.
@@ -74,6 +78,8 @@ Trong bảng, danh sách rút gọn AI-FR-001/002/003 tương ứng ba ID đầy
 - Bằng chứng: TC-008–010/025. Event TARGET: support.step_presented, support.step_result_recorded.
 
 ## UC-04 — Chuyển hỗ trợ trực tiếp
+
+CURRENT_CODE CR-01–13: action report/escalations hoặc ý định rõ chuyển KTV → TX-A/receipt → TX-B ticket/report/audit/DB notification atomic; không gọi model khi bàn giao. Chống trùng phòng/danh mục active trả 200 report=null; TX-B lỗi 503 data receipt để retry cùng key. Chưa outbox/recovery tự động, fallback không tự tạo phiếu khi chưa có yêu cầu gửi. CR-01 cho bổ sung/đổi phòng hợp lệ trong chat theo contract; nhánh tạo phiên mới và gộp UC-05 dưới đây là thiết kế mở rộng TARGET.
 
 - Actor: chủ phiên hoặc backend khi AI không thể hỗ trợ.
 - Trigger: nút hỗ trợ, không thể thao tác, nguy hiểm, ngoài phạm vi, hết giới hạn hoặc provider lỗi.
@@ -103,6 +109,8 @@ Chi tiết hai giao dịch nhận intent và bàn giao cuối nằm ở 11; khô
 - Bằng chứng: TC-006/013/014. Event TARGET: support.report_linked hoặc support.merge_review_required.
 
 ## UC-06 — Hoàn tất và quay lại
+
+CURRENT_CODE có action resolve/lời xác nhận làm session resolved và cho trao đổi tiếp khi chưa bàn giao; không đổi ticket. Chưa endpoint reopenings/follow-ups hoặc shortcut 10 phút; luồng bên dưới là TARGET. Không gộp CR-11 xóa phiên đủ điều kiện với reopen/close ticket.
 
 - Actor: chủ phiên.
 - Trigger: xác nhận đã được hoặc chọn sự cố vẫn còn.

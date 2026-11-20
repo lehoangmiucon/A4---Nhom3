@@ -1,0 +1,506 @@
+/* Support Session UI CSS */
+.support-session-launch {
+    bottom: max(16px, env(safe-area-inset-bottom, 0px));
+}
+
+.support-session-panel {
+    display: none;
+    flex-direction: column;
+    width: min(440px, calc(100vw - 32px));
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    height: min(580px, calc(100vh - 90px));
+    height: min(580px, calc(100dvh - 90px));
+    border: 1px solid #c7d9ea;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 16px 40px rgba(18, 57, 92, 0.22);
+    z-index: 1060;
+    overflow: hidden;
+}
+
+.support-session-panel > header,
+.support-panel-nav { flex-shrink: 0; }
+.support-view { min-height: 0; overflow-y: auto; }
+.support-message-bubble { overflow-wrap: anywhere; }
+
+.support-session-panel:popover-open,
+.support-session-panel.is-open {
+    display: flex;
+}
+
+.support-session-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #095eb2;
+    color: #ffffff;
+}
+
+.support-header-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.support-header-kicker {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #c9e3fc;
+}
+
+.support-session-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.support-session-header button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.support-session-header button:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.support-panel-nav {
+    display: flex;
+    border-bottom: 1px solid #e1ecf5;
+    background: #f7fafd;
+}
+
+.support-session-panel .support-nav-tab {
+    flex: 1;
+    padding: 10px 8px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: #4b6379;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+}
+
+.support-session-panel .support-nav-tab.is-active {
+    border-bottom-color: #095eb2;
+    background: #ffffff;
+    color: #095eb2;
+}
+
+.support-status-bar {
+    padding: 8px 14px;
+    font-size: 12px;
+    background: #eef6fd;
+    color: #0d4782;
+    border-bottom: 1px solid #d8e9f8;
+}
+
+.support-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 14px;
+    background: #ffffff;
+}
+
+.support-view[hidden] {
+    display: none !important;
+}
+
+.support-chat-view .portal-chat-log { min-height: 100px; margin: 12px 0; }
+.support-chat-view .portal-chat-form { padding: 0; flex-shrink: 0; }
+.support-chat-view .portal-chat-form input { min-width: 0; }
+.support-chat-view .portal-chat-status,
+.support-chat-view .portal-chat-privacy { margin-left: 0; margin-right: 0; }
+
+/* UI-02: List */
+.support-view-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.support-count-badge {
+    font-size: 12px;
+    font-weight: 700;
+    color: #557088;
+    background: #edf3f9;
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+
+.support-session-panel .support-icon-button {
+    background: transparent;
+    border: 1px solid #cbdde9;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    color: #3b556c;
+}
+
+.support-state-box {
+    padding: 24px 16px;
+    text-align: center;
+    color: #4b6379;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px dashed #cfe0ee;
+    margin-bottom: 10px;
+}
+
+.support-state-box.is-error {
+    border-color: #f7b2b2;
+    background: #fff5f5;
+    color: #b91c1c;
+}
+
+.support-pill-btn {
+    margin-top: 10px;
+    display: inline-block;
+    padding: 6px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: #095eb2;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.support-session-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.support-session-item {
+    border: 1px solid #e1ecf5;
+    border-radius: 10px;
+    padding: 12px;
+    background: #fafcfe;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.support-session-item:hover,
+.support-session-item:focus-visible {
+    background: #edf5fc;
+    border-color: #9fcdf2;
+    outline: none;
+}
+
+.support-item-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.support-item-room {
+    font-weight: 700;
+    font-size: 14px;
+    color: #17324d;
+}
+
+.support-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.support-badge.status-collecting { background: #e0f2fe; color: #0369a1; }
+.support-badge.status-awaiting_result { background: #fef3c7; color: #b45309; }
+.support-badge.status-handoff_pending { background: #ffedd5; color: #c2410c; }
+.support-badge.status-handed_off { background: #f3e8ff; color: #7e22ce; }
+.support-badge.status-resolved { background: #dcfce7; color: #15803d; }
+.support-badge.status-cancelled { background: #f1f5f9; color: #475569; }
+
+.support-item-equipment {
+    font-size: 12px;
+    color: #557088;
+    margin-bottom: 4px;
+}
+
+.support-item-desc {
+    font-size: 13px;
+    color: #27435e;
+    margin: 0 0 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.support-item-time {
+    font-size: 11px;
+    color: #7a94a9;
+}
+
+.support-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid #e1ecf5;
+}
+
+.support-session-panel .support-page-nav {
+    padding: 6px 12px;
+    border: 1px solid #cbdde9;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #1a3c5c;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.support-page-nav:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.support-page-label {
+    font-size: 12px;
+    color: #4b6379;
+}
+
+/* UI-01: Create */
+.support-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.support-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.support-form-field label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a3956;
+}
+
+.support-form-field select,
+.support-form-field input,
+.support-form-field textarea {
+    padding: 8px 10px;
+    border: 1px solid #bed2e4;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #14324f;
+    background: #ffffff;
+}
+
+.support-form-field select:focus,
+.support-form-field input:focus,
+.support-form-field textarea:focus {
+    border-color: #095eb2;
+    outline: 2px solid rgba(9, 94, 178, 0.18);
+}
+
+.support-field-hint {
+    font-size: 11px;
+    color: #66829a;
+}
+
+.support-inline-error {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    font-size: 12px;
+}
+
+.support-form-footer {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.support-submit-btn {
+    flex: 1;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: 8px;
+    background: #095eb2;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.support-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.support-session-panel .support-cancel-btn {
+    padding: 10px 14px;
+    border: 1px solid #cbdde9;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #3b556c;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* UI-03: Detail */
+.support-detail-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.support-session-panel .support-text-btn {
+    border: 0;
+    background: transparent;
+    color: #095eb2;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.support-session-panel .support-handoff-btn {
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    background: #fffbeb;
+    color: #b45309;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.support-handoff-btn:hover {
+    background: #fef3c7;
+}
+
+.support-session-summary-card {
+    border: 1px solid #dbe8f4;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #f5f9fc;
+    margin-bottom: 12px;
+}
+
+.support-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3px;
+}
+
+.support-summary-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #17324d;
+}
+
+.support-summary-sub {
+    margin: 0 0 2px;
+    font-size: 12px;
+    color: #4b6379;
+}
+
+.support-summary-time {
+    font-size: 11px;
+    color: #7a94a9;
+}
+
+.support-messages-scroll {
+    flex: 1;
+    min-height: 120px;
+    max-height: 240px;
+    overflow-y: auto;
+    border: 1px solid #e1ecf5;
+    border-radius: 10px;
+    padding: 10px;
+    background: #fcfdfe;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.support-message-bubble {
+    max-width: 90%;
+    padding: 8px 12px;
+    border-radius: 12px 12px 12px 2px;
+    font-size: 13px;
+    line-height: 1.45;
+    background: #edf5fc;
+    color: #1a3956;
+}
+
+.support-message-bubble.is-user {
+    align-self: flex-end;
+    border-radius: 12px 12px 2px 12px;
+    background: #095eb2;
+    color: #ffffff;
+}
+
+.support-bubble-sender {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    opacity: 0.8;
+    margin-bottom: 2px;
+}
+
+.support-stage-card {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f0f7ff;
+    border: 1px solid #cfe2f7;
+    font-size: 12px;
+    color: #1e3a58;
+}
+
+.support-stage-icon {
+    font-size: 18px;
+}
+
+.support-stage-copy p {
+    margin: 4px 0 0;
+    line-height: 1.4;
+    color: #415e7a;
+}

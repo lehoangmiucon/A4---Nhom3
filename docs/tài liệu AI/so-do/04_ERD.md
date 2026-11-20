@@ -64,6 +64,8 @@ Mỗi phiên mới có ít nhất một message do giao dịch tạo; ký hiệu
 
 Room/equipment nullable khi xóa, snapshot giữ nguyên. User FK restrict; session deletion cascade messages chỉ qua quy trình retention được phép.
 
+Delta CURRENT_CODE CR-11: support_sessions có deleted_at nullable (migration 2026_11_20_150000). DELETE của chủ phiên là soft delete, không kích hoạt cascade vật lý, không đổi quan hệ report/ticket/messages/command. Phiên chỉ đủ điều kiện khi handed_off và report.ticket.status=closed. Bản SVG baseline 1.1 chưa thể hiện cột này; xem từ điển 14 và evidence CR-11.
+
 ## DG-ER-02 — TARGET mở rộng
 
 ```mermaid

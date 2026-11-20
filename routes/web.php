@@ -113,7 +113,7 @@ Route::get('/customer/{path?}', function (Request $request, ?string $path = null
             return redirect(url($request->user()->role === 'staff' ? '/staff/index' : '/admin/index'));
         }
         return response()->view('customer.portal', [
-            'buildings' => Building::with('rooms')->orderBy('code')->get(),
+            'buildings' => Building::with('rooms.equipment')->orderBy('code')->get(),
             'categories' => Category::orderBy('name')->get(),
             'currentUser' => $request->user(),
             'pagePath' => 'portal',

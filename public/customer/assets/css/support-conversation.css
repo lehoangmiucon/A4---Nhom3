@@ -1,0 +1,79 @@
+.report-mode-picker { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0; }
+.report-mode-picker button { flex: 1; min-width: 200px; padding: 16px 20px; border: 1px solid #c7d9ea; border-radius: 12px; background: #fff; color: #17324d; text-align: left; cursor: pointer; }
+.report-mode-picker button[aria-pressed="true"] { border-color: #095eb2; box-shadow: inset 0 0 0 1px #095eb2; background: #eef6fd; }
+.report-mode-picker strong, .report-mode-picker span { display: block; }
+.report-mode-picker strong { font-size: 16px; margin-bottom: 6px; }
+.report-mode-picker span { font-size: 13px; line-height: 1.5; color: #4b6379; }
+.report-portal [hidden] { display: none !important; }
+.conversation-card { scroll-margin-top: 96px; }
+.conversation-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 24px; padding: 24px 36px 32px; }
+.conversation-main, .conversation-history { min-width: 0; }
+.conversation-history { border-right: 1px solid #dbe8f4; padding-right: 20px; }
+.conversation-history-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: space-between; }
+.conversation-history h3 { font-size: 14px; margin: 0; }
+.conversation-history ul { padding: 0; list-style: none; max-height: 440px; overflow-y: auto; }
+.conversation-history li { margin-bottom: 8px; }
+.conversation-history li button { width: 100%; text-align: left; overflow-wrap: anywhere; }
+.conversation-history li small { display: block; margin-top: 4px; color: #52677b; }
+.conversation-outcome { display: block; margin: 6px 0; font-size: 12px; line-height: 1.5; color: #52677b; }
+.conversation-outcome.is-completed { color: #175c39; font-weight: 700; }
+.conversation-card .conversation-delete { width: auto; padding: 5px 10px; color: #b91c1c; border-color: #e5b9b9; font-size: 12px; }
+.conversation-history-pages { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+.conversation-card .conversation-primary, .conversation-card .conversation-secondary { padding: 10px 14px; border-radius: 8px; border: 1px solid #c7d9ea; font: inherit; font-size: 13px; cursor: pointer; }
+.conversation-card .conversation-primary { background: #095eb2; border-color: #095eb2; color: #fff; font-weight: 700; }
+.conversation-card .conversation-secondary { background: #fff; color: #17324d; }
+.conversation-card button:disabled { opacity: .55; cursor: default; }
+.conversation-card button, .report-mode-picker button { transition: background-color .15s, border-color .15s, box-shadow .15s, transform .15s; }
+.conversation-card button:not(:disabled):hover { border-color: #095eb2; box-shadow: 0 2px 6px #17324d1a; }
+.conversation-card button:not(:disabled):active, .report-mode-picker button:not(:disabled):active { transform: translateY(1px) scale(.97); }
+.conversation-card button.is-clicked, .report-mode-picker button.is-clicked { animation: conversation-click .32s ease-out; }
+.conversation-card button[aria-busy="true"] { cursor: progress; }
+.conversation-card button[aria-busy="true"]::after { content: ''; display: inline-block; width: .8em; height: .8em; margin-left: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -.1em; animation: conversation-button-spin .7s linear infinite; }
+@keyframes conversation-click { from { box-shadow: 0 0 0 2px #095eb266; } to { box-shadow: 0 0 0 7px #095eb200; } }
+@keyframes conversation-button-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .conversation-card button, .report-mode-picker button { transition: none; }
+    .conversation-card button.is-clicked, .report-mode-picker button.is-clicked { animation: none; box-shadow: 0 0 0 3px #095eb266; }
+    .conversation-card button:not(:disabled):active, .report-mode-picker button:not(:disabled):active { transform: none; }
+    .conversation-card button[aria-busy="true"]::after { animation: none; }
+}
+.conversation-card button:focus-visible, .report-mode-picker button:focus-visible { outline: 3px solid #095eb2; outline-offset: 3px; }
+.conversation-context { background: #f1f7fc; border: 1px solid #dbe8f4; padding: 12px 16px; border-radius: 8px; color: #27435e; font-size: 13px; line-height: 1.5; margin-top: 0; }
+.conversation-log { display: flex; flex-direction: column; gap: 12px; min-height: 240px; max-height: 440px; overflow-y: auto; padding: 16px; background: #f8fafc; border: 1px solid #dbe8f4; border-radius: 12px; }
+.conversation-message { max-width: 92%; margin: 0; padding: 12px 16px; border-radius: 10px; background: #e5eff8; color: #17324d; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; font-size: 14px; }
+.conversation-message strong { display: block; font-size: 12px; margin-bottom: 4px; }
+.conversation-message.is-user { align-self: flex-end; background: #095eb2; color: #fff; }
+.conversation-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; user-select: none; }
+.conversation-card .conversation-reveal-skip { display: block; margin-top: 8px; padding: 4px 8px; border: 1px solid #a9bdd0; border-radius: 6px; background: transparent; color: #17324d; font: inherit; font-size: 12px; cursor: pointer; }
+.conversation-message.is-revealing .conversation-reply-visual::after { content: '▍'; color: #095eb2; animation: conversation-caret .7s step-end infinite; }
+@keyframes conversation-caret { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .conversation-message.is-revealing .conversation-reply-visual::after { animation: none; } }
+.conversation-delivery { display: block; margin-top: 6px; font-size: 12px; color: #fff; }
+.conversation-message.is-thinking { align-self: flex-start; }
+.conversation-thinking-dots { display: inline-flex; align-items: center; gap: 5px; margin-left: 8px; vertical-align: middle; }
+.conversation-thinking-dots span { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: conversation-thinking 1.2s ease-in-out infinite; }
+.conversation-thinking-dots span:nth-child(2) { animation-delay: .15s; }
+.conversation-thinking-dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes conversation-thinking { 0%, 60%, 100% { opacity: .4; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .conversation-thinking-dots span { animation: none; } }
+.conversation-status, .conversation-privacy { font-size: 13px; line-height: 1.6; color: #4b6379; }
+.conversation-status.is-error { color: #b91c1c; }
+.conversation-receipt { padding: 16px; margin-top: 16px; border: 1px solid #8bbda3; border-radius: 8px; background: #f0f9f4; color: #175c39; }
+.conversation-receipt a { display: inline-block; margin-top: 8px; color: #095eb2; }
+.conversation-context-picker { margin: 16px 0; padding: 12px 16px; border: 1px solid #dbe8f4; border-radius: 8px; }
+.conversation-context-picker summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.conversation-context-picker p { font-size: 12px; color: #4b6379; line-height: 1.5; }
+.conversation-context-picker .report-fields { margin-top: 12px; }
+.conversation-form label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 700; }
+.conversation-form textarea { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid #a9bdd0; border-radius: 8px; resize: vertical; font: inherit; }
+.conversation-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+@media(max-width: 767px) {
+    .conversation-layout { grid-template-columns: minmax(0, 1fr); padding: 16px; gap: 16px; }
+    .conversation-history { border-right: 0; border-bottom: 1px solid #dbe8f4; padding: 0 0 16px; }
+    .conversation-main { order: 1; }
+    .conversation-history { order: 2; border-bottom: 0; border-top: 1px solid #dbe8f4; padding-top: 16px; }
+    .conversation-history ul { max-height: 140px; }
+    .conversation-log { max-height: 360px; padding: 12px; }
+    .conversation-actions button { flex: 1 1 140px; }
+    .conversation-card .report-card-heading { flex-wrap: wrap; gap: 12px; }
+}

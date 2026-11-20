@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Support\StoreSupportSessionRequest;
 use App\Models\SupportSession;
+use App\Models\Ticket;
 use App\Services\Support\SessionCreationService;
 use App\Support\SupportApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SupportSessionController extends Controller
 {
@@ -26,7 +29,7 @@ class SupportSessionController extends Controller
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
         ]);
-        $page = SupportSession::where('user_id', $request->user()->id)->with('initialMessage')
+        $page = SupportSession::where('user_id', $request->user()->id)->with(['initialMessage', 'report.ticket'])
             ->when($data['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->orderByDesc('id')->paginate($data['per_page'] ?? 20);
 
@@ -39,7 +42,26 @@ class SupportSessionController extends Controller
     {
         Gate::authorize('view', $supportSession);
 
-        return SupportApiResponse::success($supportSession->load('initialMessage')->toSupportArray());
+        return SupportApiResponse::success($supportSession->load(['initialMessage', 'report.ticket'])->toSupportArray());
+    }
+
+    public function destroy(SupportSession $supportSession): JsonResponse
+    {
+        Gate::authorize('view', $supportSession);
+        DB::transaction(function () use ($supportSession) {
+            $session = SupportSession::withTrashed()->whereKey($supportSession->id)->lockForUpdate()->firstOrFail();
+            if ($session->trashed()) {
+                return;
+            }
+            $report = $session->report()->lockForUpdate()->first();
+            $ticket = $report ? Ticket::whereKey($report->ticket_id)->lockForUpdate()->first() : null;
+            if ($session->status !== 'handed_off' || $ticket?->status !== 'closed') {
+                throw ValidationException::withMessages(['session' => 'Chỉ được xóa phiên đã gửi báo cáo và phiếu đã được quản lý xác nhận hoàn thành.']);
+            }
+            $session->delete();
+        }, 3);
+
+        return SupportApiResponse::success(['id' => $supportSession->id, 'deleted' => true]);
     }
 
     public function messages(Request $request, SupportSession $supportSession): JsonResponse

@@ -1,5 +1,7 @@
 # 01 — Yêu cầu và phạm vi
 
+> Đồng bộ AI-SDLC-1.2, 20/11/2026, đến CR-13. Mục tiêu/AC toàn sản phẩm bên dưới là TARGET khi chưa có bằng chứng ở [ma trận 06](06_KIEM_THU_VA_TRUY_VET.md); [README](README.md) nêu lát cắt CURRENT_CODE.
+
 ## 1. Mục tiêu
 
 Giảng viên mô tả sự cố phòng học bằng tiếng Việt. Hệ thống hỗ trợ tuyến đầu, chỉ đưa thao tác được duyệt, ghi kết quả và bàn giao cho người thật khi cần. Mục tiêu là giảm hỏi lại và gián đoạn giờ học, đo bằng dữ liệu pilot.
@@ -33,8 +35,9 @@ Mỗi AC dùng làm oracle cho test; không thay bằng nhận xét “trông c�
 | --- | --- | --- |
 | AI-FR-001 | Tạo phiên đúng phòng/thiết bị | Phòng tồn tại; thiết bị nếu có thuộc phòng; server xác định người báo; mô tả rỗng/quá dài bị từ chối |
 | AI-FR-002 | Lưu hội thoại và đọc lại | Tin đã commit đọc được sau tải lại/đổi client; lịch sử có thứ tự và phân trang; không lấy lịch sử client làm bằng chứng |
+| AI-FR-019 | Xóa phiên đã hoàn tất báo cáo (CR-11, 20/11/2026) | Chỉ chủ phiên handed_off với report/ticket closed được xóa mềm; ticket resolved còn chờ xác nhận không đủ điều kiện. Hiển thị cờ hoàn tất/xóa được từ backend; xác nhận trước xóa; giữ phiếu/report/transcript/receipt, ẩn phiên đã xóa khỏi đọc và replay |
 | AI-FR-003 | Chống gửi lại | Cùng key/payload trả kết quả ban đầu; key khác payload lỗi; không nhân đôi tin/phiếu/tác dụng phụ |
-| AI-FR-004 | Hỏi làm rõ | Chọn câu hỏi hợp lệ, không hỏi lại thông tin đã biết; dừng khi hết giới hạn hoặc người dùng muốn gặp người thật |
+| AI-FR-004 | Hỏi làm rõ | Chọn câu hỏi hợp lệ, không hỏi lại thông tin đã biết; CR-12 yêu cầu phòng hợp lệ + loại công việc/thiết bị + mô tả cụ thể trước hướng dẫn AI; thiếu gì hỏi đó, chưa gọi model. Dừng khi hết giới hạn hoặc người dùng muốn gặp người thật |
 | AI-FR-005 | Hướng dẫn có điều kiện | Chỉ bước published đủ điều kiện; mỗi lần một bước; nội dung thao tác lấy nguyên bản đã duyệt |
 | AI-FR-006 | Ghi kết quả bước | Chỉ kết quả của bước đã phát cho đúng phiên; phân biệt resolved, not_fixed, cannot_perform |
 | AI-FR-007 | Hỗ trợ trực tiếp | Nút luôn có; không bắt thử trước; dùng được khi AI lỗi/hết quota; chỉ xác nhận tạo phiếu sau commit |
@@ -80,7 +83,7 @@ Mỗi AC dùng làm oracle cho test; không thay bằng nhận xét “trông c�
 - Session resolved khác Ticket resolved; AI không có quyền đóng phiếu KTV.
 - Ưu tiên teacher theo backend hiện có; nút “hỗ trợ trực tiếp” không mặc định urgent.
 - QR là dữ liệu phòng, không phải quyền truy cập hay bằng chứng có mặt.
-- Nhãn snapshot phải còn đọc được khi phòng/thiết bị bị xóa; room_id chỉ nullable sau thay đổi dữ liệu.
+- Nhãn snapshot phải còn đọc được khi phòng/thiết bị bị xóa. M1a yêu cầu phòng lúc tạo; CR-01 cho bắt đầu chat chưa biết phòng, CR-12 chặn hướng dẫn cho tới khi đủ phòng/danh mục/mô tả. Không nhầm nullable của chat với hợp đồng tạo phiên M1a.
 - Không tự gọi reopen phiếu khi người dùng mở lại phiên: nghiệp vụ cũ có thể xóa ảnh sửa chữa.
 - Không hiện người báo/KTV/ghi chú nội bộ cho người báo sau khi chưa có chính sách cho phép.
 

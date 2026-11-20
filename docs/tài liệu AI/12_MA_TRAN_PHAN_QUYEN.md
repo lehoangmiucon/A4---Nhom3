@@ -1,6 +1,6 @@
 # 12 — Ma trận quyền và phạm vi dữ liệu
 
-> Các cột TARGET không mô tả quyền đã có. CURRENT_CODE M1a chỉ có policy chủ phiên và role student/teacher theo 03.
+> Các cột TARGET không mô tả quyền đã có. CURRENT_CODE M1a/CR-01–13: customer student/teacher active/verified chỉ đọc/ghi phiên, command, report qua phiên của mình; CR-11 xóa theo điều kiện 03. KTV/admin đọc phần bàn giao trong mô tả ticket theo quyền ticket hiện có, không được cấp GET raw session theo role.
 > Các tên capability là hợp đồng logic, không khẳng định repository đã cài hệ thống RBAC/capability mới.
 
 ## 1. Nguyên tắc
@@ -10,6 +10,8 @@ Identity từ session/Sanctum. Token có abilities=* không đồng nghĩa đư�
 Mọi đọc/ghi phải kiểm tra actor, tài khoản, role, quan hệ đối tượng và trạng thái phù hợp. Backend không nhận user_id hoặc role từ model/client để quyết định.
 
 ## 2. Ma trận TARGET
+
+CURRENT_CODE CR-11: xóa phiên qua DELETE support-sessions chỉ dành cho chủ phiên student/teacher active, verified. Backend kiểm tra phiên handed_off có report và ticket closed tại lúc xóa; UI can_delete không cấp quyền. Customer khác kể cả với phiên đã xóa nhận 404; admin/staff không dùng endpoint này để xóa thay chủ. Xóa mềm không thay quyền hoặc dữ liệu phiếu/report.
 
 C = chủ phiên/report customer active, đã xác thực. O = customer khác. A = quản trị phụ trách. K = KTV đang được giao ticket liên quan. G = người được phân công duyệt guide. V = vận hành. Một người có thể giữ nhiều trách nhiệm; quyền không tự lan sang chức năng khác.
 
@@ -67,4 +69,4 @@ Nếu hệ thống chưa có capability store, triển khai policy hẹp theo c�
 
 TC-023 phải chạy cho session, message, attempt, command, attachment, report và guide API liên quan. Tối thiểu: đổi path ID, thay parent ID, ID hợp lệ của actor khác, role sai, tài khoản khóa, đổi KTV, đổi tài khoản trên cùng thiết bị và push deep link.
 
-CURRENT_CODE M1a mới kiểm chứng session/messages; các resource khác còn TARGET và phải có test khi được thêm.
+CURRENT_CODE đã kiểm chứng session/messages, conversation/command parent-scoped và xóa phiên (SupportSessionTest, SupportConversationTest, SupportSessionDeletionTest); KTV chỉ thấy brief trong ticket được giao (SupportHandoffBriefTest). Attempt/guide/report progress/support attachment/outbox và quyền context riêng còn TARGET; không suy quyền từ bảng thiết kế.

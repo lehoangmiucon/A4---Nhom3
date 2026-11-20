@@ -1,5 +1,7 @@
 # Bản xuất sơ đồ
 
+> Snapshot thiết kế AI-SDLC-1.1, chưa thể hiện delta CR-01–13/local provider/soft delete/diagnosis. Xem [chú thích hiện trạng](../README.md) và contract 03 trước dùng; không gọi các SVG này là sơ đồ deployment hiện tại.
+
 18 SVG được sinh từ Mermaid ngày 19/11/2026, Mermaid CLI 11. Không sửa SVG trực tiếp; sửa source rồi xuất lại. Đây là thiết kế, không phải bằng chứng nghiệm thu ứng dụng.
 
 | ID | Nguồn Markdown | Bản xuất |

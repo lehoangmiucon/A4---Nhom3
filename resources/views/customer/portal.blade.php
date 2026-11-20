@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>window.HELPDESK_CONFIG={apiEnabled:true,appUrl:@json(url('/')),apiBase:"/api"};</script>
+    <script>window.HELPDESK_CONFIG={apiEnabled:true,appUrl:@json(url('/')),apiBase:"/api",currentUserId:@json($currentUser->id)};</script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="theme-color" content="#f3f7fb">
@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ url('/customer/assets/css/account.css?v=20261103-responsive1') }}">
     <link rel="stylesheet" href="{{ url('/customer/assets/css/portal.css?v=20261106-cleanup1') }}">
     <link rel="stylesheet" href="{{ url('/admin/assets/css/role-refresh.css?v=20261110-custom-select1') }}">
-    <link rel="stylesheet" href="{{ asset('customer/assets/css/portal-chat.css?v=2') }}">
+    <link rel="stylesheet" href="{{ asset('customer/assets/css/support-conversation.css?v=20261120-cr11') }}">
 </head>
 <body class="report-portal customer-role-page role-page">
     @include('customer.partials.topbar')
@@ -32,7 +32,11 @@
             </div>
         </section>
 
-        <section class="report-card">
+        <nav class="report-mode-picker" aria-label="Chọn cách báo sự cố">
+            <button id="report-mode-manual" type="button" aria-pressed="true" aria-controls="report-manual-view"><strong>Báo cáo thủ công</strong><span>Điền thông tin và gửi phiếu như bình thường.</span></button>
+            <button id="report-mode-ai" type="button" aria-pressed="false" aria-controls="report-ai-view"><strong>Nhờ AI hỗ trợ</strong><span>Trao đổi để khắc phục sự cố. Nếu chưa được, nhờ AI gửi báo cáo ngay trong chat.</span></button>
+        </nav>
+        <section id="report-manual-view" class="report-card">
             <div class="report-card-heading">
                 <div class="report-heading-icon" aria-hidden="true">＋</div>
                 <div>
@@ -134,12 +138,12 @@
             </form>
         </section>
 
+        @include('customer.partials.support-conversation')
         <footer class="report-footer">Helpdesk trường học <span>·</span> Hỗ trợ thiết bị và cơ sở vật chất</footer>
     </main>
-    @include('customer.partials.portal-chat')
-    <script src="{{ url('/customer/assets/js/portal-qr.js?v=20261105-building-room2') }}"></script>
+    <script src="{{ url('/customer/assets/js/portal-qr.js?v=20261119-support-room1') }}"></script>
     <script src="{{ url('/customer/assets/js/portal-attachments.js?v=20261104-preview1') }}"></script>
     <script src="{{ url('/admin/assets/js/api-client.js?v=20261113-duplicate-red1') }}"></script>
-    <script src="{{ asset('customer/assets/js/portal-chat.js?v=2') }}" defer></script>
+    <script src="{{ asset('customer/assets/js/support-conversation.js?v=20261120-cr12') }}" defer></script>
 </body>
 </html>

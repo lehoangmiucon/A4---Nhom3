@@ -193,7 +193,7 @@ class UiController extends Controller
             $data['incidentFocusLabel'] = $focus ? $focusLabels[$focus] : null;
             $data['incidentCounts'] = [
                 'all' => Ticket::count(),
-                'pending' => Ticket::pendingAssignment()->count(),
+                'pending' => $data['pendingTicketCount'],
                 'in_progress' => Ticket::where('status', 'in_progress')->count(),
                 'completed_month' => Ticket::whereIn('status', ['resolved', 'closed'])
                     ->whereMonth('resolved_at', now()->month)->whereYear('resolved_at', now()->year)->count(),

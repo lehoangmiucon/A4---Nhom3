@@ -1,9 +1,11 @@
 # 11 — Quy tắc nghiệp vụ và bảng quyết định
 
-> TARGET được chuẩn hóa để triển khai; không khẳng định các luật mới đã có code. Luật CURRENT_CODE M1a vẫn do 03 mô tả.
+> Đồng bộ AI-SDLC-1.2 đến CR-13. BR-01–42 chủ yếu là thiết kế TARGET baseline 1.1; không khẳng định mọi luật đã có code. Delta CURRENT_CODE ở 03 mục 2/2.1 và BR-43–45 bên dưới có ưu tiên khi đối chiếu runtime, không dùng TARGET để phủ nhận yêu cầu mới đã chốt.
 > Đây là file sở hữu quyết định nghiệp vụ; sơ đồ diễn giải các luật này, không tự thêm luật.
 
 ## 1. Thứ tự ưu tiên hành động
+
+CURRENT_CODE cần giữ: CR-03 chặn trùng phòng/danh mục active, chưa gộp thiết bị/symptom hoặc report người báo sau; CR-12 cho bắt đầu chat thiếu phòng nhưng hỏi intake trước hướng dẫn; CR-13 có 2–3 câu hỏi quan sát theo nhánh, chưa phải guide attempt/published. Session resolved/ticket resolved/closed khác nhau. DB notification ở TX-B chưa có outbox. Bàn giao cần ý định gửi rõ, không tự tạo phiếu chỉ vì model lỗi/hết câu hỏi. Quyền/contract hiện hành theo 03/12; bảng quyết định TARGET phía dưới cần task triển khai riêng.
 
 Áp dụng theo thứ tự từ trên xuống sau kiểm tra actor/idempotency. Các điều kiện dừng không cần thêm lời gọi AI.
 
@@ -50,6 +52,10 @@ Guide chưa biết model chỉ được dùng nếu phạm vi published nói rõ
 
 ## 4. Gộp sự cố
 
+CURRENT_CODE CR-03 (20/11/2026): theo yêu cầu mới, chat AI và form cùng chặn phiếu mới nếu cùng phòng/danh mục đang có phiếu new/reopened/assigned/in_progress. Chat thông báo đã ghi nhận nhưng chưa xử lý xong, không tạo report/phiếu/thông báo mới và không trả dữ liệu phiếu của người báo trước. Không so sánh triệu chứng bằng model, không gộp transcript/quyền. Quy tắc này có thể chặn hai lỗi khác nhau trong cùng danh mục; phân biệt thiết bị/symptom chính xác ở M2-05 vẫn TARGET. [Evidence](../../tasks/verification-cr03.md).
+
+Phần quy tắc auto-match dưới đây là TARGET cho M2-05, chưa thay cho mô tả CURRENT_CODE ở trên.
+
 Đầu vào auto-match phải là thiết bị chính xác và symptom_code đã xác nhận từ taxonomy, không phải độ giống văn bản do model tự chấm. symptom_code thiếu/không chắc không auto-merge. Taxonomy và mapping được chuyên môn duyệt cùng guide.
 
 | Rule | Điều kiện | Quyết định |
@@ -82,6 +88,8 @@ Không thay đổi ngầm policy ticket hiện có. CURRENT_CODE: teacher nhận
 SLA an toàn/gián đoạn trong tài liệu 07 là mục tiêu đề xuất theo mức ảnh hưởng; trường phải xác nhận mapping đến priority trước mở vận hành. Đây là phần còn cần chuyên môn xác nhận, không phải khoảng trống cho agent tự quyết.
 
 ## 6. Bàn giao và hai giao dịch local
+
+CURRENT_CODE CR-01 (19/11/2026): TX-A nhận yêu cầu và TX-B tạo report/phiếu đã triển khai cho web chat. Vì TicketActivity hiện chỉ có database channel, DB notifications được lưu trực tiếp trong TX-B cùng phiếu/report/log/command; lỗi rollback toàn bộ TX-B, receipt TX-A giữ để retry. Đây là thay đổi có chủ đích cho lát cắt user vừa yêu cầu, không thay kết quả thành “KTV đã tiếp nhận”. Outbox đa kênh và full command contract phía dưới vẫn TARGET. Ngoại lệ CR-01 từng tạo phiếu riêng theo category/room đã được CR-03 thay thế bằng chặn trùng như mục 4; giữ phiếu đã tạo trước thay đổi. Form cũ giữ hành vi hiện có khi tách TicketCreationService. Contract CR-01 và giới hạn ở mục 2.1 tài liệu 03.
 
 Chọn thiết kế TARGET sau để không mâu thuẫn giữa handoff_pending bền vững và rollback tạo phiếu:
 
@@ -132,7 +140,11 @@ Không tự gọi TicketController::reopen từ lệnh session; không xóa ản
 - BR-40: facts unknown được giữ unknown; không tự lấp bằng dự đoán model.
 - BR-41: dữ liệu gốc, summary AI và kết luận KTV có provenance riêng.
 - BR-42: thời gian lưu/xóa theo policy; không xóa receipt/key còn bảo vệ retry hoặc thay FK để né lỗi.
+- BR-43 (CR-11): chủ phiên active/verified được xóa mềm phiên handed_off có report gắn ticket closed. Ticket resolved còn chờ quản lý xác nhận, ticket mở lại hoặc phiên tự resolved chưa report đều không đủ điều kiện. Giữ nguyên report/transcript/ticket/receipt/key; API đọc và replay không phục hồi phiên đã xóa. Đây là ẩn phiên theo yêu cầu chủ, không phải purge/retention vật lý.
+- BR-44 (CR-12): trước hướng dẫn AI cần phòng hợp lệ, loại công việc/thiết bị và mô tả cụ thể. Chỉ hỏi phần thiếu, không đoán phòng từ nhiều kết quả; lượt làm rõ không gọi model/tiêu quota chat. Lời chào/chỉ nêu phòng/danh mục không phải dữ kiện sự cố, nhưng không xóa khỏi hội thoại gốc/report. Đủ dữ kiện mới bắt đầu hướng dẫn; yêu cầu report vẫn xử lý qua backend không cần AI.
 
 ## 10. Quy tắc nào còn cần xác nhận bên ngoài?
+
+BR-45 (CR-13, CURRENT_CODE): ý định bàn giao rõ như “hãy báo cáo lên KTV cho mình”, “nhờ IT xử lý” được xử lý trước model; giữ phủ định/giả định/hỏi trạng thái/cách làm, không coi chúng là yêu cầu gửi. Câu hỗn hợp vẫn giữ dữ kiện triệu chứng. Phân nhánh quan sát máy tính/máy chiếu không khởi động, mất hình, mạng và âm thanh dựa trên messages server; mỗi lần hỏi một câu, giữ kết quả đã nêu, không lấy lời AI làm kết quả. Không biết/phỏng đoán/trích lời AI giữ unknown; hết tập câu hỏi thì đề nghị KTV, không tự tạo phiếu. Khói/mùi khét/nguy cơ điện giật dừng câu hỏi, ưu tiên an toàn. Phân nhánh/gợi ý IT là sơ bộ, chưa xác minh; không thay danh mục hoặc kết luận linh kiện hỏng.
 
 Đã định nghĩa default thiết kế để lập trình các nhánh độc lập. Provider/ngân sách, nguồn guide, người trực/contact, priority/SLA mapping và retention/backup vẫn cần người phụ trách thực tế. Theo dõi Q-01–Q-07 ở 09; không gắn tên người hay nội dung duyệt giả.

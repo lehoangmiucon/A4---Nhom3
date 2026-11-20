@@ -33,6 +33,7 @@ class SupportApiResponse
             401 => ['UNAUTHENTICATED', 'Vui lòng đăng nhập.'],
             403 => ['FORBIDDEN', 'Tài khoản không được phép sử dụng chức năng này.'],
             404 => ['NOT_FOUND', 'Không tìm thấy dữ liệu yêu cầu.'],
+            409 => ['STATE_CONFLICT', 'Phiên đã thay đổi hoặc đang xử lý. Hãy tải lại hội thoại trước khi tiếp tục.'],
             422 => ['VALIDATION_ERROR', 'Dữ liệu chưa hợp lệ.'],
             429 => ['RATE_LIMITED', 'Vui lòng chờ trước khi thử lại.'],
             default => ['SERVICE_UNAVAILABLE', 'Chưa thể xử lý yêu cầu. Vui lòng thử lại.'],

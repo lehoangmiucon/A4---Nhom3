@@ -33,7 +33,10 @@ class SessionCreationService
                     throw ValidationException::withMessages(['idempotency_key' => 'IDEMPOTENCY_KEY_REUSED']);
                 }
 
-                return json_decode($existing->response_data, true, 512, JSON_THROW_ON_ERROR);
+                $response = json_decode($existing->response_data, true, 512, JSON_THROW_ON_ERROR);
+                SupportSession::where('user_id', $actor->id)->findOrFail($response['id']);
+
+                return $response;
             }
 
             $room = Room::with('building')->whereKey($payload['room_id'])->lockForUpdate()->first();

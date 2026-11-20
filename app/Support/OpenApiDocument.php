@@ -47,15 +47,15 @@ class OpenApiDocument
                 $parameters = [];
                 preg_match_all('/\{([^}]+)\}/', $path, $matches);
                 foreach ($matches[1] as $parameter) {
-                    $schema = $parameter === 'code'
+                    $schema = $parameter === 'command' ? ['type' => 'string', 'format' => 'uuid'] : ($parameter === 'code'
                         ? ['type' => 'string', 'example' => 'A.101']
                         : ($parameter === 'id' && str_starts_with($path, '/notifications/')
                             ? ['type' => 'string', 'format' => 'uuid']
-                            : $this->id());
+                            : $this->id()));
                     $parameters[] = ['name' => $parameter, 'in' => 'path', 'required' => true, 'schema' => $schema];
                 }
                 if ($method === 'GET') $parameters = array_merge($parameters, $this->queries($action));
-                if ($action === 'SupportSessionController@store') {
+                if ($action === 'SupportSessionController@store' || (str_starts_with($action, 'SupportConversationController@') && $method === 'POST')) {
                     $parameters[] = ['name' => 'Idempotency-Key', 'in' => 'header', 'required' => true,
                         'description' => 'Tạo một lần cho một ý định, giữ nguyên khi gửi lại. Cùng khóa với nội dung khác trả 422.',
                         'schema' => ['type' => 'string', 'maxLength' => 128, 'pattern' => '^[a-zA-Z0-9._:-]+$']];
@@ -100,7 +100,7 @@ class OpenApiDocument
     private function tag(string $path, string $action): string
     {
         $tags = self::TAGS;
-        if (str_starts_with($path, '/support-sessions')) return $tags[11];
+        if (str_starts_with($path, '/support-sessions') || $path === '/support-conversations') return $tags[11];
         if ($action === 'RepairEvidenceController@show') return $tags[4];
         if (str_starts_with($path, '/auth/')) return $tags[0];
         if ($path === '/me' || str_starts_with($path, '/account/')) return $tags[1];
@@ -129,10 +129,16 @@ class OpenApiDocument
             if ($uploadLabel) return $uploadLabel;
         }
         $labels = [
+            'SupportConversationController@store' => 'Bắt đầu hội thoại hỗ trợ và lưu tin nhắn đầu',
+            'SupportConversationController@message' => 'Trao đổi với AI hoặc yêu cầu gửi báo cáo trong chat',
+            'SupportConversationController@escalate' => 'Gửi báo cáo từ dữ liệu hội thoại đã lưu',
+            'SupportConversationController@show' => 'Khôi phục hội thoại và kết quả gửi báo cáo',
+            'SupportConversationController@command' => 'Đọc receipt xử lý của chủ hội thoại',
             'SupportSessionController@store' => 'Lưu phiên hỗ trợ và mô tả ban đầu',
             'SupportSessionController@index' => 'Danh sách phiên hỗ trợ của tôi',
             'SupportSessionController@show' => 'Đọc lại phiên hỗ trợ của tôi',
             'SupportSessionController@messages' => 'Đọc lịch sử tin nhắn đã lưu',
+            'SupportSessionController@destroy' => 'Xóa phiên đã báo cáo và xử lý hoàn tất',
             'RepairEvidenceController@show' => 'Xem ảnh minh chứng sửa chữa nội bộ',
             'AuthController@register' => 'Đăng ký sinh viên',
             'AuthController@verifyOtp' => 'Xác thực OTP email',
@@ -206,9 +212,13 @@ class OpenApiDocument
 
     private function notes(string $action): string
     {
+        if (str_starts_with($action, 'SupportConversationController@')) {
+            return 'CURRENT_CODE CR-01–13: chỉ chủ phiên student/teacher active, verified. POST dùng Idempotency-Key; cùng key/payload replay, đổi payload 422; phiên đã xóa không replay (404). data gồm session/messages/report nullable/needs_context/needs_description/diagnosis/category_label/command nullable. Chưa đủ phòng/danh mục/mô tả thì hỏi bổ sung, chưa gọi model; diagnosis là quan sát sơ bộ, không kết luận nguyên nhân hoặc cấp quyền. 201 sau lưu phiên hoặc commit report/ticket/DB notification; 200 lượt tiếp hoặc chặn trùng phòng/danh mục active (report=null); 202 receipt đang xử lý; 409 version cũ hoặc lượt đang chạy; 503 TX hoàn tất handoff lỗi trả data receipt để retry cùng key. GET command.status_url kiểm tra parent/chủ phiên. Model không quyết định quyền gửi hoặc ưu tiên; không nhận lịch sử/tổng hợp từ client làm facts. Không outbox/worker hoặc usage ledger trong lát cắt hiện tại.';
+        }
         return match ($action) {
             'SupportSessionController@store' => 'Chỉ student/teacher đã xác thực email và đang hoạt động. Chưa gọi AI hoặc tạo phiếu. Cùng khóa và nội dung trả lại dữ liệu tạo phiên ban đầu với HTTP 201. Khóa chỉ lưu dạng băm.',
-            'SupportSessionController@index', 'SupportSessionController@show', 'SupportSessionController@messages' => 'Chỉ chủ phiên đang hoạt động và đã xác thực email. Phiên người khác trả 404. Phản hồi có data và meta.request_id; danh sách có meta.pagination. M1a chỉ lưu/đọc phiên, chưa gửi tin tiếp hoặc chuyển cấp.',
+            'SupportSessionController@destroy' => 'Chỉ chủ phiên student/teacher active, verified. Xóa mềm khi phiên handed_off có report gắn với ticket closed (quản lý đã xác nhận); ticket resolved còn chờ xác nhận không đủ điều kiện. Không body hoặc Idempotency-Key. 200 data={id,deleted:true}, lặp lại cùng chủ vẫn 200. Giữ ticket/report/transcript/command. Khác chủ 404; chưa hoàn tất 422. GET và replay không khôi phục phiên đã xóa.',
+            'SupportSessionController@index', 'SupportSessionController@show', 'SupportSessionController@messages' => 'Chỉ chủ phiên student/teacher đang hoạt động và đã xác thực email. Phiên người khác hoặc đã xóa mềm trả 404; danh sách không chứa phiên đã xóa. Phản hồi có data và meta.request_id; danh sách có meta.pagination. DTO phiên có ticket_status/is_completed/can_delete, backend tính theo report và ticket closed. Đây là GET M1a; gửi tin và bàn giao dùng SupportConversationController theo contract CR-01–13.',
             'RepairEvidenceController@show' => 'Trả dữ liệu ảnh, chỉ admin hoặc staff đang được giao phiếu được xem. Gửi Bearer token trong header khi tải ảnh; không đặt token trong URL. Không lưu cache ảnh.',
             'AuthController@register' => 'Chỉ email @ut.edu.vn. Luôn tạo student; vai trò teacher do quản lý cấp.',
             'AuthController@verifyOtp', 'AuthController@resendOtp' => 'OTP lấy từ email, hiệu lực 5 phút; gửi lại cách nhau tối thiểu 60 giây.',
@@ -294,6 +304,18 @@ class OpenApiDocument
         ];
         $staff = ['name' => $this->string('Nhân viên kiểm thử'), 'email' => $email, 'phone' => ['type' => 'string'], 'password' => $password, 'category_ids' => $ids];
         [$properties, $required] = match ($action) {
+            'SupportConversationController@store', 'SupportConversationController@message' => [[
+                'content' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 1000],
+                'room_id' => $this->id() + ['nullable' => true],
+                'category_id' => $this->id() + ['nullable' => true],
+                'action' => $this->enum(['chat', 'report', 'resolve']),
+                'expected_version' => ['type' => 'integer', 'minimum' => 0],
+            ], $action === 'SupportConversationController@message' ? ['content', 'expected_version'] : ['content']],
+            'SupportConversationController@escalate' => [[
+                'expected_version' => ['type' => 'integer', 'minimum' => 0],
+                'room_id' => $this->id() + ['nullable' => true],
+                'category_id' => $this->id() + ['nullable' => true],
+            ], ['expected_version']],
             'SupportSessionController@store' => [[
                 'room_id' => $this->id(),
                 'equipment_id' => $this->id() + ['nullable' => true],
@@ -346,6 +368,18 @@ class OpenApiDocument
 
     private function responses(string $action): array
     {
+        if ($action === 'SupportSessionController@destroy') {
+            return [
+                '200' => ['description' => 'Đã xóa mềm hoặc phiên của chủ yêu cầu đã được xóa trước đó; data gồm id và deleted=true'],
+            ];
+        }
+        if (str_starts_with($action, 'SupportConversationController@')) {
+            $responses = ['200' => ['description' => 'Snapshot hội thoại; data gồm session, messages, report nullable, needs_context, needs_description, diagnosis, category_label, command nullable; replay giữ snapshot đã lưu']];
+            if (in_array($action, ['SupportConversationController@store', 'SupportConversationController@message', 'SupportConversationController@escalate'], true)) {
+                $responses += ['201' => ['description' => 'Đã bắt đầu hội thoại hoặc đã commit phiếu/report/DB notification']];
+            }
+            return $responses;
+        }
         $created = in_array($action, ['SupportSessionController@store', 'AuthController@register', 'TicketController@store', 'UserController@createStaff', 'UserController@createTeamAccount', 'CategoryController@store', 'LocationController@createBuilding', 'LocationController@createRoom']);
         // Keep the required OpenAPI response declaration without generating
         // example JSON that could be mistaken for data returned by the API.

@@ -30,7 +30,7 @@ Không xây Flutter/model hosting/endpoint tương lai để thay cho phần vi�
 Cập nhật contract, task và bằng chứng sau kiểm thử; báo phần chưa hoàn thành.
 ```
 
-Bắt đầu hiện tại: các task M1B ở bảng công việc. Không lặp lại M1a như thể chưa có code; kiểm tra thay đổi thực tế nếu bối cảnh mới.
+Bắt đầu theo README AI (đồng bộ 1.2), tasks/plan.md, tasks/todo.md và evidence gần nhất verification-cr13.md; verification-cr01.md là checkpoint lịch sử: CR-01 đã có hai chế độ báo sự cố, hội thoại lưu server và gửi phiếu trong chat. Kiểm tra cấu hình provider và các gate staging còn lại; không lặp lại phần đã có hoặc coi toàn M2/M3/M4 hoàn thành. Kiểm tra thay đổi thực tế nếu bối cảnh mới.
 
 ## 4. Các rào chống lạc hướng
 

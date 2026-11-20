@@ -33,5 +33,5 @@
     </div>
 </header>
 <script src="{{ url('/shared/js/logout.js?v=20261106-csrf1') }}" defer></script>
-<script src="{{ url('/shared/js/page-feedback.js?v=20261111-feedback-top1') }}" defer></script>
+<script src="{{ url('/shared/js/page-feedback.js?v=20261120-chat-status') }}" defer></script>
 <script src="{{ url('/admin/assets/js/native-selects.js?v=20261111-categorymenu2') }}" defer></script>

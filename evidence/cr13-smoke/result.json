@@ -1,0 +1,18 @@
+[
+  {
+    "layoutWidth": 1440,
+    "result": "PASS: observation question; power result preserved; advanced to indicator; natural IT handoff; actual backend receipt; no runtime errors",
+    "backend": "sqlite::memory:",
+    "provider": "fake",
+    "transport": "fixture fetch using actual service responses",
+    "localDataChanged": false
+  },
+  {
+    "layoutWidth": 390,
+    "result": "PASS: observation question; power result preserved; advanced to indicator; natural IT handoff; actual backend receipt; no runtime errors",
+    "backend": "sqlite::memory:",
+    "provider": "fake",
+    "transport": "fixture fetch using actual service responses",
+    "localDataChanged": false
+  }
+]

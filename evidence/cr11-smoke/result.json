@@ -1,0 +1,7 @@
+{
+  "result": "PASS: persistent statuses; eligible action; pending badge; cancel; one DELETE; preserved pending session; cleared active session; success status; no runtime errors",
+  "viewport": "1440x1100",
+  "api": "fake",
+  "browser": "Chrome headless",
+  "localDataChanged": false
+}

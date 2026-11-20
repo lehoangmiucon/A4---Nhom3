@@ -28,10 +28,16 @@ Route::get('/categories', [CategoryController::class, 'options']);
 Route::post('/tickets', [TicketController::class, 'store'])->middleware(['auth:sanctum', 'account.active']);
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::post('/support-conversations', [\App\Http\Controllers\SupportConversationController::class, 'store'])->middleware(['role:student,teacher', 'throttle:30,1']);
     Route::prefix('support-sessions')->middleware('role:student,teacher')->group(function () {
+        Route::post('/{supportSession}/messages', [\App\Http\Controllers\SupportConversationController::class, 'message'])->whereNumber('supportSession')->middleware('throttle:30,1');
+        Route::post('/{supportSession}/escalations', [\App\Http\Controllers\SupportConversationController::class, 'escalate'])->whereNumber('supportSession')->middleware('throttle:30,1');
+        Route::get('/{supportSession}/conversation', [\App\Http\Controllers\SupportConversationController::class, 'show'])->whereNumber('supportSession');
+        Route::get('/{supportSession}/commands/{command}', [\App\Http\Controllers\SupportConversationController::class, 'command'])->whereNumber('supportSession');
         Route::post('/', [SupportSessionController::class, 'store'])->middleware('throttle:30,1');
         Route::get('/', [SupportSessionController::class, 'index']);
         Route::get('/{supportSession}', [SupportSessionController::class, 'show'])->whereNumber('supportSession');
+        Route::delete('/{supportSession}', [SupportSessionController::class, 'destroy'])->whereNumber('supportSession')->withTrashed();
         Route::get('/{supportSession}/messages', [SupportSessionController::class, 'messages'])->whereNumber('supportSession');
     });
 

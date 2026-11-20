@@ -18,7 +18,7 @@ http://<IP-máy-chủ>:8888/Laravelpro/helpdesk/public/api.
 
 ## Phiên hỗ trợ AI — nền tảng M1a
 
-Đã có API lưu mô tả ban đầu và đọc lại phiên; chưa có gửi tin tiếp, gọi AI theo phiên hoặc tự chuyển cấp. Giao diện chat hiện tại chưa chuyển sang các endpoint này. Migration mới cần được triển khai trước khi sử dụng API trên database thật. Không cần khóa AI cho bốn endpoint bên dưới.
+Bốn endpoint M1a bên dưới vẫn được giữ cho tương thích. CR-01 bổ sung POST /support-conversations, POST /support-sessions/{supportSession}/messages, POST /support-sessions/{supportSession}/escalations, GET /support-sessions/{supportSession}/conversation và GET /support-sessions/{supportSession}/commands/{command}. Xem [contract CURRENT_CODE CR-01, mục 2.1](<tài liệu AI/03_DU_LIEU_VA_API.md>) cho payload, expected_version, receipt và retry. Portal dùng luồng CR-01; Flutter chưa triển khai. Bốn migration support đã có evidence trên local (batch 15/16/17), chưa xác nhận production; máy nhận phải kiểm tra migrate:status theo [hướng dẫn local/API](local-ai.md). Bốn endpoint M1a không cần khóa AI; gửi báo cáo CR-01 cũng không phụ thuộc model.
 
 | Method | Endpoint | Dữ liệu / kết quả |
 | --- | --- | --- |
@@ -31,11 +31,18 @@ Chỉ student/teacher đang hoạt động và đã xác thực email được s
 
 Tạo Idempotency-Key một lần cho mỗi ý định tạo phiên và giữ nguyên khi mạng yếu/gửi lại. Khóa dài tối đa 128 ký tự ASCII gồm chữ, số, dấu chấm, gạch dưới, hai chấm hoặc gạch ngang. Hai yêu cầu khác nhau phải dùng khóa khác nhau. Server lưu khóa dạng SHA-256; unique constraint và khóa giao dịch bảo vệ bản ghi. Cùng khóa/cùng nội dung trả nguyên dữ liệu tạo ban đầu và HTTP 201, không tạo phiên/tin thứ hai. Khác nội dung trả 422 với error.code IDEMPOTENCY_KEY_REUSED. GET chi tiết là trạng thái hiện tại; phản hồi replay là snapshot khi tạo, có thể khác nếu phòng/thiết bị đã bị xóa.
 
-Phiên mới có status=collecting, version=1, initial_message_id, room_id, equipment_id, các nhãn snapshot, handoff=null và permitted_actions=[] vì chưa triển khai hành động agent. Không suy luận rằng đã tạo phiếu từ việc tạo phiên.
+Phiên mới có status=collecting, version=1, initial_message_id, initial_description (nội dung tin đầu, nullable), room_id, equipment_id, các nhãn snapshot, handoff=null và permitted_actions=[] là các field M1a còn giữ tương thích; portal CR-01–13 có hành động riêng theo contract 03, không dùng mảng rỗng này để suy luận mọi hành động đều chưa có. initial_description được thêm ở M1b; replay key cũ giữ nguyên snapshot đã lưu và có thể thiếu trường này, dùng GET để lấy DTO hiện tại. Không suy luận rằng đã tạo phiếu từ việc tạo phiên.
 
 Phản hồi endpoint mới dùng data và meta.request_id; danh sách có meta.pagination với current_page, per_page, total, last_page. Lỗi dùng error.code, error.message, error.details và meta.request_id. Mã lỗi hiện có: UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, VALIDATION_ERROR, IDEMPOTENCY_KEY_REUSED, RATE_LIMITED, SERVICE_UNAVAILABLE. Nội dung trả có Cache-Control: no-store. POST tạo phiên giới hạn 30 yêu cầu/phút/tài khoản; khi 429 tuân theo Retry-After, không tạo key mới chỉ để lách giới hạn.
 
 Mô tả được lưu thành một tin role=user ở server trong cùng giao dịch với phiên và kết quả idempotency. Phòng bắt buộc tồn tại khi tạo ý định mới; thiết bị phải thuộc phòng. Khi xóa phòng hoặc thiết bị, FK được null và nhãn snapshot vẫn còn; không mất hội thoại. Xóa vật lý tài khoản có dữ liệu hỗ trợ bị FK chặn; quy trình retention/ẩn danh sẽ được triển khai riêng.
+
+### Bổ sung CURRENT_CODE CR-11–13
+
+- `DELETE /support-sessions/{supportSession}`: xóa mềm phiên của chủ student/teacher active/verified, chỉ handed_off có report gắn ticket closed. Ticket resolved còn chờ quản lý nên không được xóa. Không body/Idempotency-Key; thành công 200 data={id,deleted:true}; cùng chủ retry 200, khác chủ 404, chưa đủ điều kiện 422 error.details.session. Giữ ticket/report/transcript/command; GET và replay phiên đã xóa nhận 404.
+- DTO phiên bổ sung ticket_status nullable, is_completed/can_delete boolean do backend tính; không dùng can_delete ở client thay kiểm tra server.
+- Chat cần room/category/mô tả trước hướng dẫn, thiếu thì hỏi trong messages; response bổ sung needs_description và diagnosis (branch, stage, observations, unknowns, next_question, technical_suggestions). Xem schema trường và enum ở contract 03 mục 2.1; mobile không tự đặt các cờ hoặc nhận snapshot replay là state mới.
+- CR-13 nhận ý định chuyển KTV rõ ràng trước gọi model. Đường gửi report bypass quota AI nhưng vẫn cần dữ kiện hợp lệ/quyền/idempotency. Tối đa trước ghi 200 tin/chat mặc định, command chat 40/phiên và 12/phút; đây không phải giới hạn token/tiền.
 
 ## Đăng ký, OTP, tài khoản
 
@@ -114,7 +121,7 @@ Các alias /admin/tickets và /staff/tickets dùng chung bộ lọc này.
 - Chưa đăng nhập/token không hợp lệ trả 401; sai quyền hoặc tài khoản bị khóa trả 403. Ảnh không tồn tại, sai phiếu, không phải loại `repair` hoặc thiếu file riêng tư trả 404 với người đã qua các kiểm tra tương ứng.
 - Admin xem được ảnh; staff chỉ xem khi đang được giao phiếu. Student/teacher không được xem ảnh sửa chữa của chính phiếu mình báo. Khi đổi người phụ trách, staff cũ mất quyền; khi mở lại phiếu, URL ảnh cũ không còn hợp lệ.
 
-Ảnh báo cáo và avatar vẫn dùng URL công khai hiện có. Máy chủ nâng cấp từ bản cũ phải chuyển dữ liệu theo [hướng dẫn SEC-01](SEC-01-repair-evidence.md); không có cơ chế đọc dự phòng ảnh sửa chữa từ public.
+Ảnh báo cáo và avatar vẫn dùng URL công khai hiện có. Máy chủ nâng cấp từ bản cũ phải chuyển dữ liệu theo [báo cáo bảo mật hiện có](<../tài liệu cá nhân/SECURITY_AUDIT.md>) (hướng dẫn SEC-01 riêng chưa có trong checkout); không có cơ chế đọc dự phòng ảnh sửa chữa từ public.
 
 ## Phân công, lịch và xử lý
 
@@ -174,7 +181,7 @@ Token cũ gọi API từ request tiếp theo nhận **401**; app cần xóa thô
 
 Không gửi `password`, hoặc gửi rỗng/null, chỉ cập nhật hồ sơ/chuyên môn và giữ nguyên đăng nhập. Mật khẩu không hợp lệ hoặc trùng mật khẩu hiện tại trả 422, giữ nguyên mật khẩu/token. Phiên và token của admin hoặc tài khoản khác không bị thu hồi. Đây là hành vi admin đặt lại mật khẩu; người dùng tự đổi mật khẩu vẫn áp dụng quy tắc giữ phiên/token hiện tại của endpoint tương ứng.
 
-Khi triển khai bản sửa, phiên web cũ của staff chưa có dấu kiểm tra thông tin đăng nhập phải đăng nhập lại một lần. Xem [hướng dẫn SEC-02](SEC-02-staff-password-revocation.md) về triển khai và kiểm chứng.
+Khi triển khai bản sửa, phiên web cũ của staff chưa có dấu kiểm tra thông tin đăng nhập phải đăng nhập lại một lần. Xem [báo cáo bảo mật hiện có](<../tài liệu cá nhân/SECURITY_AUDIT.md>) (hướng dẫn SEC-02 riêng chưa có trong checkout) về triển khai và kiểm chứng.
 
 Chi tiết người dùng trả data.user, reported_counts, assigned_counts, schedules_count.
 status lọc tài khoản: active|unverified|locked.

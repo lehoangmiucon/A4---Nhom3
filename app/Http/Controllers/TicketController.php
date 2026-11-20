@@ -62,42 +62,7 @@ class TicketController extends Controller
         if (!$room) throw ValidationException::withMessages(['room_code' => 'Mã QR không gắn với phòng học hợp lệ.']);
 
         $category = \App\Models\Category::findOrFail($data['category_id']);
-        $reportResult = DB::transaction(function () use ($request, $data, $room, $category) {
-            Room::query()->whereKey($room->id)->lockForUpdate()->firstOrFail();
-            $existingTicket = in_array($request->user()->role, ['student', 'teacher'], true) ? Ticket::query()
-                ->where('room_id', $room->id)
-                ->where('category_id', $category->id)
-                ->whereIn('status', ['new', 'reopened', 'assigned', 'in_progress'])
-                ->latest()
-                ->lockForUpdate()
-                ->first() : null;
-            if ($existingTicket) {
-                return ['duplicate' => $existingTicket];
-            }
-
-            $ticket = Ticket::create([
-                'ticket_number' => 'HD-' . now()->format('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3))),
-                'reporter_id' => $request->user()->id,
-                'reporter_name' => $request->user()->name,
-                'reporter_email' => $request->user()->email,
-                'reporter_phone' => $data['phone'] ?? null,
-                'room_id' => $room->id,
-                'room_label' => $room->name,
-                'building_label' => $room->building?->name,
-                'category_id' => $category->id,
-                'equipment_label' => $category->name,
-                'title' => $data['title'],
-                'description' => $data['description'],
-                'priority' => $request->user()->role === 'teacher' ? 'high' : $this->priority($data['priority'] ?? 'normal'),
-                'status' => 'new',
-            ]);
-            TicketLog::create(['ticket_id' => $ticket->id, 'user_id' => $request->user()->id, 'to_status' => 'new', 'note' => 'Người báo sự cố đã gửi báo cáo.']);
-            foreach ($request->file('attachments', []) as $file) {
-                $path = ImageStorage::attachment($file, $ticket, 'report');
-                TicketAttachment::create(['ticket_id' => $ticket->id, 'uploaded_by_id' => $request->user()->id, 'path' => $path, 'original_name' => basename($path), 'attachment_type' => 'report']);
-            }
-            return ['ticket' => $ticket];
-        });
+        $reportResult = app(\App\Services\TicketCreationService::class)->create($request->user(), $room, $category, $data, $request->file('attachments', []));
         if (isset($reportResult['duplicate'])) {
             return response()->json([
                 'message' => 'Lỗi này đã có người báo cáo trước đó và chúng tôi đã tiếp nhận. Cảm ơn bạn đã gửi báo cáo cho chúng tôi.',

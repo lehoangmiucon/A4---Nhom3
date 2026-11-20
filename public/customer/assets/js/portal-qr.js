@@ -43,6 +43,8 @@
     };
 
     let rooms = [];
+    let roomsLoaded = false;
+    let pendingSupportRoomId = null;
     const roomsUrl = new URL(`${appUrl}/api/rooms`, window.location.origin);
 
     const fillRooms = (buildingCodeValue, selectedRoomId = null) => {
@@ -137,6 +139,34 @@
                 "Vị trí đã được điền và xác nhận từ mã QR.";
     };
 
+    // Use the same location state for QR, manual selection and support-session drafts.
+    const selectSupportRoom = () => {
+        const room = rooms.find((item) => String(item.id) === String(pendingSupportRoomId));
+        pendingSupportRoomId = null;
+        banner.hidden = true;
+        locationCard.classList.remove("is-qr");
+        buildingSelect.classList.remove("qr-prefilled");
+        roomSelect.classList.remove("qr-prefilled");
+        buildingSelect.disabled = false;
+        if (manualNotice) manualNotice.hidden = false;
+        locationCard.querySelector("h3").textContent = "Vị trí báo cáo sự cố";
+        locationCard.querySelector(".report-location-heading p").textContent = "Kiểm tra tòa nhà và phòng trước khi gửi.";
+        if (roomInstruction) roomInstruction.textContent = "Vị trí được chọn từ phiên hỗ trợ. Bạn có thể thay đổi trước khi gửi.";
+        buildingSelect.value = room?.building?.code || "";
+        buildingCode.value = buildingSelect.value;
+        fillRooms(buildingSelect.value, room?.id);
+        if (!room) showRoomMessage("Phòng của phiên không còn tồn tại. Vui lòng chọn lại vị trí.", true);
+    };
+
+    document.addEventListener("helpdesk:select-room", (event) => {
+        pendingSupportRoomId = event.detail?.roomId ?? "";
+        // Never leave a previous room ID submittable while loading the new location.
+        roomId.value = "";
+        roomCode.value = "";
+        roomSelect.value = "";
+        if (roomsLoaded) selectSupportRoom();
+    });
+
     fetch(roomsUrl, {
         headers: { Accept: "application/json" },
         credentials: "same-origin",
@@ -148,6 +178,11 @@
         })
         .then((payload) => {
             rooms = Array.isArray(payload.data) ? payload.data : [];
+            roomsLoaded = true;
+            if (pendingSupportRoomId !== null) {
+                selectSupportRoom();
+                return;
+            }
             const roomValue =
                 params.get("room_code") ||
                 params.get("room") ||

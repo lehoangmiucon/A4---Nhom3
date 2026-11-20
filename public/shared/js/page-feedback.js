@@ -2,7 +2,7 @@
     const key = "helpdesk:page-feedback";
     const dismissTimers = new WeakMap();
     const autoDismiss = (element, delay = 5000) => {
-        if (!element) return;
+        if (!element || element.closest?.('[data-auto-dismiss="false"]')) return;
         window.clearTimeout(dismissTimers.get(element));
         dismissTimers.set(
             element,

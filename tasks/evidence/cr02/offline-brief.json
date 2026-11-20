@@ -1,0 +1,11 @@
+{
+    "model": "qwen2.5:7b",
+    "seconds": 3.14,
+    "reply": "Máy chiếu vẫn báo No Signal sau khi thay dây HDMI. Hãy kiểm tra lại nguồn HDMI trên laptop và đảm bảo cổng HDMI đang được sử dụng là hoạt động.",
+    "description": "Phòng: QA203 — Phòng QA203\nThiết bị\/danh mục: Máy chiếu\n\nTÓM TẮT AI — CHƯA ĐƯỢC KTV XÁC MINH\nMáy chiếu báo No Signal dù đã cắm HDMI từ laptop và thay dây HDMI.\n\nKIỂM TRA\/KẾT QUẢ NGƯỜI DÙNG ĐÃ NÊU\n- Máy chiếu báo No Signal dù đã cắm HDMI từ laptop. Đã đổi dây HDMI nhưng vẫn không có hình.\n\nGỢI Ý AI CHO KTV — CHỈ THAM KHẢO, CẦN KIỂM CHỨNG\n- Kiểm tra nguồn HDMI trên laptop và đảm bảo cổng HDMI đang hoạt động.\n\nLỜI BÁO GỐC — NGUỒN ĐỐI CHIẾU\nMáy chiếu báo No Signal dù đã cắm HDMI từ laptop. Đã đổi dây HDMI nhưng vẫn không có hình.\n\nNguồn: hội thoại hỗ trợ #1. Hội thoại đầy đủ được lưu trong báo cáo hỗ trợ. Gợi ý không phải kết luận nguyên nhân hoặc xác nhận đã sửa.",
+    "status": "handed_off",
+    "tickets": 1,
+    "replay_did_not_duplicate": true,
+    "database": "sqlite :memory:",
+    "allowed_http": "127.0.0.1:11434 only"
+}

@@ -4,6 +4,8 @@ File này sở hữu biểu diễn sơ đồ. Luật chuyển trạng thái ở 
 
 ## DG-ST-01 — Session TARGET
 
+Delta CURRENT_CODE CR-13: diagnosis.stage là projection quan sát riêng, không thay enum session hoặc đánh dấu resolved. collecting_observations hỏi từng quan sát → ready_for_it khi hết câu hỏi/chưa thể tự xác định; safety_stop ưu tiên dừng. Chỉ yêu cầu report rõ ràng mới đi handoff_pending → handed_off qua giao dịch hiện có. Không đồng nhất ready_for_it với đã gửi phiếu. SVG baseline chưa biểu diễn projection này; contract tại 03 và evidence CR-13.
+
 UC-01–06/09; TC-007/010/011/017/025. Tên enum đã có trong model M1a nhưng phần lớn transition chưa có code.
 
 ```mermaid

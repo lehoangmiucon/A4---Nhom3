@@ -1,0 +1,10 @@
+{
+    "model": "qwen2.5:7b",
+    "seconds": 1.71,
+    "reply": "Kiểm tra dây HDMI có bị hỏng hay kết nối chặt chẽ không. Đảm bảo nguồn điện của máy chiếu đang hoạt động. Nếu vẫn không khắc phục được, hãy liên hệ với nhân viên IT.",
+    "status": "handed_off",
+    "tickets": 1,
+    "replay_did_not_duplicate": true,
+    "database": "sqlite :memory:",
+    "allowed_http": "127.0.0.1:11434 only"
+}

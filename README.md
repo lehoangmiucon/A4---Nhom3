@@ -25,23 +25,23 @@ php artisan key:generate
 
 Repository chứa mã nguồn và migration; `.env`, `vendor`, cache, database cục bộ và ảnh do người dùng tải lên không được đưa lên Git. GitHub Pages chỉ phục vụ trang tĩnh, không chạy được backend Laravel/PHP của dự án.
 
-Khi cập nhật hệ thống đã có ảnh sửa chữa, chạy `php artisan attachments:privatize-repairs --dry-run` rồi `php artisan attachments:privatize-repairs` trên từng máy lưu ảnh. Xem [hướng dẫn khắc phục SEC-01](docs/SEC-01-repair-evidence.md) về chặn URL cũ, chuyển ảnh và kiểm tra sau triển khai. Trạng thái các phát hiện nằm trong [báo cáo bảo mật](<tài liệu cá nhân/SECURITY_AUDIT.md>).
+Khi cập nhật hệ thống đã có ảnh sửa chữa, chạy `php artisan attachments:privatize-repairs --dry-run` rồi `php artisan attachments:privatize-repairs` trên từng máy lưu ảnh. Xem [báo cáo bảo mật hiện có](<tài liệu cá nhân/SECURITY_AUDIT.md>) (file hướng dẫn SEC-01 riêng chưa có trong checkout) về chặn URL cũ, chuyển ảnh và kiểm tra sau triển khai. Trạng thái các phát hiện nằm trong [báo cáo bảo mật](<tài liệu cá nhân/SECURITY_AUDIT.md>).
 
 Khi `MAIL_MAILER=log`, mã OTP được ghi vào log Laravel để phát triển trên máy. Muốn gửi email thật, cấu hình SMTP trong `.env`.
 
-SEC-02: admin đổi mật khẩu nhân viên sẽ thu hồi toàn bộ Bearer token và vô hiệu hóa phiên staff. Khi cập nhật bản sửa, phiên web staff cũ cần đăng nhập lại một lần. Xem [hướng dẫn triển khai và kiểm chứng](docs/SEC-02-staff-password-revocation.md).
+SEC-02: admin đổi mật khẩu nhân viên sẽ thu hồi toàn bộ Bearer token và vô hiệu hóa phiên staff. Khi cập nhật bản sửa, phiên web staff cũ cần đăng nhập lại một lần. Xem [báo cáo bảo mật hiện có](<tài liệu cá nhân/SECURITY_AUDIT.md>) (file hướng dẫn SEC-02 riêng chưa có trong checkout).
 
 ## Trợ lý AI trên trang báo sự cố
 
-Bộ tài liệu phát triển chính thức của tính năng: [Tài liệu AI](<docs/tài liệu AI/README.md>), gồm yêu cầu có mã, kiến trúc, dữ liệu/API, an toàn, quy trình task, ma trận kiểm thử và hướng dẫn vibe coding. Khi triển khai dùng bộ này cùng tasks/todo.md; tài liệu cá nhân cũ giữ để tham khảo lịch sử.
+Tài liệu sở hữu hiện trạng/thiết kế: [Tài liệu AI](<docs/tài liệu AI/README.md>), [task duy nhất](tasks/todo.md) và [kế hoạch nhận việc](tasks/plan.md). Cập nhật đến CR-13 ngày 20/11/2026; không dùng tài liệu cá nhân cũ thay contract hiện hành.
 
-Hướng triển khai được chọn là dùng API AI trả theo mức sử dụng thay vì tự vận hành hoặc fine-tune mô hình. Tích hợp hiện tại sử dụng OpenAI; xem [quyết định kiến trúc và các bước cấu hình](<tài liệu cá nhân/decisions/001-hosted-ai-api.md>). Chat hiện hỗ trợ trả lời và soạn nháp. Đã có API nền tảng M1a để lưu/đọc lại phiên; cần triển khai migration trước khi dùng. UI khôi phục phiên, chat theo phiên và tự động chuyển cấp chưa tích hợp. Xem [kế hoạch thực thi](tasks/plan.md) và [kiểm chứng M1a](tasks/verification-m1a.md).
+Portal có **Báo cáo thủ công / Nhờ AI hỗ trợ**, hội thoại lưu server, khôi phục/phân trang, hỏi phòng/công việc trước hướng dẫn và phân nhánh quan sát ban đầu. Yêu cầu “hãy báo cáo lên KTV cho mình” hoặc nút gửi báo cáo tạo phiếu ngay trong chat khi đủ dữ kiện; không bắt điền nháp vào form. Xóa mềm chỉ cho chủ phiên đã báo cáo với phiếu được quản lý xác nhận hoàn tất. Hồ sơ IT có tóm tắt, kết quả người dùng nêu và gợi ý chưa xác minh.
 
-1. Thêm `OPENAI_API_KEY` vào `.env` để Laravel gọi OpenAI Responses API. Có thể đổi `OPENAI_MODEL` trong `.env`, mặc định là `gpt-4.1-mini`. Nếu đã chạy `config:cache`, chạy `php artisan config:clear` sau khi sửa cấu hình.
-2. Đăng nhập bằng tài khoản sinh viên hoặc giảng viên. Mở `/customer/portal` và chọn **Hỏi AI**. Thử nhắn “Máy chiếu phòng A203 bật lên nhưng không thấy hình” với mã phòng có trong hệ thống.
-3. Khi có bản nháp, chọn **Điền nháp vào phiếu**, kiểm tra thông tin và gửi bằng nút **Gửi báo cáo sự cố**. Nếu còn thiếu phòng hoặc danh mục, chọn trực tiếp trong form. Vị trí đang chọn trên form, kể cả vị trí từ QR, được ưu tiên giữ lại.
+1. Cài dependency và cấu hình database trên máy của bạn; kiểm tra các migration support trước khi dùng. Chỉ chạy migration ở môi trường đã xác định, không migrate:fresh để cập nhật.
+2. Chọn OpenAI API hoặc Ollama theo [hướng dẫn local/API](docs/local-ai.md). Key chỉ lưu ở server; không có cloud fallback tự động. Đổi provider giữ contract/luật backend, không có nghĩa mọi model đều tương thích hoặc đã được đánh giá.
+3. Đăng nhập student/teacher active, verified, mở `/customer/portal` → **Nhờ AI hỗ trợ**. Chọn/nêu phòng có thật, loại thiết bị/công việc và mô tả dấu hiệu. Gửi báo cáo sẽ ghi phiếu/notification thật vào DB đang chọn.
 
-Chat gửi một phần hội thoại gần nhất, danh mục sự cố và mã/tên phòng đang chọn (nếu có) đến OpenAI. Lịch sử hiển thị trong trang hiện tại. Khóa API chỉ nằm phía máy chủ. Khi thiếu khóa hoặc kết nối AI gặp lỗi, người dùng vẫn có thể điền form trực tiếp.
+Checkpoint CR-13: **276 test PHP / 2892 assertions, 62 test JavaScript** và Chrome với backend SQLite :memory:/model giả; [evidence](tasks/verification-cr13.md). Đã smoke Ollama thật ở checkpoint cũ, chưa eval model thật sau CR-13, chưa nghiệm thu staging/production. Guide published, outbox, app Flutter và kiểm soát chi phí vận hành đầy đủ còn TARGET; không gọi agent đã hoàn thiện chỉ từ số test đạt.
 
 ## Luồng API hiện có
 

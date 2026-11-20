@@ -1,0 +1,30 @@
+[
+  {
+    "label": "1440-missing",
+    "result": "PASS: missing context; no premature guidance; selected room and work; no runtime errors; no horizontal overflow",
+    "api": "fake",
+    "browser": "Chrome headless",
+    "localDataChanged": false
+  },
+  {
+    "label": "1440-ready",
+    "result": "PASS: complete context; no premature guidance; selected room and work; no runtime errors; no horizontal overflow",
+    "api": "fake",
+    "browser": "Chrome headless",
+    "localDataChanged": false
+  },
+  {
+    "label": "390-missing",
+    "result": "PASS: missing context; no premature guidance; selected room and work; no runtime errors; no horizontal overflow",
+    "api": "fake",
+    "browser": "Chrome headless",
+    "localDataChanged": false
+  },
+  {
+    "label": "390-ready",
+    "result": "PASS: complete context; no premature guidance; selected room and work; no runtime errors; no horizontal overflow",
+    "api": "fake",
+    "browser": "Chrome headless",
+    "localDataChanged": false
+  }
+]

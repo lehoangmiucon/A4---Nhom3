@@ -1,0 +1,118 @@
+{
+  "timestamp": "2026-11-20T06:04:25.434Z",
+  "steps": [
+    {
+      "step": 1,
+      "action": "login_student",
+      "url": "http://127.0.0.1:8000/customer/index"
+    },
+    {
+      "step": 2,
+      "action": "open_ai_mode",
+      "aiViewVisible": true,
+      "initialLogCount": 1,
+      "initialText": "Trợ lý hỗ trợBạn đang gặp sự cố gì? Hãy cho mình biết thiết bị, dấu hiệu lỗi và phòng học. Mình sẽ hỗ trợ kiểm tra; nếu chưa khắc phục được, bạn có thể nhờ mình gửi báo cáo ngay tại đây."
+    },
+    {
+      "step": 3,
+      "action": "first_message",
+      "status": {
+        "busy": false,
+        "thinking": false,
+        "msgCount": 2,
+        "statusText": "",
+        "retryHidden": true,
+        "lastMsg": "Trợ lý hỗ trợMáy Máy chiếu phòng A203 không lên hình, đã thử cắm lại dây HDMI nhưng vẫn báo No signal. Hãy kiểm tra lại nguồn điện của máy chiếu.Hiện toàn bộ",
+        "context": "A203 · Máy chiếu · Hội thoại đã lưu",
+        "inputDisabled": false
+      }
+    },
+    {
+      "step": 4,
+      "action": "change_category",
+      "status": {
+        "busy": false,
+        "thinking": false,
+        "msgCount": 4,
+        "statusText": "",
+        "retryHidden": true,
+        "lastMsg": "Trợ lý hỗ trợỔ cắm điện của mỔ cắm điện của máy chiếu bị lỏng. Hãy kiểm tra và cố định lại. Nếu vẫn gặp vấn đề, báo nhân viênMaintenance để xử lý.Hiện toàn bộ",
+        "context": "A203 · Điện & chiếu sáng · Hội thoại đã lưu",
+        "inputDisabled": false
+      }
+    },
+    {
+      "step": 5,
+      "action": "new_chat_reset",
+      "resetState": {
+        "msgCount": 1,
+        "inputVal": "",
+        "inputDisabled": false,
+        "inputReadOnly": false,
+        "reportHidden": true,
+        "reportContent": "",
+        "roomVal": "",
+        "catVal": "",
+        "context": "Cuộc trò chuyện mới. Bạn đang gặp sự cố gì?"
+      }
+    },
+    {
+      "step": 6,
+      "action": "create_ticket_report",
+      "reportReceipt": {
+        "text": "Đã gửi báo cáo HD-20261120-DAAD17. Phiếu đang chờ quản lý tiếp nhận.Xem phiếu và theo dõi xử lý",
+        "url": "http://127.0.0.1:8000/customer/ticket-detail?ticket=21",
+        "ticketId": "21"
+      },
+      "target": {
+        "roomId": 2,
+        "roomCode": "A203",
+        "catId": 2,
+        "catName": "Máy chiếu"
+      }
+    },
+    {
+      "step": 7,
+      "action": "view_student_ticket",
+      "studentViewData": {
+        "title": "Máy chiếu phòng A203 bị trục trặc không hoạt động được, đã bật thử công tắc",
+        "description": "Phòng: A203 — Phòng A.203\nThiết bị/danh mục: Máy chiếu\n\nTÓM TẮT AI — CHƯA ĐƯỢC KTV XÁC MINH\nMáy chiếu phòng A203 không hoạt động, đã thử bật công tắc.\n\nKIỂM TRA/KẾT QUẢ NGƯỜI DÙNG ĐÃ NÊU\n- Máy chiếu phòng A203 bị trục trặc không hoạt động được, đã bật thử công tắc\n\nGỢI Ý AI CHO KTV — CHỈ THAM KHẢO, CẦN KIỂM CHỨNG\n- Kiểm tra lại dây nối máy chiếu và nguồn điện.\n\nLỜI BÁO GỐC — NGUỒN ĐỐI CHIẾU\nMáy chiếu phòng A203 bị trục trặc không hoạt động được, đã bật thử công tắc\n\nNguồn: hội thoại hỗ trợ #21. Hội thoại đầy đủ được lưu trong báo cáo hỗ trợ. Gợi ý không phải kết luận nguyên nhân hoặc xác nhận đã sửa.",
+        "computedWhitePre": "pre-line",
+        "facts": [
+          "Máy chiếu",
+          "Khu giảng đường A · Phòng A.203",
+          "Bình thường",
+          "NGUYEN THANH TRI"
+        ]
+      }
+    },
+    {
+      "step": 8,
+      "action": "view_staff_ticket",
+      "staffViewData": {
+        "url": "http://127.0.0.1:8000/staff/ticket-detail?ticket=21",
+        "title": "Máy chiếu phòng A203 bị trục trặc không hoạt động được, đã bật thử công tắc",
+        "description": "Phòng: A203 — Phòng A.203\nThiết bị/danh mục: Máy chiếu\n\nTÓM TẮT AI — CHƯA ĐƯỢC KTV XÁC MINH\nMáy chiếu phòng A203 không hoạt động, đã thử bật công tắc.\n\nKIỂM TRA/KẾT QUẢ NGƯỜI DÙNG ĐÃ NÊU\n- Máy chiếu phòng A203 bị trục trặc không hoạt động được, đã bật thử công tắc\n\nGỢI Ý AI CHO KTV — CHỈ THAM KHẢO, CẦN KIỂM CHỨNG\n- Kiểm tra lại dây nối máy chiếu và nguồn điện.\n\nLỜI BÁO GỐC — NGUỒN ĐỐI CHIẾU\nMáy chiếu phòng A203 bị trục trặc không hoạt động được, đã bật thử công tắc\n\nNguồn: hội thoại hỗ trợ #21. Hội thoại đầy đủ được lưu trong báo cáo hỗ trợ. Gợi ý không phải kết luận nguyên nhân hoặc xác nhận đã sửa.",
+        "whiteSpace": "pre-line",
+        "lineHeight": "24.5px",
+        "categoryText": "\n                        Danh mục lỗiMáy chiếu\n                        Địa điểmKhu giảng đường A · Phòng A.203\n                        Người báoNGUYEN THANH TRI\n                        Mức độ ưu tiênBình thường\n                    ",
+        "statusBadge": "● Đã tiếp nhận"
+      }
+    }
+  ],
+  "checks": {
+    "login_success": true,
+    "new_chat_cleared_log": true,
+    "new_chat_cleared_input": true,
+    "new_chat_cleared_report": true,
+    "category_sync_working": true,
+    "ticket_created_receipt": true,
+    "student_description_has_sections": true,
+    "student_description_has_checks": true,
+    "student_description_has_suggestions": true,
+    "student_description_has_raw_source": true,
+    "student_white_space_preline": true,
+    "staff_white_space_preline": true,
+    "staff_view_ok": true
+  }
+}

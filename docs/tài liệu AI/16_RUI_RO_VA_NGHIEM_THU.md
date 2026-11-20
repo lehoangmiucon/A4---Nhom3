@@ -2,6 +2,8 @@
 
 ## 1. Sổ rủi ro
 
+Đồng bộ đến CR-13. Các kiểm soát dưới đây chủ yếu là TARGET; coverage đã có ở 06 và todo, không phải mọi rủi ro đã được khắc phục. BASE-001 đã sửa; CR-13 có safety stop theo mẫu và projection quan sát, chưa có eligibility/published guide/eval an toàn toàn diện. R-08/10/15/16 vẫn cần hoàn thiện vận hành dù test local đạt.
+
 | Risk | Kịch bản | Kiểm soát | Owner theo trách nhiệm | Bằng chứng |
 | --- | --- | --- | --- | --- |
 | R-01 | Model bịa hoặc chọn sai thao tác | Eligibility, published immutable, render nội dung cố định | Kỹ thuật + backend | TC-008/009/024 |

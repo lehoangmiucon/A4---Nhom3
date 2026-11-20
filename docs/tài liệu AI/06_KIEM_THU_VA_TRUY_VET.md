@@ -2,9 +2,19 @@
 
 ## 1. Trạng thái bằng chứng
 
-Bằng chứng hiện có là [M1a](../../tasks/verification-m1a.md). Các TC dưới đây là thiết kế kiểm thử; chỉ những ca gắn CURRENT_CODE có bằng chứng hiện tại. Viết tên test dự kiến không chứng minh nó đã tồn tại.
+Checkpoint hiện tại đến CR-13 (20/11/2026): **276 PHP / 2892 assertions, 62 JavaScript**, Chrome bố cục 1440/390px với service SQLite :memory: và model giả. [CR-13](../../tasks/verification-cr13.md) sở hữu bằng chứng; số liệu các đoạn M1a/CR-01–03 phía dưới là lịch sử, không phải kết quả hiện tại. Ollama thật đã smoke tại LOCAL-AI-01/CR-02 và E2E local cũ; chưa eval model thật sau CR-13, chưa nghiệm thu staging/MySQL concurrency/screen reader. [DOC-SYNC-01](../../tasks/verification-doc-sync01.md) kiểm tra tài liệu, không phải một đợt unit test/runtime mới.
 
-Lần ghi nhận trước biên soạn: 16 test SupportSession mới đạt; 21 test nếu tính Swagger; toàn suite 135 đạt, 1 lỗi nền. Không chạy lại suite chỉ để viết tài liệu.
+Bằng chứng hiện có là [M1a](../../tasks/verification-m1a.md) và [review M1b](../../tasks/verification-m1b.md). Các TC dưới đây là thiết kế kiểm thử; chỉ những phần có evidence mới được coi là kiểm chứng. Viết tên test dự kiến không chứng minh nó đã tồn tại.
+
+Lịch sử M1a: toàn suite 135 đạt, 1 lỗi nền. Review M1b ngày 19/11/2026: PHP 143 đạt / 1956 assertions; JavaScript 30 đạt (17 ca M1b); Chrome với API giả đạt 4 viewport. BASE-001 đã sửa. Browser kết nối backend/staging, screen reader và MySQL concurrency chưa nghiệm thu; xem giới hạn trong evidence M1b.
+
+CR-01 cập nhật ngày 20/11/2026: [evidence](../../tasks/verification-cr01.md), PHP 158 passed / 2119 assertions, JavaScript 38 passed, Chrome API giả bốn viewport. Migration local đã chạy; provider chưa cấu hình khóa. Các ca CR-01 chứng minh một phần yêu cầu bên dưới, không thay bộ TC/UAT TARGET.
+
+CR-02: [evidence](../../tasks/verification-cr02.md), toàn suite 168 passed / 2175 assertions, sáu test brief 45 assertions; smoke model Ollama thật riêng 1 test/15 assertions. Bao phủ phần bản bàn giao AI-FR-008, BR-41 và quyền KTV; chưa thay UAT/AI eval.
+
+CR-02D (20/11/2026): [evidence](../../tasks/verification-cr02.md), sửa nhận diện yêu cầu báo cáo và giữ brief khi bổ sung phòng/danh mục chưa biết; toàn suite 180 passed / 2235 assertions với SQLite bộ nhớ và fake HTTP.
+
+CR-03 (20/11/2026): [evidence](../../tasks/verification-cr03.md), đồng bộ chặn phiếu AI trùng cùng phòng/danh mục với phiếu chưa hoàn tất qua TicketCreationService; toàn suite tại checkpoint đó **192 passed / 2396 assertions**. Chưa phân biệt triệu chứng/thiết bị chi tiết hoặc nghiệm thu production.
 
 ## 2. Chiến lược
 
@@ -20,28 +30,29 @@ Lần ghi nhận trước biên soạn: 16 test SupportSession mới đạt; 21 
 
 | Yêu cầu | Mốc/task nhóm | Test cases | Bằng chứng hiện tại |
 | --- | --- | --- | --- |
-| AI-FR-001 | M1a | TC-001, TC-002 | SupportSessionTest |
-| AI-FR-002 | M1a/M1b/M3 | TC-003, TC-004 | Chỉ lưu/đọc tin đầu đã test |
-| AI-FR-003 | M1a/M2/M3 | TC-005, TC-006 | Tạo phiên đã test; phiếu/command còn target |
-| AI-FR-004 | M3/M4 | TC-007 | TARGET |
+| AI-FR-001 | M1a/M1b | TC-001, TC-002 | SupportSessionTest, SupportSessionUiTest; chọn phòng/thiết bị và lỗi form qua JS/smoke giả |
+| AI-FR-002 | M1a/M1b/M3 | TC-003, TC-004 | CR-01 lưu lượt tiếp, đọc lịch sử server, reload/logout: SupportConversationTest và JS; orchestration guide M3 còn TARGET |
+| AI-FR-003 | M1a/M2/M3 | TC-005, TC-006 | CR-01 có receipt, replay/mismatch/version, rollback và retry tạo phiếu trong SQLite; MySQL concurrency chưa test |
+| AI-FR-004 | CR-12/13 + M3/M4 | TC-007, TC-034/035 | Intake/phân nhánh quan sát đã test bằng SupportIntakeTest/SupportDiagnosticFlowTest; guide question_code/eligibility đầy đủ còn TARGET |
 | AI-FR-005 | M3/M4/M7 | TC-008, TC-009 | TARGET |
 | AI-FR-006 | M3 | TC-010 | TARGET |
-| AI-FR-007, AI-FR-008 | M2/M4 | TC-011, TC-012 | TARGET |
-| AI-FR-009, AI-FR-010 | M2 | TC-013, TC-014 | TARGET |
+| AI-FR-007, AI-FR-008 | M2/M4 + CR-01 | TC-011, TC-012 | Gửi phiếu trong chat, facts người báo, DB notification atomic và retry đã test; outbox/giao nhận mạng còn TARGET |
+| AI-FR-009, AI-FR-010 | M2 + CR-03 | TC-013, TC-014 | CR-03 chặn trùng cùng phòng/danh mục chưa xử lý (SupportConversationTest); so khớp symptom/thiết bị chi tiết và AI-FR-010 còn TARGET |
 | AI-FR-011, AI-FR-016 | M5 | TC-015, TC-016 | TARGET |
-| AI-FR-012 | M4 | TC-017 | TARGET |
+| AI-FR-012 | CR-01 + M4 | TC-017 | Có action resolve và tiếp tục chat trước bàn giao; shortcut 10 phút/reopenings/follow-up riêng còn TARGET |
 | AI-FR-013 | M3/M5 | TC-009 | TARGET |
-| AI-FR-014 | M1b/M4 | TC-004, TC-018 | Form/chat cũ có test; UI theo phiên TARGET |
+| AI-FR-014 | M1b/M4 | TC-004, TC-018 | CR-01 có hai chế độ, composer, gửi phiếu tại chỗ; PHP/JS và Chrome fake đạt; UAT staging/screen reader còn chờ |
 | AI-FR-015 | M6 | TC-019, TC-020 | TARGET |
-| AI-FR-017, AI-FR-018 | M2/M4 | TC-021, TC-022 | TARGET |
+| AI-FR-019 | CR-11 | TC-033 | SupportSessionDeletionTest + JS/Chrome fake: quyền/điều kiện closed, xóa mềm giữ phiếu, chặn GET/replay và dọn UI |
+| AI-FR-017, AI-FR-018 | M2/M4 + CR-01 | TC-021, TC-022 | CR-01 có fallback provider, gửi báo cáo không cần AI; chưa nghiệm thu circuit breaker/guide đầy đủ |
 | AI-NFR-001 | M1a/M2/M6 | TC-023 | M1a chỉ phiên/tin đã test |
-| AI-NFR-002 | M3/M4 | TC-024 | TARGET |
+| AI-NFR-002 | CR-01/13 + M3/M4 | TC-024, TC-035 | Policy/input guard, không tạo phiếu từ model; CR-13 safety stop/unknown/projection có test. Published guide/eligibility và eval safety đầy đủ còn TARGET |
 | AI-NFR-003 | M2/M3/M4 | TC-006, TC-025 | SQLite constraint/rollback phiên đã test; MySQL TARGET |
 | AI-NFR-004 | M2/M4 | TC-021, TC-026 | TARGET |
-| AI-NFR-005 | M4 | TC-027 | TARGET |
+| AI-NFR-005 | CR-07/12 + M4 | TC-027, TC-034 | Quota command chat 40/12, trần trước ghi 200 và clarify không gọi provider đã test; reservation/ledger tiền/token/concurrency phân tán còn TARGET |
 | AI-NFR-006 | M1a/M4/M8 | TC-028 | M1a redaction/error đã test; toàn data lifecycle TARGET |
 | AI-NFR-007 | M8 | TC-029 | TARGET |
-| AI-NFR-008 | M1a/M8 | TC-030 | Swagger M1a đã test; client compatibility chưa đủ |
+| AI-NFR-008 | M1a/CR-01–13/M8 | TC-030/033–035 | API/Swagger và các test PHP/JS cập nhật theo CR; client compatibility xuyên phiên bản và app thật chưa đủ |
 | AI-NFR-009 | M8 | TC-031 | TARGET |
 | AI-NFR-010 | M7 | TC-032 | TARGET |
 
@@ -53,6 +64,9 @@ Task cụ thể phải gắn các ID trong ma trận. Nếu một FR chưa có t
 | --- | --- | --- |
 | TC-001 | Customer hợp lệ tạo phiên phòng thật | Một phiên collecting, version=1, một tin gốc; không tạo phiếu/gọi AI |
 | TC-002 | Phòng sai, thiết bị khác phòng, input rỗng/quá dài, client gán quyền | 422, không có dữ liệu dở dang |
+| TC-033 | Xóa phiên đã báo cáo và hoàn tất (AI-FR-019, BR-43, CR-11) | Chỉ chủ phiên handed_off/ticket closed; chặn resolved/reopened/chưa báo cáo; xóa mềm giữ hồ sơ, chặn GET/replay; xác nhận/lỗi/retry/phân trang/logout đúng. SupportSessionDeletionTest, JS và Chrome fake; [evidence](../../tasks/verification-cr11.md) |
+| TC-034 | Xác định phòng/công việc trước hướng dẫn (CR-12, BR-44, AI-FR-004) | Thiếu phòng/danh mục/mô tả không gọi provider; QR/ngữ cảnh đã biết được giữ; không tính lời chào là sự cố, replay và bản ghi gốc còn nguyên; đủ thông tin mới hướng dẫn. SupportIntakeTest, JS/Chrome fake, [evidence](../../tasks/verification-cr12.md) |
+| TC-035 | Phân nhánh quan sát và bàn giao đúng ý định (CR-13, BR-45) | Giữ kết quả, không lặp bước; phân biệt chưa biết/phủ định/phỏng đoán; yêu cầu chuyển KTV có replay; report gồm dữ kiện và gợi ý IT chưa xác minh; SupportDiagnosticFlowTest và Chrome fixture. [Evidence](../../tasks/verification-cr13.md) |
 | TC-003 | Đọc phiên/tin qua web và token | Cùng dữ liệu server, thứ tự/phân trang đúng |
 | TC-004 | Reload, logout rồi đăng nhập tài khoản khác | Khôi phục đúng chủ phiên; không còn dữ liệu UI của người trước |
 | TC-005 | Retry cùng key/payload; đổi payload; khác actor/key | Replay; 422 mismatch; các intent độc lập |
@@ -110,7 +124,7 @@ Có báo cáo tải, chi phí, provider/model, deadline, người trực, ngân 
 
 ## 7. Lỗi nền
 
-UiPerformanceTest::test_incident_summary_does_not_repeat_the_pending_count_query đã lỗi trước M1a: thực tế hai truy vấn count, kỳ vọng một. Giữ nguyên bằng chứng baseline, không xóa hoặc đổi expectation để làm xanh. Lỗi nền không cấm viết tài liệu hoặc kiểm thử độc lập, nhưng repository không được mô tả là hoàn toàn đạt hoặc sẵn sàng release cho đến khi xử lý/quyết định rõ.
+UiPerformanceTest::test_incident_summary_does_not_repeat_the_pending_count_query từng lỗi trước M1a: hai truy vấn count thay vì một. **BASE-001 đã sửa ở M1b**, bằng chứng cũ giữ trong verification-m1a/m1b; không dùng lỗi này làm blocker hiện tại hoặc đổi expectation. Checkpoint CR-13 toàn suite đã đạt, nhưng còn gate model thật/staging/guide/vận hành nên chưa RELEASED.
 
 ## 8. Truy vết thiết kế chi tiết và UAT
 

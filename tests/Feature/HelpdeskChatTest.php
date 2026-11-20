@@ -26,7 +26,7 @@ class HelpdeskChatTest extends TestCase
         $this->fakeReply(['room_code' => 'A203', 'category_id' => $category->id]);
 
         $this->actingAs($this->user('student'))
-            ->get('/customer/portal')->assertOk()->assertSee('Điền nháp vào phiếu');
+            ->get('/customer/portal')->assertOk()->assertSee('conversation-escalate', false);
 
         $messages = [
             ['role' => 'user', 'content' => 'Máy chiếu phòng a203 không có hình.'],

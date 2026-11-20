@@ -1,0 +1,9 @@
+{
+  "markdown_files": 58,
+  "missing_local_targets": [],
+  "handoff_references_checked": 17,
+  "missing_handoff_references": [],
+  "functional_requirements": 19,
+  "functional_requirements_missing_from_trace": [],
+  "limits": "Checks local file targets, not Markdown anchors, external URLs, diagram rendering, runtime correctness, or completeness of TARGET acceptance criteria."
+}

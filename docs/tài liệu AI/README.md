@@ -1,7 +1,7 @@
 # Tài liệu AI
 
 > Bộ tài liệu phát triển và nghiệm thu tính năng AI Agent hỗ trợ kỹ thuật phòng học.
-> Baseline tài liệu: AI-SDLC-1.1 — 19/11/2026.
+> Baseline thiết kế: AI-SDLC-1.1 — 19/11/2026; bản đồng bộ hiện trạng: AI-SDLC-1.2 — 20/11/2026, đến CR-13.
 > Phạm vi: bổ sung tính năng vào đề tài hiện có; không đổi tên đề tài.
 > Đây là yêu cầu và thiết kế để xây sản phẩm, không phải xác nhận mọi chức năng đã vận hành.
 
@@ -25,7 +25,7 @@ Tên thư mục sử dụng docs hiện có của repository: **docs/tài liệu
 | [08 — Vibe coding](08_HUONG_DAN_VIBE_CODING.md) | Quy tắc làm việc của AI coding agent, mẫu giao việc và chống lạc hướng |
 | [09 — Quyết định](09_QUYET_DINH_VA_THAY_DOI.md) | Quyết định đã chốt, giả định, quyết định còn thiếu và lịch sử sửa |
 | [10 — Use case chi tiết](10_USE_CASE_CHI_TIET.md) | 14 use case: luồng chính, thay thế, ngoại lệ, điều kiện trước/sau |
-| [11 — Quy tắc nghiệp vụ](11_QUY_TAC_NGHIEP_VU.md) | 42 quy tắc, bảng quyết định, điều kiện phát bước và bàn giao hai transaction |
+| [11 — Quy tắc nghiệp vụ](11_QUY_TAC_NGHIEP_VU.md) | BR-01–45, bảng quyết định; đánh dấu quy tắc CURRENT_CODE và TARGET |
 | [12 — Ma trận phân quyền](12_MA_TRAN_PHAN_QUYEN.md) | Quyền theo chủ sở hữu, nhiệm vụ, phạm vi dữ liệu và capability |
 | [13 — Thiết kế giao diện](13_THIET_KE_GIAO_DIEN.md) | Màn hình web/app/quản trị, trạng thái lỗi, wireframe và khả năng tiếp cận |
 | [14 — Từ điển dữ liệu](14_TU_DIEN_DU_LIEU.md) | Thuật ngữ, dữ liệu CURRENT/TARGET, constraint và nguồn gốc dữ liệu |
@@ -37,9 +37,15 @@ Tên thư mục sử dụng docs hiện có của repository: **docs/tài liệu
 Nguồn trạng thái task duy nhất: [tasks/todo.md](../../tasks/todo.md).
 Kế hoạch thực thi đang chạy: [tasks/plan.md](../../tasks/plan.md).
 Bằng chứng M1a: [verification-m1a.md](../../tasks/verification-m1a.md).
+Bằng chứng review M1b và BASE-001: [verification-m1b.md](../../tasks/verification-m1b.md).
+Bằng chứng hai luồng báo sự cố CR-01: [verification-cr01.md](../../tasks/verification-cr01.md).
 API đã có: [docs/mobile-api.md](../mobile-api.md) và Swagger tại /api.
 
-Kiểm chứng bộ tài liệu: [AI-SDLC-1.1](verification/AI-SDLC-1.1.md). Lịch sử: [AI-SDLC-1.0](verification/AI-SDLC-1.0.md).
+Người mới nhận việc: đọc hiện trạng mục 4 dưới đây → [cách chạy local/API](../local-ai.md) → [kế hoạch nhận việc và file sở hữu](../../tasks/plan.md) → chọn task trong [todo](../../tasks/todo.md). Không cần đọc toàn bộ evidence lịch sử để biết hệ thống hiện chạy gì.
+
+Kiểm chứng gần nhất: [CR-13](../../tasks/verification-cr13.md) — **276 test PHP / 2892 assertions, 62 test JavaScript**, Chrome bố cục 1440/390px với service SQLite :memory: và model giả. Đây là số đo checkpoint, không phải cam kết mọi checkout khác cũng đạt. [Rà soát tài liệu 1.2](../../tasks/verification-doc-sync01.md).
+
+Kiểm chứng đồng bộ hiện trạng: [AI-SDLC-1.2](verification/AI-SDLC-1.2.md). Lịch sử thiết kế: [AI-SDLC-1.1](verification/AI-SDLC-1.1.md), [AI-SDLC-1.0](verification/AI-SDLC-1.0.md).
 
 Trước task nghiệp vụ, đối chiếu use case ở 10, quy tắc ở 11, quyền ở 12 và sơ đồ tương ứng. Không dùng hình tổng quan thay cho điều kiện chi tiết. Mẫu [ca kiểm thử](templates/TEST_SCENARIO.md) và [biên bản UAT](templates/UAT.md) giúp lưu bằng chứng khi thực hiện.
 
@@ -53,23 +59,24 @@ Trước task nghiệp vụ, đối chiếu use case ở 10, quy tắc ở 11, q
 - Tài liệu ý tưởng/kế hoạch trong tài liệu cá nhân được giữ làm lịch sử, không dùng làm nguồn cạnh tranh.
 - Không tự đổi nghiệp vụ phiếu, vai trò, provider, model, scope hoặc stack để giải quyết một lỗi cục bộ.
 
-## 4. Trạng thái tại baseline
+## 4. Hiện trạng đến CR-13 — 20/11/2026
 
-| Phần | Trạng thái có căn cứ |
-| --- | --- |
-| Chat cũ | Có mã gọi OpenAI, trả reply/draft; chưa chứng minh cấu hình tài khoản trả phí hoạt động |
-| M1a: lưu phiên | Có 4 API, migration, policy, service, Swagger và 16 test mới |
-| Database thật | Chưa chạy migration M1a trong các bước đã ghi nhận |
-| UI theo phiên | Chưa tích hợp; chat cũ không tự trở thành lịch sử phiên |
-| Hướng dẫn/công cụ agent | Chưa triển khai theo hợp đồng mới |
-| Chuyển cấp/outbox | Chưa triển khai |
-| Flutter và push | Chưa triển khai trong phạm vi đã kiểm chứng |
-| Vận hành | Chưa nghiệm thu production |
+| Phần | CURRENT_CODE / kiểm chứng | Còn TARGET hoặc chưa kiểm chứng |
+| --- | --- | --- |
+| Phiên và UI web | M1a/M1b + CR-01: hai chế độ thủ công/chat, lưu lịch sử, phân trang, retry/version, khôi phục/logout; CR-05–10 phản hồi gửi/animation/trạng thái và sửa spinner | UAT đăng nhập/CSRF của toàn phiên bản cuối trên staging, screen reader thật |
+| Intake và phân nhánh | CR-12 yêu cầu phòng/danh mục/mô tả; CR-13 quan sát máy tính/máy chiếu không khởi động/mất hình, mạng/âm thanh, tránh lặp và chuyển KTV | Nhận diện mọi cách nói, định danh hai thiết bị cùng loại trong một phòng, kho guide published/eligibility và eval độc lập |
+| Bàn giao IT | Tạo ticket/report/log/audit/DB notification cùng TX-B, receipt TX-A/retry; brief AI có hash và fallback; danh mục hiện tại; chống trùng cùng phòng/danh mục | Outbox/delivery ledger/recovery tự động, gộp theo thiết bị + triệu chứng, report acknowledgement/progress/follow-up riêng |
+| Xóa phiên | CR-11: chủ phiên chỉ xóa mềm handed_off có ticket closed; giữ hồ sơ/phiếu | Purge/retention/ẩn danh theo policy được duyệt |
+| Provider | HelpdeskAiService có OpenAI Responses API và Ollama; mặc định repo openai/gpt-4.1-mini; LOCAL-AI-01 đã smoke Ollama/qwen2.5:7b thật tại checkpoint trước | Chưa smoke OpenAI thật hoặc eval model thật sau CR-12/13; không tự chuyển provider/model khi lỗi |
+| Database local | Bằng chứng batch 15: hai migration phiên/workflow; batch 16: brief; batch 17: deleted_at. Dữ liệu test đã dọn có bản sao private | Thành viên khác phải kiểm tra migrate:status; không coi batch máy này là schema staging/production |
+| App và vận hành | Laravel/API dùng chung đã có; test tự động SQLite :memory: | Flutter/push, quota tiền/token phân tán, circuit/queue, giám sát, tải MySQL, restore, staging và release còn theo todo |
 
-Kết quả gần nhất đã ghi nhận: 135 test đạt, 1 lỗi nền ở UiPerformanceTest; đây là kết quả trước lần biên soạn tài liệu này, không phải lần chạy mới. Không được báo toàn suite xanh.
+Các số liệu và trạng thái cũ là checkpoint lịch sử tại evidence M1a/M1b, CR-01–13 và LOCAL-AI-01; không ghi đè để giả tất cả đã được kiểm chứng ở phiên bản cuối. [E2E local cũ](../../tasks/verification-e2e-web.md) ghi model thật/backend local tại thời điểm chạy, không thay nghiệm thu CR-13 hoặc staging. Phiếu/phiên ID trong ảnh cũ đã được [dọn test](../../tasks/verification-data-cleanup.md), không phải fixture để gọi lại trên máy người nhận.
+
+CURRENT_CODE nghĩa có mã/bằng chứng trong workspace; không đồng nghĩa đã commit/push, không đồng nghĩa DEPLOYED. Chỉ RELEASED khi có version/môi trường/người nghiệm thu. Trạng thái triển khai chi tiết và thứ tự tiếp tục ở [todo](../../tasks/todo.md) và [plan](../../tasks/plan.md).
 
 ## 5. Luồng phát triển bắt buộc
 
 Yêu cầu có mã → thiết kế/hợp đồng → task có phạm vi → test thất bại phù hợp → triển khai tối thiểu → test đạt → review → cập nhật bằng chứng → staging → nghiệm thu → phát hành.
 
-Hoàn thành code không đồng nghĩa đã migrate, đã gọi API thật, đã có app hay đã phát hành. Bước tiếp theo mặc định là M1b: giao diện tạo và đọc lại phiên, chưa hứa hội thoại agent đầy đủ khi API gửi tin chưa tồn tại.
+Hoàn thành code không đồng nghĩa đã gọi API thật, đã có app hay đã phát hành. CR-01 đã có API gửi tin và tạo phiếu trong chat, migration local và smoke UI; cấu hình provider, UAT đăng nhập trên staging, MySQL concurrency và các phần TARGET còn theo tasks/todo.md.

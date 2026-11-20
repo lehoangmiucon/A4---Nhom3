@@ -4,13 +4,13 @@
 
 Phát triển và test tự động dùng dữ liệu giả, SQLite :memory: theo TestCase hiện có. Staging phải tách production, có database/queue/provider key/push riêng. Khi cần kiểm chứng khóa và concurrency, dùng MySQL staging đúng cấu hình triển khai.
 
-Chưa có bằng chứng migration M1a đã chạy trên database thật. Không suy từ test RefreshDatabase rằng môi trường đang dùng đã được cập nhật.
+Đã có evidence migration trên local: phiên/workflow batch 15, brief batch 16, deleted_at batch 17. Đây không phải bằng chứng staging/production hoặc máy thành viên khác đã cập nhật. Danh sách migration và cách kiểm tra ở [hướng dẫn local/API](../local-ai.md). Không suy từ RefreshDatabase rằng DB đang dùng đã cập nhật.
 
 Trước thao tác có side effect, xác nhận APP_ENV, tên/kết nối database, queue, mail/push và tài khoản trả phí mà không in secret. Không tự sao chép .env hoặc dữ liệu người dùng vào tài liệu.
 
 ## 2. Cấu hình và bí mật
 
-Hiện có OPENAI_API_KEY và OPENAI_MODEL ở server. Chọn provider/model sản xuất cần quyết định Q-01 ở tài liệu 09; không tự đổi default để đuổi theo model mới nhất.
+CURRENT_CODE có HELPDESK_AI_PROVIDER=openai|ollama, OPENAI_API_KEY/OPENAI_MODEL, OLLAMA_URL/OLLAMA_MODEL và ba biến hạn mức chat ở config/services.php/.env.example; cấu hình chi tiết và chuyển API/local tại [local-ai.md](../local-ai.md). Chọn provider/model sản xuất cần quyết định Q-01 ở tài liệu 09; không tự đổi default để đuổi theo model mới nhất.
 
 Các cấu hình target cần nhóm rõ: agent_enabled, support_session_ui_enabled, deadlines, limiter, quota, ngân sách, lịch trực, contact, retention và storage private. Tên biến thực được chốt trong task, cập nhật config/.env.example không có giá trị bí mật.
 
@@ -18,7 +18,7 @@ Không nhúng key model vào Flutter, JS, link ảnh, log, prompt hoặc excepti
 
 ## 3. Timeout, retry và circuit breaker
 
-Các giá trị sau là đề xuất pilot, chưa phải SLA:
+CURRENT_CODE gọi provider đồng bộ ngoài transaction: OpenAI connect 5s/timeout 20s, Ollama connect 2s/timeout 20s; client abort 35s. Không retry provider tự động hoặc cloud fallback. Replay processing dưới 30s trả 202; sau 30s retry kết thúc bằng fallback, không gọi model lại. Đây không phải persisted deadline/circuit/queue. Các giá trị dưới đây là TARGET pilot, chưa phải SLA hoặc cấu hình đã có:
 
 | Tham số | Đề xuất | Hành vi |
 | --- | --- | --- |
@@ -34,7 +34,9 @@ Circuit và counter phải chia sẻ giữa worker. Auth/quota lỗi không spam
 
 Circuit chỉ ngắt AI, không ngắt form/phiếu/progress. Khi fallback, tạo/liên kết phiếu bằng dữ liệu server rồi mới nói đã tạo. Server không truy cập được: client ghi chưa xác nhận và hiển thị contact đã cấu hình, không hứa đã bàn giao.
 
-## 4. Outbox và worker
+## 4. Outbox và worker — TARGET
+
+CURRENT_CODE chỉ có DB notification trong TX-B và receipt để client retry cùng key; không có support_outbox/support_deliveries hoặc job tự phục hồi pending. Không chạy queue:work rồi coi việc bàn giao đã có recovery tự động.
 
 Transaction ghi phiếu/report/outbox trước. Worker gửi notification DB/push sau commit, có unique event-recipient-channel, retry hữu hạn, backoff và failed queue có người xử lý.
 
@@ -51,7 +53,9 @@ php artisan schedule:work
 
 Timeout worker/lease phải lớn hơn deadline task và nhỏ hơn retry_after thích hợp để tránh hai worker xử lý cùng lease. Cấu hình cụ thể phải được kiểm thử với queue driver chọn thực tế; không sao chép lệnh này làm bằng chứng đã đạt.
 
-## 5. Ngân sách
+## 5. Ngân sách — TARGET, còn thiếu kiểm soát runtime
+
+Code có giới hạn command chat, chưa lưu input/output token/chi phí/usage ledger hoặc đặt trước ngân sách. Không coi giới hạn lượt là bảo đảm không vượt ngân sách. Tài khoản/provider/model sản xuất và ngân sách Q-01/02 vẫn cần chốt; không gọi API trả phí chỉ để kiểm tra tài liệu.
 
 Theo dõi input/output token của mọi lần thử và chi phí của từng provider/model/version. Context gửi lại và báo cáo tổng hợp đều tiêu phí; một ca hỗ trợ không phải một request.
 
@@ -72,6 +76,8 @@ Các mức ảnh hưởng trên cần mapping priority/SLA theo Q-07 trước v�
 Đọc notification không xác nhận tiếp nhận. Quá hạn tiếp nhận: nhắc và chuyển người trực thay thế theo policy. Đã tiếp nhận nhưng chưa phân công: có deadline/cảnh báo riêng được cấu hình trước vận hành. Ngoài giờ: thể hiện đúng thời gian phục vụ và contact, không hứa KTV đã lên đường.
 
 ## 7. Dữ liệu và quyền riêng tư
+
+CURRENT_CODE CR-11 xóa mềm phiên đủ điều kiện, không purge report/messages/receipt/key/ảnh. DATA-CLEAN-01 là thao tác quản trị dữ liệu test được người dùng chỉ định ngày 20/11, có bản sao private; không phải job retention hoặc script để thành viên chạy lại. Không đưa backup/raw dữ liệu/key lên Git. Các chính sách/worker retention dưới đây còn TARGET.
 
 - Gửi API tối thiểu facts cần thiết; không đưa liên hệ người báo vào suy luận nếu không cần.
 - Log kỹ thuật mặc định chỉ metadata: request/command/session ID phù hợp quyền, model, prompt/schema/guide version, action, validation decision, usage, độ trễ và lỗi đã làm sạch.

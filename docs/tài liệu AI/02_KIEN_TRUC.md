@@ -4,7 +4,9 @@
 
 Laravel ở gốc repository; website ở public/ và resources/views/; API ở routes/api.php; session/token qua Sanctum; database và nghiệp vụ phiếu hiện có. App Flutter dự kiến ở mobile/. Không chuyển dự án sang monorepo backend/web mới, không thêm dịch vụ Python để chỉ gọi API.
 
-## 2. Bản đồ module
+## 2. Bản đồ module — TARGET toàn sản phẩm
+
+Sơ đồ dưới đây là kiến trúc đích; Flutter, guide-catalog, outbox, worker/delivery, push và cost reservation chưa có trong lát cắt web hiện tại. Không triển khai frontend gọi endpoint TARGET chỉ vì xuất hiện ở sơ đồ.
 
 | ID | Trách nhiệm | Phụ thuộc |
 | --- | --- | --- |
@@ -40,7 +42,9 @@ flowchart TD
 
 Đã có M1a: SupportSessionController, StoreSupportSessionRequest, SupportSessionPolicy, SessionCreationService, SupportSession/SupportMessage, SupportApiResponse và migration 2026_11_19_000001.
 
-Dự kiến thêm khi có task tương ứng:
+CURRENT_CODE CR-01–13 đã có: SupportConversationController; SupportConversationService (điều phối đồng bộ), ConversationContext (intake/ý định), SupportDiagnosticFlow (projection quan sát), ConversationBrief/ConversationFallback/ConversationReportService; HelpdeskAiService; TicketCreationService; SupportCommand/SupportReport; portal partial/JS/CSS và tests liên quan. File sở hữu và thứ tự tiếp tục tại [plan](../../tasks/plan.md). Không tạo service thay thế hoặc kho receipt cạnh tranh chỉ vì tên trong sơ đồ khác.
+
+Dự kiến thêm khi có task tương ứng (TicketCreationService đã có, không tạo lại):
 
 ```text
 app/Services/Support/
@@ -49,7 +53,6 @@ app/Services/Support/
     GuideEligibilityService.php
     SessionCommandService.php
     EscalationService.php
-app/Services/TicketCreationService.php
 app/Jobs/ProcessSupportTurn.php
 app/Jobs/DeliverSupportNotification.php
 tests/Feature/Support/
@@ -59,7 +62,9 @@ mobile/
 
 Danh sách này không bắt buộc tạo mọi file trước. Không tạo service rỗng hoặc endpoint giả chỉ để trông đủ kiến trúc.
 
-## 4. Trạng thái phiên — source of truth
+## 4. Trạng thái phiên — enum và vòng đời TARGET
+
+CURRENT_CODE: enum có cả 6 giá trị nhưng CR-01 chủ yếu ghi collecting/handoff_pending/handed_off/resolved. awaited result/attempt/cancellation endpoint chưa triển khai. Command thực có processing/handoff_pending/completed và operation chat/report/resolve/clarify, chưa phải enum pending/succeeded/failed/discarded của TARGET. CR-13 diagnosis.stage là projection quan sát riêng (contract 03), không đổi session status; câu hỏi quan sát không phải attempt của guide đã duyệt.
 
 | Status | Ý nghĩa | Lệnh thay đổi hợp lệ |
 | --- | --- | --- |
@@ -70,7 +75,7 @@ Danh sách này không bắt buộc tạo mọi file trước. Không tạo serv
 | resolved | Người dùng xác nhận tự giải quyết | Mở lại phiên hoặc báo tái diễn |
 | cancelled | Chủ động hủy trước bàn giao | Xem lịch sử, tạo phiên mới |
 
-Trạng thái lượt AI riêng: pending, processing, succeeded, failed, discarded. Không đổi session thành processing. Queue delay không đồng nghĩa người dùng đã hủy. handoff_pending có thể giữ lỗi xử lý và next_attempt_at, không giả handed_off.
+Trạng thái lượt AI TARGET riêng: pending, processing, succeeded, failed, discarded. Không đổi session thành processing. Queue delay không đồng nghĩa người dùng đã hủy. handoff_pending TARGET có thể giữ next_attempt_at; CURRENT_CODE không có trường đó hoặc worker tự retry, chỉ có receipt + retry client. Không giả handed_off.
 
 Sơ đồ chuyển trạng thái chuẩn nằm tại [DG-ST-01](so-do/05_STATE_MACHINE.md). Bảng trên sở hữu enum/ý nghĩa; file sơ đồ sở hữu hình, không duy trì hai bản state diagram song song.
 
@@ -81,15 +86,17 @@ Sơ đồ chuyển trạng thái chuẩn nằm tại [DG-ST-01](so-do/05_STATE_M
 - Không có thao tác AI chuyển handed_off/cancelled trở lại hướng dẫn.
 - resolved phải có bằng chứng xác nhận người dùng, không chỉ đề xuất model.
 - Mở lại phiên tăng version, giữ lịch sử và counters; không tự reset quota để lách hạn mức.
-- Nếu muốn sửa phòng/thiết bị sau tạo phiên, phải có change request và quy tắc vô hiệu hóa context; bản đầu tạo phiên mới cho thay đổi vị trí.
+- CURRENT_CODE CR-01/04/12/13 cho đổi room_id/category_id trong cùng chat; đổi ngữ cảnh đã biết làm brief cũ hết hiệu lực và reset phạm vi quan sát. Chưa phân biệt ổn định hai thiết bị cùng loại/cùng phòng. Không đổi hành vi này thành bắt tạo phiên mới mà không có CR.
 
 ## 5. Trạng thái phiếu
 
-Giữ new, reopened, assigned, in_progress, resolved, closed. Tiếp nhận được lưu acknowledged_by/at ở hồ sơ bàn giao; không tự thêm ticket.status=acknowledged.
+Giữ new, reopened, assigned, in_progress, resolved, closed. resolved của ticket là KTV báo hoàn thành chờ quản lý; closed là quản lý xác nhận. CR-11 chỉ xóa mềm phiên handed_off/report/ticket closed. acknowledged_by/at của hồ sơ bàn giao là TARGET M5, chưa có bảng handoff; không tự thêm ticket.status=acknowledged.
 
 Phân công trực tiếp có thể đồng thời ghi nhận tiếp nhận. Đọc notification không làm việc đó. Giảng viên/KTV/model không được vượt quy trình quản trị duyệt đóng hoặc mở lại phiếu.
 
 ## 6. Xử lý một lượt
+
+CURRENT_CODE: request HTTP lưu tin/command trong TX-A → ưu tiên report/resolve/an toàn/intake → gọi provider đồng bộ ngoài transaction nếu cần → ghi kết quả trong TX hoàn tất nếu version còn khớp. Không có job/queue AI, reservation token/tiền hoặc usage ledger. CR-13 chọn câu hỏi quan sát ở backend; cùng lượt model chuẩn bị brief, câu trả lời model chỉ dùng khi nhánh chưa phân loại. Tiền đề/quota/replay theo 03. Các bước worker/deadline/usage dưới đây là TARGET M3/M4, không phải hạ tầng đang chạy.
 
 1. Kiểm tra chủ phiên, tài khoản và lệnh hợp lệ.
 2. Kiểm tra idempotency và expected_version trong giao dịch ngắn.
@@ -112,7 +119,9 @@ Tách snapshot gốc/bước đã thử khỏi phần tóm tắt AI. Không cầ
 
 Worker đọc outbox sau commit; thông báo DB có unique event-recipient-channel. Push có thể lặp khi kết quả cũ không rõ; client loại trùng theo event_id. Phiếu có thật nhưng push chưa gửi phải được hiển thị đúng.
 
-## 8. Gộp sự cố và quyền người báo sau
+## 8. Gộp sự cố và quyền người báo sau — TARGET
+
+CURRENT_CODE CR-03 dùng TicketCreationService cho form/chat để chặn phiếu cùng phòng/danh mục còn new/reopened/assigned/in_progress. Chat trả 200 report=null, không liên kết hoặc tiết lộ phiếu cũ và không tạo report người báo sau. So khớp thiết bị/symptom_code, nhiều report cùng ticket và Progress DTO dưới đây chưa có. Không xóa guard hiện hành trước khi có CR/test tương thích.
 
 Mỗi phiên có một support_report; nhiều report có thể cùng ticket. Mỗi report giữ chủ sở hữu, mô tả và context riêng.
 
@@ -127,7 +136,9 @@ Mỗi phiên có một support_report; nhiều report có thể cùng ticket. M�
 
 Hoàn tác nhanh đề xuất 10 phút nhưng sau đó vẫn có “Sự cố vẫn còn”. Chưa có phiếu: mở lại phiên. Đã có phiếu: gửi follow-up/yêu cầu xử lý lại; không gọi TicketController::reopen bằng quyền giảng viên hoặc AI.
 
-## 10. Chuyển đổi từ chat hiện có
+## 10. Chuyển đổi từ chat hiện có — lịch sử và phần còn thiếu
+
+M1b ở hai đoạn dưới là checkpoint lịch sử. CURRENT_CODE portal đã chuyển sang CR-01–13: hai chế độ thủ công/chat lưu phiên, gửi phiếu trong chat và projection quan sát. Legacy HelpdeskChatController/portal-chat còn phục vụ contract reply/draft cũ, không phải đường chính của portal. M3/M4 vẫn cần guide/eligibility/feature flag và nghiệm thu an toàn đầy đủ.
 
 M1b chỉ cung cấp giao diện lưu/đọc lại phiên, có nhãn chưa bật agent. Không gọi endpoint messages/turns tương lai hoặc nối chat cũ rồi tuyên bố mọi tin đã lưu.
 

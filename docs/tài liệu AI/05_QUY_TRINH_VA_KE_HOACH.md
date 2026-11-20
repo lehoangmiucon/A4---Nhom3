@@ -65,6 +65,8 @@ DONE_CODE không đủ để phát hành. Cần migration, UI thật, MySQL conc
 
 ## 5. Trình tự milestone
 
+Đây là roadmap TARGET; CURRENT_CODE đã đi theo các lát cắt CR-01–13 qua một phần M2/M3/M4. Không chạy lại từ đầu task đã có hoặc coi cả milestone hoàn tất từ các lát cắt đó. Thứ tự nhận việc cụ thể và bản đồ file ở [plan](../../tasks/plan.md); trạng thái/AC duy nhất ở todo.
+
 | Mốc | Kết quả | Phụ thuộc |
 | --- | --- | --- |
 | M1a | API lưu/đọc phiên | Đã có mã/test; chưa deployed |
@@ -101,6 +103,8 @@ git status --short
 php artisan test --filter=SupportSessionTest
 php artisan test --filter=SwaggerDocumentationTest
 php artisan test --compact
+node --test tests/js/*.test.mjs tests/JavaScript/*.test.cjs
+node tests/browser/support-diagnostic-smoke.mjs
 php -l app/Http/Controllers/SupportSessionController.php
 php vendor/bin/pint --test app/Http/Controllers/SupportSessionController.php
 git diff --check
@@ -109,7 +113,7 @@ php artisan route:list --path=api/support-sessions --except-vendor
 
 Đổi đường dẫn/test filter theo task. “No tests executed” không phải PASS. Không chạy Pint toàn repo để sửa hàng loạt style ngoài phạm vi.
 
-composer test là script khai báo của repository; môi trường đã ghi nhận có php ở C:/xampp/php/php.exe nhưng chưa tìm thấy composer trong PATH. Có thể chạy php artisan test theo cấu hình hiện có; ghi rõ công cụ thực sự sử dụng.
+composer test là script khai báo của repository; cài Composer/PHP phù hợp máy nhận, không giả định PATH hoặc đường dẫn của máy tác giả. Có thể chạy php artisan test theo phpunit.xml/TestCase (SQLite :memory:). Chrome fixture cần browser theo CHROME_PATH, dùng model/API fake; không thay smoke provider thật hoặc staging. Windows sandbox từng chặn đọc vendor/autoload.php, cần kiểm tra quyền execution thay vì sửa test hoặc DB.
 
 Lệnh migrate, queue, scheduler và test trả phí chỉ chạy ở môi trường đã xác định, theo 07. Không lấy lệnh ví dụ trong tài liệu để chạy mù trên database thật.
 

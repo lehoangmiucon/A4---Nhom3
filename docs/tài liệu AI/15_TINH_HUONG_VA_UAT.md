@@ -72,6 +72,6 @@ UAT cần ghi actual result và người kiểm tra. PASS chỉ sau thao tác th
 
 ## 5. Điều kiện ký nghiệm thu
 
-Có trace FR/UC/TC/UAT, môi trường và version; các lỗi an toàn/quyền/data consistency đã xử lý; provider/ngân sách/lịch trực/data policy được xác nhận; khôi phục và rollback được diễn tập. Lỗi nền BASE-001 phải được xử lý hoặc có quyết định chất lượng rõ trước release.
+Có trace FR/UC/TC/UAT, môi trường và version; các lỗi an toàn/quyền/data consistency đã xử lý; provider/ngân sách/lịch trực/data policy được xác nhận; khôi phục và rollback được diễn tập. BASE-001 đã sửa ở checkpoint M1b; vẫn kiểm tra hồi quy khi release. Những lỗi mới chưa được phép bỏ qua chỉ vì baseline cũ đã xanh.
 
 Chỉ ghi vai trò cần ký (đại diện giảng viên, quản trị/KTV, QA/dev, vận hành/chủ quản dữ liệu), không tự đặt tên hoặc đánh dấu đã ký. Dùng [mẫu UAT](templates/UAT.md).
