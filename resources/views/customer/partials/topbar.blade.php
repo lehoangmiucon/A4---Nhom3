@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" crossorigin="anonymous">
 <header class="role-topbar customer-topbar">
     <a class="role-brand" href="{{ url($currentUser->role === 'staff' ? '/staff/index' : '/customer/index') }}" aria-label="Helpdesk · Tổng quan">
         <img class="role-brand-image" src="{{ url('/shared/images/helpdesk-logo.png') }}" alt="Helpdesk">
