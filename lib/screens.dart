@@ -12,6 +12,14 @@ import 'package:printing/printing.dart';
 import 'services/api_client.dart';
 import 'services/app_state.dart';
 
+String roleLabel(dynamic role) => switch (role?.toString()) {
+  'student' => 'Sinh viên',
+  'teacher' => 'Giảng viên',
+  'staff' => 'Kỹ thuật viên',
+  'admin' => 'Quản trị viên',
+  _ => '',
+};
+
 Map<String, dynamic> asMap(dynamic value) =>
     value is Map ? Map<String, dynamic>.from(value) : <String, dynamic>{};
 
@@ -609,14 +617,6 @@ class _ChatPageState extends State<ChatPage> {
     if (ticket.isNotEmpty) return 'Phiếu ${ticket['ticket_number'] ?? ''}';
     return conversation['type'] == 'assistant' ? 'Trợ lý AI' : 'Trò chuyện riêng';
   }
-
-  String roleLabel(dynamic role) => switch (role?.toString()) {
-    'admin' => 'QL',
-    'staff' => 'NV',
-    'student' => 'SV',
-    'teacher' => 'GV',
-    _ => '',
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -4138,7 +4138,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   user['email']?.toString() ?? '',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                Text('Vai trò: ' + (user['role']?.toString() ?? '')),
+                Text('Vai trò: ${roleLabel(user['role'])}'),
                 const SizedBox(height: 16),
                 TextField(
                   controller: name,
@@ -4551,9 +4551,9 @@ class _AdminListState extends State<_AdminList> {
                   items: const [
                     DropdownMenuItem(
                       value: 'staff',
-                      child: Text('Nhân viên kỹ thuật'),
+                      child: Text('Kỹ thuật viên'),
                     ),
-                    DropdownMenuItem(value: 'admin', child: Text('Quản lý')),
+                    DropdownMenuItem(value: 'admin', child: Text('Quản trị viên')),
                   ],
                   onChanged: (value) => update(() => role = value ?? 'staff'),
                 ),
@@ -4945,9 +4945,9 @@ class _AdminListState extends State<_AdminList> {
             value: role,
             items: const [
               DropdownMenuItem(value: 'student', child: Text('Sinh viên')),
-              DropdownMenuItem(value: 'teacher', child: Text('Giáo viên')),
-              DropdownMenuItem(value: 'staff', child: Text('Nhân viên')),
-              DropdownMenuItem(value: 'admin', child: Text('Quản lý')),
+              DropdownMenuItem(value: 'teacher', child: Text('Giảng viên')),
+              DropdownMenuItem(value: 'staff', child: Text('Kỹ thuật viên')),
+              DropdownMenuItem(value: 'admin', child: Text('Quản trị viên')),
             ],
             onChanged: (v) => update(() => role = v ?? role),
           ),
@@ -5074,7 +5074,7 @@ class _AdminListState extends State<_AdminList> {
                             subtitle: Text(
                               (row['email']?.toString() ?? '') +
                                   ' · ' +
-                                  (row['role']?.toString() ?? '') +
+                                  roleLabel(row['role']) +
                                   ' · Phiếu báo ' +
                                   (row['reported_tickets_count']?.toString() ??
                                       '0'),
@@ -5117,7 +5117,7 @@ class _AdminListState extends State<_AdminList> {
                             subtitle: Text(
                               (row['email']?.toString() ?? '') +
                                   ' · ' +
-                                  (row['role']?.toString() ?? '') +
+                                  roleLabel(row['role']) +
                                   ' · Lịch ' +
                                   (row['schedules_count']?.toString() ?? ''),
                             ),
@@ -5359,7 +5359,7 @@ class _AdminPersonDetailPageState extends State<AdminPersonDetailPage> {
                           ),
                           if (user['phone'] != null)
                             Text(user['phone'].toString()),
-                          Text('Role: ' + (user['role']?.toString() ?? '')),
+                          Text('Vai trò: ${roleLabel(user['role'])}'),
                           if (categories.isNotEmpty)
                             Wrap(
                               spacing: 6,
