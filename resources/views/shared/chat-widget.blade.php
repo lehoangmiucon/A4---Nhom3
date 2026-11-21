@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="{{ url('/shared/css/chat-widget.css?v=20261121-widget1') }}">
+<link rel="stylesheet" href="{{ url('/shared/css/chat-widget.css?v=20261121-widget2') }}">
 <div class="chat-widget" id="helpdesk-chat-widget">
     <button class="chat-widget-launcher" type="button" data-open-chat-widget aria-label="Mở khung tin nhắn">
         <i class="fa-solid fa-comments" aria-hidden="true"></i><span>Tin nhắn</span>
@@ -35,10 +35,10 @@
                     </header>
                     <div class="chat-ticket-context" id="chat-ticket-context" hidden></div>
                     <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
-                    <form class="chat-composer" id="chat-composer"><textarea id="chat-message-input" rows="1" maxlength="5000" placeholder="Nhập tin nhắn..." required></textarea><button type="submit" id="chat-send" aria-label="Gửi tin nhắn"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button></form>
-                    <p class="chat-notice" id="chat-notice" role="status" hidden></p>
+                    <form class="chat-composer" id="chat-composer"><textarea id="chat-message-input" rows="1" maxlength="5000" placeholder="Nhập tin nhắn..." aria-label="Tin nhắn" required></textarea><button type="submit" id="chat-send">Gửi</button></form>
                 </div>
             </section>
+            <p class="chat-notice" id="chat-notice" aria-live="polite" aria-atomic="true" hidden></p>
         </section>
     </section>
 </div>
