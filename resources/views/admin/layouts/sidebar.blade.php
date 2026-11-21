@@ -50,6 +50,9 @@
         <a class="nav-link {{ $isCurrent(['pages/reports']) ? 'active' : '' }}" href="{{ url('/admin/pages/reports') }}">
             <i class="fa-solid fa-chart-line nav-icon-fa" aria-hidden="true"></i><span>Báo cáo</span>
         </a>
+        <a class="nav-link {{ request()->is('messages') ? 'active' : '' }}" href="#chat-widget-window" data-open-chat-widget aria-controls="chat-widget-window">
+            <i class="fa-solid fa-comments nav-icon-fa" aria-hidden="true"></i><span>Tin nhắn</span>
+        </a>
         <a class="nav-link {{ $isCurrent(['pages/notifications']) ? 'active' : '' }}" href="{{ url('/admin/pages/notifications') }}">
             <i class="fa-solid fa-bell nav-icon-fa" aria-hidden="true"></i><span>Thông báo</span>
         </a>

@@ -1000,3 +1000,5 @@ a {
 }
 .otp-expiry{margin:0;color:#176fa6;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
 .otp-expiry.otp-expired{color:#c62828}
+.auth-remember{display:flex;align-items:center;gap:9px;margin:5px 0 16px;color:#60758b;font-size:13px;cursor:pointer}
+.auth-remember input{width:16px;height:16px;margin:0;accent-color:#1686df}

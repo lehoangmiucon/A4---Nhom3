@@ -27,6 +27,14 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10
 Route::get('/login', fn () => redirect(url('/auth/login')))->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
 Route::middleware(['auth', 'account.active'])->group(function () {
+    Route::get('/messages', function (Request $request) {
+        $dashboard = match ($request->user()->role) {
+            'admin' => '/admin/index',
+            'staff' => '/staff/index',
+            default => '/customer/index',
+        };
+        return redirect(url($dashboard).'?open_chat=1');
+    })->name('messages');
     Route::post('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
     Route::post('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
 });

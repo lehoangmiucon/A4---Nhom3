@@ -7,6 +7,7 @@
         <a class="{{ in_array($pagePath ?? '', ['index', 'ticket-detail'], true) ? 'current' : '' }}" href="index">Công việc</a>
         <a class="{{ ($pagePath ?? '') === 'schedule' ? 'current' : '' }}" href="schedule">Lịch của tôi</a>
         <a href="{{ url('/customer/tickets') }}">Phiếu đã gửi</a>
+        <a class="{{ request()->is('messages') ? 'current' : '' }}" href="#chat-widget-window" data-open-chat-widget aria-controls="chat-widget-window">Tin nhắn</a>
         <a href="{{ url('/customer/portal') }}">Gửi sự cố</a>
         <a class="{{ ($pagePath ?? '') === 'notifications' ? 'current' : '' }}" href="notifications">Thông báo
             @if(($unreadNotificationCount ?? 0) > 0)<span class="role-nav-notification-badge" aria-label="{{ $unreadNotificationCount }} unread notifications">{{ min($unreadNotificationCount, 99) }}{{ $unreadNotificationCount > 99 ? '+' : '' }}</span>
@@ -32,6 +33,7 @@
         </form>
     </section>
 </header>
+@include('shared.chat-widget')
 <script src="{{ url('/shared/js/logout.js?v=20261106-csrf1') }}" defer></script>
 <script src="{{ url('/shared/js/page-feedback.js?v=20261111-feedback-top1') }}" defer></script>
 <script src="{{ url('/admin/assets/js/native-selects.js?v=20261111-categorymenu2') }}" defer></script>

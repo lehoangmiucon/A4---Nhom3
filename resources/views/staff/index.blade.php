@@ -9,7 +9,7 @@
     <title>Công việc kỹ thuật · Helpdesk</title>
     <link rel="stylesheet" href="assets/css/staff.css?v=20261106-cleanup1">
     <link rel="stylesheet" href="../admin/assets/css/ticket-status.css?v=20261104-status1">
-    <link rel="stylesheet" href="assets/css/dashboard-refresh.css?v=20261111-categoryfilter1">
+    <link rel="stylesheet" href="assets/css/dashboard-refresh.css?v=20261121-ajax1">
     <link rel="stylesheet" href="../admin/assets/css/role-refresh.css?v=20261110-pagination1">
     <link rel="stylesheet" href="{{ url('/shared/css/ticket-category.css?v=20261111-color1') }}">
 </head>
@@ -63,7 +63,7 @@
                             $nextSchedule = $ticket->schedules->first();
                             $ticketFilter = in_array($ticket->status, ['new', 'reopened', 'assigned'], true) ? 'assigned' : (in_array($ticket->status, ['resolved', 'closed'], true) ? 'completed' : $ticket->status);
                         @endphp
-                        <article class="staff-ticket-item" data-ticket-status="{{ $ticketFilter }}" data-ticket-category="{{ $ticket->category_id ?? '' }}" style="--category-color: {{ $categoryColor }}">
+                        <article class="staff-ticket-item" data-ticket-id="{{ $ticket->id }}" data-ticket-status="{{ $ticketFilter }}" data-ticket-category="{{ $ticket->category_id ?? '' }}" style="--category-color: {{ $categoryColor }}">
                             <div class="staff-ticket-item-top">
                                 <a class="staff-ticket-number" href="ticket-detail?ticket={{ $ticket->id }}">{{ $ticket->ticket_number }}</a>
                                 <span class="role-badge ticket-status ticket-status-{{ str_replace('_', '-', $ticket->status) }}">{{ $statusLabels[$ticket->status] ?? $ticket->status }}</span>
@@ -85,7 +85,7 @@
                 </div>
             </section>
 
-            <aside class="role-card staff-calendar-panel">
+            <aside class="role-card staff-calendar-panel" id="staff-calendar-panel" aria-live="polite">
                 <div class="staff-panel-heading">
                     <div><span class="role-kicker">LỊCH ĐIỀU PHỐI</span><h2>{{ $calendarPeriod === 'week' ? 'Lịch tuần' : 'Lịch tháng' }}</h2></div>
                     <a class="staff-today-link" href="{{ url('/staff/index') }}?{{ http_build_query(['period' => $calendarPeriod, 'day' => today()->format('Y-m-d'), 'month' => today()->format('Y-m')]) }}"><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> Hôm nay</a>
@@ -151,11 +151,14 @@
 (function () {
     var cards = Array.from(document.querySelectorAll('.staff-ticket-item'));
     var list = document.getElementById('staff-ticket-list');
-    if (!list || !cards.length) return;
+    if (!list) return;
     var pageSize = 15;
     var page = 1;
     var filter = 'all';
+    var serverIds = null;
+    var requestSequence = 0;
     var categoryFilter = document.getElementById('staff-category-filter');
+    var listError = document.getElementById('staff-list-error');
     var nav = document.createElement('nav');
     nav.className = 'ticket-pagination staff-ticket-pagination';
     nav.setAttribute('aria-label', 'Phân trang phiếu kỹ thuật');
@@ -165,7 +168,8 @@
         var selectedCategory = categoryFilter ? categoryFilter.value : '';
         var matching = cards.filter(function (card) {
             return (filter === 'all' || card.dataset.ticketStatus === filter)
-                && (!selectedCategory || card.dataset.ticketCategory === selectedCategory);
+                && (!selectedCategory || card.dataset.ticketCategory === selectedCategory)
+                && (!serverIds || serverIds.has(String(card.dataset.ticketId)));
         });
         var pages = Math.max(1, Math.ceil(matching.length / pageSize));
         page = Math.min(page, pages);
@@ -189,6 +193,35 @@
         for (var number = Math.max(1, page - 2); number <= Math.min(pages, page + 2); number++) button(String(number), number, false, number === page);
         button('›', page + 1, page === pages, false);
     }
+    async function loadFilters() {
+        var sequence = ++requestSequence;
+        var params = new URLSearchParams({ filter: filter });
+        if (categoryFilter && categoryFilter.value) params.set('category_id', categoryFilter.value);
+        var appUrl = new URL(window.HELPDESK_CONFIG?.appUrl || '/', window.location.origin);
+        var apiBase = (appUrl.pathname.replace(/\/$/, '') + (window.HELPDESK_CONFIG?.apiBase || '/api')).replace(/\/$/, '');
+        list.setAttribute('aria-busy', 'true');
+        if (listError) listError.hidden = true;
+        try {
+            var response = await fetch(apiBase + '/staff/tickets/filter?' + params.toString(), {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            var payload = await response.json();
+            if (!response.ok) throw new Error(payload.message || 'Không thể lọc danh sách phiếu.');
+            if (sequence !== requestSequence) return;
+            serverIds = new Set((payload.data?.ids || []).map(String));
+            page = 1;
+            render();
+        } catch (error) {
+            if (sequence !== requestSequence) return;
+            if (listError) {
+                listError.textContent = error.message || 'Không thể lọc danh sách phiếu.';
+                listError.hidden = false;
+            }
+        } finally {
+            if (sequence === requestSequence) list.removeAttribute('aria-busy');
+        }
+    }
     document.querySelectorAll('[data-staff-filter]').forEach(function (tab) {
         tab.addEventListener('click', function () {
             filter = tab.dataset.staffFilter;
@@ -198,12 +231,13 @@
                 item.classList.toggle('is-active', active);
                 item.setAttribute('aria-selected', active ? 'true' : 'false');
             });
-            render();
+            loadFilters();
         });
     });
-    if (categoryFilter) categoryFilter.addEventListener('change', function () { page = 1; render(); });
-    render();
+    if (categoryFilter) categoryFilter.addEventListener('change', function () { page = 1; loadFilters(); });
+    loadFilters();
 })();
 </script>
+<script src="assets/js/staff-dashboard-ajax.js?v=20261121-calendar-ajax1"></script>
 </body>
 </html>

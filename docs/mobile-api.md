@@ -64,6 +64,7 @@ Lịch tuần/tháng lấy qua endpoint lịch với from, to.
 | GET | /buildings | Tòa nhà kèm phòng cho tài khoản đăng nhập |
 | POST | /tickets | Tạo phiếu với attachments[] |
 | GET | /tickets | Danh sách phân trang tự giới hạn theo quyền |
+| GET | /customer/tickets | Phiếu do tài khoản hiện tại đã báo (bao gồm staff); hỗ trợ search/q, status, category_id, per_page |
 | GET | /tickets/{id} | Chi tiết, ảnh, lịch, lịch sử; admin có eligible_staff phù hợp danh mục |
 | PATCH / POST | /tickets/{id} | Người báo sửa phiếu còn trạng thái new |
 | GET | /tickets/{id}/logs | Lịch sử xử lý |

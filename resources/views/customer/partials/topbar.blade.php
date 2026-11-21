@@ -10,6 +10,7 @@
         @endif
         <a class="{{ ($pagePath ?? '') === 'index' ? 'current' : '' }}" href="{{ url('/customer/index') }}">Tổng quan</a>
         <a class="{{ in_array($pagePath ?? '', ['tickets', 'ticket-detail'], true) ? 'current' : '' }}" href="{{ url('/customer/tickets') }}">Phiếu của tôi</a>
+        <a class="{{ request()->is('messages') ? 'current' : '' }}" href="#chat-widget-window" data-open-chat-widget aria-controls="chat-widget-window">Tin nhắn</a>
         <a class="{{ ($pagePath ?? '') === 'notifications' ? 'current' : '' }}" href="{{ url('/customer/notifications') }}">Thông báo
             @if(($unreadNotificationCount ?? 0) > 0)
                 <span class="customer-notification-badge" aria-label="{{ $unreadNotificationCount }} unread notifications">{{ min($unreadNotificationCount, 99) }}{{ $unreadNotificationCount > 99 ? '+' : '' }}</span>
@@ -35,6 +36,7 @@
         </section>
     </div>
 </header>
+@include('shared.chat-widget')
 <script src="{{ url('/shared/js/logout.js?v=20261106-csrf1') }}" defer></script>
 <script src="{{ url('/shared/js/page-feedback.js?v=20261111-feedback-top1') }}" defer></script>
 <script src="{{ url('/admin/assets/js/native-selects.js?v=20261111-categorymenu2') }}" defer></script>

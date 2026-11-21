@@ -12,6 +12,7 @@ use App\Models\TicketSchedule;
 use App\Models\User;
 use App\Notifications\TicketActivity;
 use App\Services\ImageStorage;
+use App\Services\ChatConversationService;
 use App\Support\PeriodRange;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -132,6 +133,44 @@ class TicketController extends Controller
         return response()->json($query->paginate($request->integer('per_page', 15))->withQueryString());
     }
 
+    /** Return tickets reported by the signed-in user, including staff reports. */
+    public function reportedByMe(Request $request): JsonResponse
+    {
+        if (! $request->filled('search') && $request->has('q')) {
+            $request->merge(['search' => $request->input('q')]);
+        }
+
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:200'],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'status' => ['nullable', Rule::in(['new', 'assigned', 'in_progress', 'resolved', 'closed', 'reopened'])],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $query = Ticket::with(['room.building:id,code,name', 'assignee:id,name', 'category:id,name,color'])
+            ->where('reporter_id', $request->user()->id)
+            ->when($filters['category_id'] ?? null, fn (Builder $tickets, $categoryId) => $tickets->where('category_id', $categoryId))
+            ->when($filters['status'] ?? null, fn (Builder $tickets, $status) => $tickets->where('status', $status))
+            ->when($filters['search'] ?? null, function (Builder $tickets, $search) {
+                $tickets->where(function (Builder $matches) use ($search) {
+                    $matches->where('ticket_number', 'like', "%{$search}%")
+                        ->orWhere('title', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('room_label', 'like', "%{$search}%")
+                        ->orWhere('building_label', 'like', "%{$search}%")
+                        ->orWhere('equipment_label', 'like', "%{$search}%")
+                        ->orWhereHas('room', fn (Builder $room) => $room
+                            ->where('name', 'like', "%{$search}%")
+                            ->orWhere('code', 'like', "%{$search}%"))
+                        ->orWhereHas('room.building', fn (Builder $building) => $building->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('category', fn (Builder $category) => $category->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->latest('updated_at')->orderByDesc('id');
+
+        return response()->json($query->paginate($filters['per_page'] ?? 15)->withQueryString());
+    }
+
     public function filterIncidents(Request $request): JsonResponse
     {
         $ids = $this->filteredTickets($request, Ticket::query())->latest('updated_at')->orderByDesc('id')->pluck('id');
@@ -210,6 +249,28 @@ class TicketController extends Controller
         if (!empty($filters['category'])) $query->whereHas('ticket', fn($ticket) => $ticket->where('category_id', $filters['category']));
         if (!empty($filters['status'])) $query->whereHas('ticket', fn($ticket) => $ticket->where('status', $filters['status']));
         $ids = $query->pluck('id');
+        return response()->json(['data' => ['ids' => $ids, 'count' => $ids->count()]]);
+    }
+
+    public function filterStaffTickets(Request $request): JsonResponse
+    {
+        $filters = $request->validate([
+            'filter' => ['required', Rule::in(['all', 'assigned', 'in_progress', 'completed'])],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+        ]);
+        $query = Ticket::query();
+        $this->scopeTickets($query, $request->user());
+        if (!empty($filters['category_id'])) {
+            $query->where('category_id', $filters['category_id']);
+        }
+        match ($filters['filter']) {
+            'assigned' => $query->whereIn('status', ['new', 'assigned', 'reopened']),
+            'in_progress' => $query->where('status', 'in_progress'),
+            'completed' => $query->whereIn('status', ['resolved', 'closed']),
+            default => null,
+        };
+
+        $ids = $query->orderByDesc('updated_at')->orderByDesc('id')->pluck('id');
         return response()->json(['data' => ['ids' => $ids, 'count' => $ids->count()]]);
     }
 
@@ -385,6 +446,11 @@ class TicketController extends Controller
                     'note' => $data['note'] ?? null,
                 ])->save();
             }
+            app(ChatConversationService::class)->syncTicketAssignment(
+                $ticket,
+                $request->user(),
+                User::findOrFail($data['staff_id']),
+            );
         });
         $payload = ['ticket_id' => $ticket->id, 'ticket_number' => $ticket->ticket_number, 'title' => $ticket->title, 'status' => 'assigned', 'message' => 'Bạn được phân công xử lý phiếu.'];
         Notification::send(User::whereKey($data['staff_id'])->get(), new TicketActivity([...$payload, 'message' => empty($data['scheduled_at']) ? 'Bạn được phân công xử lý phiếu.' : 'Bạn được phân công và có lịch xử lý mới.']));

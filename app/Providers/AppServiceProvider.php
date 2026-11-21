@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\ChatAssistant;
+use App\Services\UnavailableChatAssistant;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +13,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(ChatAssistant::class, fn () => app(config(
+            'chat.assistant',
+            UnavailableChatAssistant::class,
+        )));
     }
 
     /**

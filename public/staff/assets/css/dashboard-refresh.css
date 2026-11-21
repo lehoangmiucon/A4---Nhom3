@@ -1001,3 +1001,4 @@
         min-height: 58px;
     }
 }
+.staff-calendar-panel[aria-busy="true"],#staff-ticket-list[aria-busy="true"]{opacity:.68;pointer-events:none;transition:opacity .16s ease}

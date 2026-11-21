@@ -39,6 +39,7 @@
         </main>
     </div>
     <label class="nav-scrim" for="nav-toggle" aria-label="Đóng menu"></label>
+    @include('shared.chat-widget')
     @yield('scripts')
     <script src="{{ url('/admin/assets/js/image-lightbox.js?v=20261104-lightbox1') }}"></script>
     <script src="{{ url('/admin/assets/js/period-select.js?v=20261103-period-menu2') }}"></script>

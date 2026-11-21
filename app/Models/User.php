@@ -10,6 +10,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\Conversation;
 
 class User extends Authenticatable
 {
@@ -78,5 +79,12 @@ class User extends Authenticatable
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'staff_categories', 'staff_id', 'category_id')->withTimestamps();
+    }
+
+    public function conversations(): BelongsToMany
+    {
+        return $this->belongsToMany(Conversation::class)
+            ->withPivot('last_read_at')
+            ->withTimestamps();
     }
 }

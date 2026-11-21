@@ -13,7 +13,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Đăng nhập · Helpdesk</title>
-    <link rel="stylesheet" href="assets/css/auth.css?v=20261110-password-eye1">
+    <link rel="stylesheet" href="assets/css/auth.css?v=20261121-remember1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" crossorigin="anonymous">
 </head>
 
@@ -46,7 +46,12 @@
                             <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required>
                             <button class="password-toggle" type="button" data-password-toggle aria-controls="password" aria-label="Hiện mật khẩu" aria-pressed="false" title="Hiện mật khẩu"><i class="fa-solid fa-eye" aria-hidden="true"></i></button>
                         </div>
-                    </div><button class="role-button" type="submit">Đăng nhập</button>
+                    </div>
+                    <label class="auth-remember" for="remember">
+                        <input id="remember" name="remember" type="checkbox" value="1">
+                        <span>Ghi nhớ đăng nhập</span>
+                    </label>
+                    <button class="role-button" type="submit">Đăng nhập</button>
                     <div class="role-form-note">Sau khi xác thực, hệ thống mở khu vực phù hợp với vai trò đã được cấp cho tài khoản.</div>
                     <p class="api-feedback" data-api-feedback role="status" aria-live="polite" hidden></p>
                 </form>

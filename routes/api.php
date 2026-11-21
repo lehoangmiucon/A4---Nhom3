@@ -11,6 +11,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ApiDashboardController;
 use App\Http\Controllers\ApiDirectoryController;
 use App\Http\Controllers\ApiScheduleController;
+use App\Http\Controllers\ChatController;
 use Illuminate\Support\Facades\Route;
 
 // Sanctum accepts stateful website sessions and Bearer tokens from mobile clients.
@@ -27,6 +28,13 @@ Route::get('/categories', [CategoryController::class, 'options']);
 Route::post('/tickets', [TicketController::class, 'store'])->middleware(['auth:sanctum', 'account.active']);
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::get('/chat/conversations', [ChatController::class, 'index']);
+    Route::get('/chat/contacts', [ChatController::class, 'contacts'])->middleware('throttle:60,1');
+    Route::post('/chat/conversations', [ChatController::class, 'startDirect'])->middleware('throttle:30,1');
+    Route::post('/chat/assistant', [ChatController::class, 'startAssistant']);
+    Route::get('/chat/conversations/{conversation}/messages', [ChatController::class, 'messages'])->whereNumber('conversation');
+    Route::post('/chat/conversations/{conversation}/messages', [ChatController::class, 'sendMessage'])->whereNumber('conversation')->middleware('throttle:60,1');
+
     Route::get('/me', [AccountController::class, 'profile']);
     Route::get('/account/profile', [AccountController::class, 'profile']);
     Route::patch('/account/profile', [AccountController::class, 'updateProfile']);
@@ -91,6 +99,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
 
     Route::prefix('staff')->middleware('role:admin,staff')->group(function () {
         Route::get('/dashboard', [ApiDashboardController::class, 'staff']);
+        Route::get('/tickets/filter', [TicketController::class, 'filterStaffTickets']);
         Route::get('/tickets', [TicketController::class, 'index']);
         Route::get('/tickets/{ticket}', [TicketController::class, 'show']);
         Route::get('/schedules', [ApiScheduleController::class, 'index']);
@@ -102,5 +111,6 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
 
     Route::prefix('customer')->middleware('role:admin,staff,student,teacher')->group(function () {
         Route::get('/dashboard', [ApiDashboardController::class, 'customer']);
+        Route::get('/tickets', [TicketController::class, 'reportedByMe']);
     });
 });
