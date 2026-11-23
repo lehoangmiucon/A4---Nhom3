@@ -456,7 +456,10 @@ class TicketController extends Controller
         Notification::send(User::whereKey($data['staff_id'])->get(), new TicketActivity([...$payload, 'message' => empty($data['scheduled_at']) ? 'Bạn được phân công xử lý phiếu.' : 'Bạn được phân công và có lịch xử lý mới.']));
         Notification::send(User::whereKey($ticket->reporter_id)->get(), new TicketActivity([...$payload, 'message' => 'Quản lý đã tiếp nhận và phân công phiếu của bạn.']));
         ActivityLog::record($request, 'ticket.assigned', $ticket, 'Assigned ticket to staff.', [
+            'from_staff_id' => $previousStaffId,
             'staff_id' => $data['staff_id'],
+            'from_status' => $oldStatus,
+            'to_status' => 'assigned',
             'scheduled_at' => $data['scheduled_at'] ?? null,
         ]);
 

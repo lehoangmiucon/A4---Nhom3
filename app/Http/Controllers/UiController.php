@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Building;
+use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Room;
 use App\Models\Ticket;
@@ -65,6 +66,9 @@ class UiController extends Controller
         if ($section === 'admin' && $request->user()) {
             $recentNotifications = $request->user()->notifications()->latest()->limit(100)->get();
             $data['notificationPreviewGroups'] = $this->groupNotifications($recentNotifications)->take(5);
+        }
+        if ($section === 'admin' && $path === 'pages/activity-logs') {
+            $data['activityLogs'] = ActivityLog::query()->with('user:id,name,email,role')->latest('id')->paginate(30);
         }
         if ($section === 'admin' && $path === 'index') {
             $period = PeriodRange::normalize($request->query('period', 'month'));

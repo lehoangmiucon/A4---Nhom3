@@ -19,10 +19,15 @@
     const input = document.getElementById('chat-message-input');
     const send = document.getElementById('chat-send');
     const notice = document.getElementById('chat-notice');
+    const emptyComposer = document.getElementById('chat-empty-composer');
+    const emptyInput = document.getElementById('chat-empty-message-input');
+    const emptySend = document.getElementById('chat-empty-send');
+    const emptyNotice = document.getElementById('chat-empty-notice');
     let conversations = [];
     let current = null;
     let lastId = 0;
     let pollTimer = null;
+    let conversationPollTimer = null;
     let searchTimer = null;
 
     const request = async (path, options = {}) => {
@@ -47,24 +52,37 @@
     const showNotice = (message) => {
         notice.textContent = message;
         notice.hidden = !message;
+        emptyNotice.textContent = message;
+        emptyNotice.hidden = !message;
     };
 
     const conversationName = (conversation) => conversation.title || 'Cuộc trò chuyện';
 
     const renderConversations = () => {
-        count.textContent = conversations.length;
+        const query = !config.canSearchContacts ? (search?.value || '').trim().toLocaleLowerCase('vi') : '';
+        const visibleConversations = query ? conversations.filter((conversation) => {
+            const searchable = [conversation.title, conversation.last_message?.body, conversation.ticket?.title,
+                conversation.ticket?.ticket_number, ...(conversation.participants || []).map((person) => `${person.name || ''} ${person.email || ''}`)]
+                .filter(Boolean).join(' ').toLocaleLowerCase('vi');
+            return searchable.includes(query);
+        }) : conversations;
+        const unreadTotal = visibleConversations.reduce((total, conversation) => total + Number(conversation.unread_count || 0), 0);
+        count.textContent = unreadTotal > 99 ? '99+' : String(unreadTotal);
+        count.hidden = unreadTotal === 0;
+        count.setAttribute('aria-label', `${unreadTotal} tin nhắn chưa đọc`);
         list.replaceChildren();
-        if (!conversations.length) {
+        if (!visibleConversations.length) {
             const hint = document.createElement('p');
             hint.className = 'chat-empty-list';
-            hint.textContent = 'Chưa có tin nhắn. Tìm người ở phía trên để bắt đầu.';
+            hint.textContent = query ? 'Không tìm thấy cuộc trò chuyện phù hợp.' : 'Chưa có tin nhắn.';
             list.append(hint);
             return;
         }
-        conversations.forEach((conversation) => {
+        visibleConversations.forEach((conversation) => {
             const button = document.createElement('button');
             button.type = 'button';
-            button.className = `chat-conversation${current?.id === conversation.id ? ' active' : ''}`;
+            const unreadCount = Number(conversation.unread_count || 0);
+            button.className = `chat-conversation${current?.id === conversation.id ? ' active' : ''}${unreadCount > 0 ? ' unread' : ''}`;
             const face = document.createElement('span');
             face.className = `chat-avatar${conversation.type === 'assistant' ? ' assistant' : ''}`;
             face.textContent = conversation.type === 'assistant' ? '✦' : conversationName(conversation).slice(0, 1).toUpperCase();
@@ -76,6 +94,13 @@
             preview.textContent = conversation.last_message?.body || conversation.ticket?.title || 'Bắt đầu trò chuyện';
             copy.append(name, preview);
             button.append(face, copy);
+            if (unreadCount > 0) {
+                const unread = document.createElement('span');
+                unread.className = 'chat-unread-count';
+                unread.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                unread.setAttribute('aria-label', `${unreadCount} tin nhắn chưa đọc`);
+                button.append(unread);
+            }
             button.addEventListener('click', () => openConversation(conversation));
             list.append(button);
         });
@@ -129,7 +154,8 @@
         if (pollTimer) window.clearInterval(pollTimer);
         try {
             await refreshMessages(true);
-            pollTimer = window.setInterval(() => refreshMessages().catch(() => {}), 4000);
+            pollTimer = window.setInterval(() => refreshMessages().catch(() => {}), 2000);
+            await refreshConversations().catch(() => {});
         } catch (error) {
             showNotice(error.message);
         }
@@ -148,26 +174,21 @@
     const openWidget = async () => {
         if (!widget) return;
         widget.hidden = false;
-        if (current) {
-            await refreshMessages(true).catch((error) => showNotice(error.message));
-            if (pollTimer) window.clearInterval(pollTimer);
-            pollTimer = window.setInterval(() => refreshMessages().catch(() => {}), 4000);
-        } else {
-            frame.setAttribute('aria-busy', 'true');
-            try {
-                await refreshConversations();
-                if (conversations.length) {
-                    await openConversation(conversations[0]);
-                } else {
-                    const payload = await request('/assistant', { method: 'POST' });
-                    await refreshConversations();
-                    await openConversation(payload.data);
-                }
-            } catch (error) {
-                showNotice(error.message);
-            } finally {
-                frame.removeAttribute('aria-busy');
-            }
+        frame.classList.remove('thread-open');
+        if (pollTimer) window.clearInterval(pollTimer);
+        pollTimer = null;
+        frame.setAttribute('aria-busy', 'true');
+        try {
+            await refreshConversations();
+            if (conversationPollTimer) window.clearInterval(conversationPollTimer);
+            conversationPollTimer = window.setInterval(() => {
+                if (!widget?.hidden && !document.hidden) refreshConversations().catch(() => {});
+            }, 2500);
+            showNotice('');
+        } catch (error) {
+            showNotice(error.message);
+        } finally {
+            frame.removeAttribute('aria-busy');
         }
     };
 
@@ -175,6 +196,8 @@
         if (widget) widget.hidden = true;
         if (pollTimer) window.clearInterval(pollTimer);
         pollTimer = null;
+        if (conversationPollTimer) window.clearInterval(conversationPollTimer);
+        conversationPollTimer = null;
     };
 
     const renderContacts = (rows) => {
@@ -221,7 +244,13 @@
         contacts.hidden = false;
     };
 
-    search.addEventListener('input', () => {
+    search?.addEventListener('input', () => {
+        if (!config.canSearchContacts) {
+            contacts?.replaceChildren();
+            if (contacts) contacts.hidden = true;
+            renderConversations();
+            return;
+        }
         window.clearTimeout(searchTimer);
         const value = search.value.trim();
         if (value.length < 2) { contacts.hidden = true; return; }
@@ -242,6 +271,7 @@
     });
     document.getElementById('chat-refresh').addEventListener('click', () => refreshConversations().catch((error) => showNotice(error.message)));
     document.getElementById('chat-mobile-back').addEventListener('click', () => frame.classList.remove('thread-open'));
+    document.getElementById('chat-empty-browse').addEventListener('click', () => frame.classList.remove('thread-open'));
     document.querySelectorAll('[data-open-chat-widget]').forEach((button) => {
         button.addEventListener('click', (event) => {
             event.preventDefault();
@@ -253,6 +283,37 @@
         if (event.key === 'Escape' && widget && !widget.hidden) closeWidget();
     });
 
+    const postMessage = async (body) => {
+        const payload = await request(`/conversations/${current.id}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body }),
+        });
+        renderMessage(payload.data);
+        if (payload.assistant) renderMessage(payload.assistant);
+        messages.scrollTop = messages.scrollHeight;
+        await refreshConversations().catch(() => {});
+    };
+
+    emptyComposer.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const body = emptyInput.value.trim();
+        if (!body) return;
+        emptySend.disabled = true;
+        showNotice('');
+        try {
+            const payload = await request('/assistant', { method: 'POST' });
+            await openConversation(payload.data);
+            await postMessage(body);
+            emptyInput.value = '';
+            input.focus();
+        } catch (error) {
+            showNotice(error.message);
+        } finally {
+            emptySend.disabled = false;
+        }
+    });
+
     composer.addEventListener('submit', async (event) => {
         event.preventDefault();
         const body = input.value.trim();
@@ -260,16 +321,8 @@
         send.disabled = true;
         showNotice('');
         try {
-            const payload = await request(`/conversations/${current.id}/messages`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body }),
-            });
-            renderMessage(payload.data);
-            if (payload.assistant) renderMessage(payload.assistant);
+            await postMessage(body);
             input.value = '';
-            messages.scrollTop = messages.scrollHeight;
-            await refreshConversations();
         } catch (error) {
             showNotice(error.message);
         } finally {
@@ -277,6 +330,14 @@
             input.focus();
         }
     });
+
+    const sendOnEnter = (textarea, form) => textarea?.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+        event.preventDefault();
+        form.requestSubmit();
+    });
+    sendOnEnter(emptyInput, emptyComposer);
+    sendOnEnter(input, composer);
 
     if (new URLSearchParams(window.location.search).get('open_chat') === '1') {
         openWidget();

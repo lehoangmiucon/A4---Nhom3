@@ -6,6 +6,9 @@ use App\Contracts\ChatAssistant;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
 use App\Models\User;
+use App\Services\FcmPush;
+use App\Notifications\ChatActivity;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,13 +29,21 @@ class ChatController extends Controller
             ->orderByDesc('updated_at')
             ->limit(100)
             ->get()
-            ->map(fn (Conversation $conversation) => $this->conversationData($conversation, $user));
+            ->values();
+        $unreadCounts = $this->unreadCountsFor($user, $conversations->modelKeys());
+        $conversations = $conversations
+            ->map(fn (Conversation $conversation) => $this->conversationData(
+                $conversation,
+                $user,
+                (int) ($unreadCounts[$conversation->id] ?? 0),
+            ));
 
         return response()->json(['data' => $conversations]);
     }
 
     public function contacts(Request $request): JsonResponse
     {
+        abort_unless(in_array($request->user()->role, ['admin', 'staff'], true), 403, 'Bạn không có quyền tìm kiếm người dùng.');
         $validated = $request->validate(['q' => ['required', 'string', 'min:2', 'max:120']]);
         $query = trim($validated['q']);
         $phoneQuery = str_replace([' ', '-', '+', '(', ')'], '', $query);
@@ -60,6 +71,7 @@ class ChatController extends Controller
 
     public function startDirect(Request $request): JsonResponse
     {
+        abort_unless(in_array($request->user()->role, ['admin', 'staff'], true), 403, 'Bạn không có quyền bắt đầu cuộc trò chuyện riêng.');
         $data = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
         ]);
@@ -162,6 +174,24 @@ class ChatController extends Controller
         $conversation->touch();
         $result = ['data' => $this->messageData($message->load('sender:id,name,role'))];
 
+        if ($conversation->type !== 'assistant') {
+            $recipients = $conversation->participants()->where('users.id', '!=', $request->user()->id)->get();
+            foreach ($recipients as $recipient) {
+                Notification::send($recipient, new ChatActivity([
+                    'title' => 'Tin nhắn từ '.$request->user()->name,
+                    'message' => mb_substr($body, 0, 200),
+                    'conversation_id' => $conversation->id,
+                    'type' => 'chat',
+                ]));
+                app(FcmPush::class)->sendToUser(
+                    (int) $recipient->id,
+                    'Tin nhắn Helpdesk',
+                    $request->user()->name.': '.$body,
+                    ['type' => 'chat', 'conversation_id' => (string) $conversation->id],
+                );
+            }
+        }
+
         if ($conversation->type === 'assistant') {
             $reply = trim($assistant->reply($request->user(), $conversation, $body));
             if ($reply !== '') {
@@ -198,13 +228,14 @@ class ChatController extends Controller
         );
     }
 
-    private function conversationData(Conversation $conversation, User $user): array
+    private function conversationData(Conversation $conversation, User $user, ?int $unreadCount = null): array
     {
         $participants = $conversation->participants
             ->where('id', '!=', $user->id)
             ->values()
             ->map(fn (User $participant) => $participant->only('id', 'name', 'email', 'phone', 'role', 'avatar_url'));
         $last = $conversation->lastMessage;
+        $unreadCount ??= (int) ($this->unreadCountsFor($user, [$conversation->id])[$conversation->id] ?? 0);
 
         return [
             'id' => $conversation->id,
@@ -215,8 +246,32 @@ class ChatController extends Controller
             'participants' => $participants,
             'ticket' => $conversation->ticket?->only('id', 'ticket_number', 'title'),
             'last_message' => $last ? $this->messageData($last) : null,
+            'unread_count' => $unreadCount,
             'updated_at' => $conversation->updated_at,
         ];
+    }
+
+    private function unreadCountsFor(User $user, array $conversationIds): array
+    {
+        if ($conversationIds === []) {
+            return [];
+        }
+
+        return DB::table('chat_messages as messages')
+            ->join('conversation_user as participants', 'participants.conversation_id', '=', 'messages.conversation_id')
+            ->where('participants.user_id', $user->id)
+            ->whereIn('messages.conversation_id', $conversationIds)
+            ->where(function ($query) use ($user): void {
+                $query->whereNull('messages.user_id')->orWhere('messages.user_id', '!=', $user->id);
+            })
+            ->where(function ($query): void {
+                $query->whereNull('participants.last_read_at')
+                    ->orWhereColumn('messages.created_at', '>', 'participants.last_read_at');
+            })
+            ->groupBy('messages.conversation_id')
+            ->selectRaw('messages.conversation_id, COUNT(*) as unread_count')
+            ->pluck('unread_count', 'conversation_id')
+            ->all();
     }
 
     private function messageData(ChatMessage $message): array

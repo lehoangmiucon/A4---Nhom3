@@ -4,7 +4,7 @@
 @section('content_class', 'room-detail-page')
 
 @push('styles')
-<link rel="stylesheet" href="{{ url('/admin/assets/css/room-print.css?v=20261103-print-qr-blue1') }}">
+<link rel="stylesheet" href="{{ url('/admin/assets/css/room-print.css?v=20261123-print-qr-blue2') }}">
 @endpush
 
 @section('content')

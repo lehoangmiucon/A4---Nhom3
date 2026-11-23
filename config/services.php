@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'fcm' => [
+        'credentials' => env('FCM_CREDENTIALS_PATH'),
+        'project_id' => env('FCM_PROJECT_ID'),
+    ],
+
 ];

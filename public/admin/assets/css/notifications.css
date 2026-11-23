@@ -5,6 +5,9 @@
 .notification-group-copy{display:block;min-width:0}
 .notification-group-copy strong,.notification-group-copy small{display:block}
 .notification-group-copy strong{color:#294966;font-size:13px;line-height:1.4}
+.notification-group.is-unread .notification-group-copy strong{color:#173b5c;font-weight:800}
+.notification-group.is-unread .notification-group-copy small{color:#405a72;font-weight:600}
+.notification-group.is-unread .notification-group-copy strong::before{content:"";display:inline-block;width:7px;height:7px;margin:0 7px 1px 0;border-radius:50%;background:#1689e8;box-shadow:0 0 0 3px #e6f3ff}
 
 .notification-group-copy small{margin-top:4px;color:#70849a;font-size:11px;line-height:1.5}
 .notification-group-count{padding:5px 9px;border:1px solid #e1eaf2;border-radius:999px;background:#fff;color:#71849a;font-size:10px;font-weight:700;white-space:nowrap}

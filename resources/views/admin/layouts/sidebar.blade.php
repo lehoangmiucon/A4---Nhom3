@@ -56,6 +56,9 @@
         <a class="nav-link {{ $isCurrent(['pages/notifications']) ? 'active' : '' }}" href="{{ url('/admin/pages/notifications') }}">
             <i class="fa-solid fa-bell nav-icon-fa" aria-hidden="true"></i><span>Thông báo</span>
         </a>
+        <a class="nav-link {{ $isCurrent(['pages/activity-logs']) ? 'active' : '' }}" href="{{ url('/admin/pages/activity-logs') }}">
+            <i class="fa-solid fa-clock-rotate-left nav-icon-fa" aria-hidden="true"></i><span>Nhật ký thao tác</span>
+        </a>
         <details class="nav-group system-group" {{ $systemOpen ? 'open' : '' }}>
             <summary class="nav-link group-link">
                 <i class="fa-solid fa-gear nav-icon-fa" aria-hidden="true"></i><span>Hệ thống</span>

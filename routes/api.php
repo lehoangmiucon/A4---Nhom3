@@ -12,6 +12,8 @@ use App\Http\Controllers\ApiDashboardController;
 use App\Http\Controllers\ApiDirectoryController;
 use App\Http\Controllers\ApiScheduleController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\PushDeviceController;
+use App\Http\Controllers\ActivityLogController;
 use Illuminate\Support\Facades\Route;
 
 // Sanctum accepts stateful website sessions and Bearer tokens from mobile clients.
@@ -28,6 +30,8 @@ Route::get('/categories', [CategoryController::class, 'options']);
 Route::post('/tickets', [TicketController::class, 'store'])->middleware(['auth:sanctum', 'account.active']);
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+    Route::post('/push/devices', [PushDeviceController::class, 'store'])->middleware('throttle:20,1');
+    Route::delete('/push/devices', [PushDeviceController::class, 'destroy'])->middleware('throttle:20,1');
     Route::get('/chat/conversations', [ChatController::class, 'index']);
     Route::get('/chat/contacts', [ChatController::class, 'contacts'])->middleware('throttle:60,1');
     Route::post('/chat/conversations', [ChatController::class, 'startDirect'])->middleware('throttle:30,1');
@@ -52,6 +56,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::patch('/notifications/tickets/{ticketId}/read', [NotificationController::class, 'readTicket']);
 
     Route::prefix('admin')->middleware('role:admin')->group(function () {
+        Route::get('/activity-logs', [ActivityLogController::class, 'index']);
         Route::get('/dashboard', [ApiDashboardController::class, 'admin']);
         Route::get('/schedules', [ApiScheduleController::class, 'index']);
         Route::get('/schedules/{schedule}', [ApiScheduleController::class, 'show'])->whereNumber('schedule');

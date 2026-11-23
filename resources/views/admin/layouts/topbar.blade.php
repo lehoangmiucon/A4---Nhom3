@@ -1,27 +1,6 @@
-@php
-    $pagePath = $pagePath ?? 'index';
-    $topbarTitles = [
-        'index' => 'Tổng quan',
-        'pages/incidents' => 'Phiếu sự cố',
-        'pages/ticket-detail' => 'Chi tiết phiếu',
-        'pages/ticket-review' => 'Duyệt kết quả sửa chữa',
-        'pages/schedule' => 'Lịch phân công',
-        'pages/locations' => 'Địa điểm & thiết bị',
-        'pages/building-detail' => 'Chi tiết khu nhà',
-        'pages/room-detail' => 'Chi tiết phòng',
-        'pages/users' => 'Người báo sự cố',
-        'pages/user-detail' => 'Chi tiết sinh viên',
-        'pages/team-detail' => 'Chi tiết đội ngũ',
-        'pages/team' => 'Đội ngũ',
-        'pages/categories' => 'Danh mục lỗi',
-        'pages/reports' => 'Báo cáo',
-        'pages/notifications' => 'Thông báo',
-        'pages/account' => 'Tài khoản',
-    ];
-@endphp
 <header class="topbar">
     <label class="mobile-menu" for="nav-toggle" aria-label="Mở menu"><span></span><span></span><span></span></label>
-    <div class="breadcrumb"><strong>{{ $topbarTitles[$pagePath] ?? 'Quản trị' }}</strong></div>
+    <div class="breadcrumb"><strong>Tổng quan</strong></div>
     <div class="top-actions">
         <span class="today-label"><i class="fa-regular fa-calendar" aria-hidden="true"></i>{{ now()->format('d/m/Y') }}</span>
         <div class="notification-menu" data-notification-menu>
@@ -67,4 +46,5 @@
     </div>
 </header>
 <script src="{{ url('/shared/js/logout.js?v=20261106-csrf1') }}" defer></script>
+<script src="{{ url('/shared/js/live-notifications.js?v=20261124-sound1') }}" data-api="{{ url('/api/notifications') }}" data-notifications-page="{{ url('/admin/pages/notifications') }}" defer></script>
 <script src="{{ url('/shared/js/page-feedback.js?v=20261110-report-toast-center1') }}" defer></script>
