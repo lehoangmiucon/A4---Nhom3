@@ -1,14 +1,52 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'screens.dart';
 import 'services/api_client.dart';
 import 'services/app_state.dart';
+
+final appNavigatorKey = GlobalKey<NavigatorState>();
+final appMessengerKey = GlobalKey<ScaffoldMessengerState>();
+const notificationSoundChannel = MethodChannel(
+  'com.apphelpdesk/notification_sound',
+);
+
+void openPush(RemoteMessage message) {
+  final navigator = appNavigatorKey.currentState;
+  if (navigator == null) return;
+  navigator.push(
+    MaterialPageRoute<void>(
+      builder: (_) => message.data['type'] == 'chat'
+          ? const ChatPage()
+          : const NotificationsPage(),
+    ),
+  );
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final api = ApiClient();
   final state = AppState(api);
   await state.initialize();
+  state.push.onOpen = openPush;
+  state.push.onForeground = (message) {
+    unawaited(
+      notificationSoundChannel.invokeMethod<void>('play').catchError((_) {}),
+    );
+    state.refreshUnreadNotifications();
+    appMessengerKey.currentState?.showSnackBar(
+      SnackBar(
+        content: Text(message.notification?.title ?? 'Thông báo Helpdesk'),
+        action: SnackBarAction(
+          label: 'Xem',
+          onPressed: () => openPush(message),
+        ),
+      ),
+    );
+  };
   AppScope.current = state;
   runApp(HelpdeskApp(state: state));
 }
@@ -23,6 +61,8 @@ class HelpdeskApp extends StatelessWidget {
     return AnimatedBuilder(
       animation: state,
       builder: (context, _) => MaterialApp(
+        navigatorKey: appNavigatorKey,
+        scaffoldMessengerKey: appMessengerKey,
         title: 'Helpdesk',
         debugShowCheckedModeBanner: false,
         themeMode: state.themeMode,

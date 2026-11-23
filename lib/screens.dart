@@ -514,12 +514,16 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   final search = TextEditingController();
+  final assistantDraft = TextEditingController();
   List<Map<String, dynamic>> conversations = [];
   List<Map<String, dynamic>> contacts = [];
   bool loading = true;
   bool searching = false;
+  bool sendingDraft = false;
   String? error;
   Timer? searchTimer;
+  Timer? conversationPollTimer;
+  bool refreshingConversations = false;
 
   ApiClient get api => AppScope.stateOf(context).api;
 
@@ -527,18 +531,25 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     loadConversations();
+    conversationPollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!loading) loadConversations();
+    });
     search.addListener(onSearchChanged);
   }
 
   @override
   void dispose() {
     searchTimer?.cancel();
+    conversationPollTimer?.cancel();
     search.removeListener(onSearchChanged);
     search.dispose();
+    assistantDraft.dispose();
     super.dispose();
   }
 
   Future<void> loadConversations() async {
+    if (refreshingConversations) return;
+    refreshingConversations = true;
     try {
       final result = await api.get('/chat/conversations');
       if (!mounted) return;
@@ -553,12 +564,22 @@ class _ChatPageState extends State<ChatPage> {
         loading = false;
         error = readableError(exception);
       });
+    } finally {
+      refreshingConversations = false;
     }
   }
 
   void onSearchChanged() {
     searchTimer?.cancel();
     final value = search.text.trim();
+    final canSearchContacts = [
+      'admin',
+      'staff',
+    ].contains(AppScope.stateOf(context).user?['role']?.toString());
+    if (!canSearchContacts) {
+      setState(() => contacts = []);
+      return;
+    }
     if (value.length < 2) {
       setState(() => contacts = []);
       return;
@@ -582,31 +603,55 @@ class _ChatPageState extends State<ChatPage> {
     try {
       final result = asMap(await api.post('/chat/assistant'));
       final conversation = asMap(result['data']);
-      if (conversation.isNotEmpty && mounted) await openConversation(conversation);
+      if (conversation.isNotEmpty && mounted)
+        await openConversation(conversation);
     } catch (exception) {
       if (mounted) toast(context, readableError(exception));
+    }
+  }
+
+  Future<void> sendAssistantPrompt() async {
+    final message = assistantDraft.text.trim();
+    if (message.isEmpty || sendingDraft) return;
+    setState(() => sendingDraft = true);
+    try {
+      final result = asMap(await api.post('/chat/assistant'));
+      final conversation = asMap(result['data']);
+      if (conversation.isEmpty || !mounted) return;
+      assistantDraft.clear();
+      await openConversation(conversation, initialMessage: message);
+    } catch (exception) {
+      if (mounted) toast(context, readableError(exception));
+    } finally {
+      if (mounted) setState(() => sendingDraft = false);
     }
   }
 
   Future<void> startDirect(Map<String, dynamic> contact) async {
     try {
-      final result = asMap(await api.post(
-        '/chat/conversations',
-        body: {'user_id': contact['id']},
-      ));
+      final result = asMap(
+        await api.post('/chat/conversations', body: {'user_id': contact['id']}),
+      );
       search.clear();
       final conversation = asMap(result['data']);
-      if (conversation.isNotEmpty && mounted) await openConversation(conversation);
+      if (conversation.isNotEmpty && mounted)
+        await openConversation(conversation);
     } catch (exception) {
       if (mounted) toast(context, readableError(exception));
     }
   }
 
-  Future<void> openConversation(Map<String, dynamic> conversation) async {
+  Future<void> openConversation(
+    Map<String, dynamic> conversation, {
+    String? initialMessage,
+  }) async {
     await Navigator.push<void>(
       context,
       MaterialPageRoute<void>(
-        builder: (_) => ChatConversationPage(conversation: conversation),
+        builder: (_) => ChatConversationPage(
+          conversation: conversation,
+          initialMessage: initialMessage,
+        ),
       ),
     );
     if (mounted) loadConversations();
@@ -615,13 +660,33 @@ class _ChatPageState extends State<ChatPage> {
   String subtitle(Map<String, dynamic> conversation) {
     final ticket = asMap(conversation['ticket']);
     if (ticket.isNotEmpty) return 'Phiếu ${ticket['ticket_number'] ?? ''}';
-    return conversation['type'] == 'assistant' ? 'Trợ lý AI' : 'Trò chuyện riêng';
+    return conversation['type'] == 'assistant'
+        ? 'Trợ lý AI'
+        : 'Trò chuyện riêng';
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final searchingForContact = search.text.trim().length >= 2;
+    final canSearch = [
+      'admin',
+      'staff',
+    ].contains(AppScope.stateOf(context).user?['role']?.toString());
+    final searchQuery = search.text.trim().toLowerCase();
+    final searchingForContact = canSearch && searchQuery.length >= 2;
+    final visibleConversations = canSearch || searchQuery.isEmpty
+        ? conversations
+        : conversations.where((conversation) {
+            final ticket = asMap(conversation['ticket']);
+            final last = asMap(conversation['last_message']);
+            final text = [
+              conversation['title'],
+              last['body'],
+              ticket['title'],
+              ticket['ticket_number'],
+            ].whereType<Object>().join(' ').toLowerCase();
+            return text.contains(searchQuery);
+          }).toList();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tin nhắn'),
@@ -654,43 +719,55 @@ class _ChatPageState extends State<ChatPage> {
                         Icon(Icons.auto_awesome_rounded, color: colors.primary),
                         const SizedBox(width: 10),
                         const Expanded(child: Text('Trợ lý AI')),
-                        Icon(Icons.chevron_right_rounded, color: colors.primary),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: colors.primary,
+                        ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: search,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    hintText: 'Tìm email hoặc SĐT',
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: searching
-                        ? const Padding(
-                            padding: EdgeInsets.all(14),
-                            child: SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          )
-                        : null,
-                    isDense: true,
-                    filled: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 11),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
+                if (true) ...[
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: search,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      hintText: (canSearch
+                          ? 'Tìm email hoặc số điện thoại'
+                          : 'Tìm cuộc trò chuyện'),
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: searching
+                          ? const Padding(
+                              padding: EdgeInsets.all(14),
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            )
+                          : null,
+                      isDense: true,
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 11),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
           if (searchingForContact && contacts.isNotEmpty)
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 2, 20, 4),
-              child: Align(alignment: Alignment.centerLeft, child: Text('Kết quả')),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Kết quả'),
+              ),
             ),
           if (searchingForContact)
             Expanded(
@@ -702,7 +779,8 @@ class _ChatPageState extends State<ChatPage> {
                       separatorBuilder: (_, _) => const SizedBox(height: 2),
                       itemBuilder: (context, index) {
                         final contact = contacts[index];
-                        final name = contact['name']?.toString() ?? 'Người dùng';
+                        final name =
+                            contact['name']?.toString() ?? 'Người dùng';
                         return Card(
                           margin: EdgeInsets.zero,
                           child: ListTile(
@@ -710,15 +788,31 @@ class _ChatPageState extends State<ChatPage> {
                             visualDensity: VisualDensity.compact,
                             leading: CircleAvatar(
                               radius: 19,
-                              child: Text(name.isEmpty ? '?' : name.characters.first.toUpperCase()),
+                              child: Text(
+                                name.isEmpty
+                                    ? '?'
+                                    : name.characters.first.toUpperCase(),
+                              ),
                             ),
-                            title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                            subtitle: Text(
-                              contact['email']?.toString() ?? contact['phone']?.toString() ?? '',
+                            title: Text(
+                              name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            trailing: Text(roleLabel(contact['role']), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
+                            subtitle: Text(
+                              contact['email']?.toString() ??
+                                  contact['phone']?.toString() ??
+                                  '',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: Text(
+                              roleLabel(contact['role']),
+                              style: TextStyle(
+                                color: colors.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                             onTap: () => startDirect(contact),
                           ),
                         );
@@ -730,53 +824,176 @@ class _ChatPageState extends State<ChatPage> {
               child: RefreshIndicator(
                 onRefresh: loadConversations,
                 child: loading
-                    ? ListView(children: const [SizedBox(height: 210), Center(child: CircularProgressIndicator())])
+                    ? ListView(
+                        children: const [
+                          SizedBox(height: 210),
+                          Center(child: CircularProgressIndicator()),
+                        ],
+                      )
                     : error != null
-                        ? ListView(children: [
-                            const SizedBox(height: 90),
-                            Center(child: Text(error!, textAlign: TextAlign.center)),
-                            Center(child: TextButton.icon(onPressed: loadConversations, icon: const Icon(Icons.refresh_rounded), label: const Text('Thử lại'))),
-                          ])
-                        : conversations.isEmpty
-                            ? ListView(children: const [SizedBox(height: 120), Center(child: Icon(Icons.forum_outlined, size: 36)), SizedBox(height: 8), Center(child: Text('Chưa có tin nhắn'))])
-                            : ListView.separated(
-                                padding: const EdgeInsets.fromLTRB(12, 4, 12, 18),
-                                itemCount: conversations.length,
-                                separatorBuilder: (_, _) => const SizedBox(height: 3),
-                                itemBuilder: (context, index) {
-                                  final conversation = conversations[index];
-                                  final last = asMap(conversation['last_message']);
-                                  final title = conversation['title']?.toString() ?? 'Tin nhắn';
-                                  return Card(
-                                    margin: EdgeInsets.zero,
-                                    clipBehavior: Clip.antiAlias,
-                                    child: ListTile(
-                                      dense: true,
-                                      visualDensity: VisualDensity.compact,
-                                      leading: CircleAvatar(
-                                        radius: 20,
-                                        backgroundColor: colors.secondaryContainer,
-                                        child: Icon(
-                                          conversation['type'] == 'assistant'
-                                              ? Icons.auto_awesome_rounded
-                                              : conversation['type'] == 'ticket'
-                                                  ? Icons.confirmation_number_outlined
-                                                  : Icons.person_outline_rounded,
-                                          size: 20,
+                    ? ListView(
+                        children: [
+                          const SizedBox(height: 90),
+                          Center(
+                            child: Text(error!, textAlign: TextAlign.center),
+                          ),
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: loadConversations,
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: const Text('Thử lại'),
+                            ),
+                          ),
+                        ],
+                      )
+                    : conversations.isEmpty
+                    ? ListView(
+                        children: const [
+                          SizedBox(height: 120),
+                          Center(child: Icon(Icons.forum_outlined, size: 36)),
+                          SizedBox(height: 8),
+                          Center(child: Text('Chưa có tin nhắn')),
+                        ],
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 18),
+                        itemCount: visibleConversations.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 3),
+                        itemBuilder: (context, index) {
+                          final conversation = visibleConversations[index];
+                          final last = asMap(conversation['last_message']);
+                          final unreadCount =
+                              int.tryParse(
+                                conversation['unread_count']?.toString() ?? '',
+                              ) ??
+                              0;
+                          final title =
+                              conversation['title']?.toString() ?? 'Tin nhắn';
+                          return Card(
+                            margin: EdgeInsets.zero,
+                            clipBehavior: Clip.antiAlias,
+                            color: unreadCount > 0
+                                ? colors.errorContainer.withValues(alpha: .18)
+                                : colors.surface,
+                            child: ListTile(
+                              dense: true,
+                              visualDensity: VisualDensity.compact,
+                              leading: CircleAvatar(
+                                radius: 20,
+                                backgroundColor: colors.secondaryContainer,
+                                child: Icon(
+                                  conversation['type'] == 'assistant'
+                                      ? Icons.auto_awesome_rounded
+                                      : conversation['type'] == 'ticket'
+                                      ? Icons.confirmation_number_outlined
+                                      : Icons.person_outline_rounded,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: unreadCount > 0
+                                      ? FontWeight.w800
+                                      : FontWeight.w500,
+                                ),
+                              ),
+                              subtitle: Text(
+                                last['body']?.toString() ??
+                                    subtitle(conversation),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: unreadCount > 0
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                  color: unreadCount > 0
+                                      ? colors.onSurface
+                                      : colors.onSurfaceVariant,
+                                ),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (unreadCount > 0)
+                                    Container(
+                                      constraints: const BoxConstraints(
+                                        minWidth: 22,
+                                        minHeight: 22,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                      ),
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: colors.error,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        unreadCount > 99
+                                            ? '99+'
+                                            : '$unreadCount',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
-                                      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                      subtitle: Text(
-                                        last['body']?.toString() ?? subtitle(conversation),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-                                      onTap: () => openConversation(conversation),
                                     ),
-                                  );
-                                },
+                                  const SizedBox(width: 5),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    size: 20,
+                                  ),
+                                ],
                               ),
+                              onTap: () => openConversation(conversation),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ),
+          if (!searchingForContact)
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: assistantDraft,
+                        minLines: 1,
+                        maxLines: 3,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => sendAssistantPrompt(),
+                        decoration: InputDecoration(
+                          hintText: 'Nhắn Trợ lý Helpdesk...',
+                          prefixIcon: const Icon(Icons.auto_awesome_rounded),
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      tooltip: 'Gửi tin nhắn',
+                      onPressed: sendingDraft ? null : sendAssistantPrompt,
+                      icon: sendingDraft
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.send_rounded),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -786,8 +1003,13 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 class ChatConversationPage extends StatefulWidget {
-  const ChatConversationPage({super.key, required this.conversation});
+  const ChatConversationPage({
+    super.key,
+    required this.conversation,
+    this.initialMessage,
+  });
   final Map<String, dynamic> conversation;
+  final String? initialMessage;
 
   @override
   State<ChatConversationPage> createState() => _ChatConversationPageState();
@@ -809,8 +1031,15 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   @override
   void initState() {
     super.initState();
-    fetchMessages();
-    pollTimer = Timer.periodic(const Duration(seconds: 4), (_) => fetchMessages());
+    fetchMessages().then((_) {
+      if (!mounted || widget.initialMessage == null) return;
+      input.text = widget.initialMessage!;
+      send();
+    });
+    pollTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => fetchMessages(),
+    );
   }
 
   @override
@@ -855,10 +1084,12 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     setState(() => sending = true);
     input.clear();
     try {
-      final result = asMap(await api.post(
-        '/chat/conversations/${widget.conversation['id']}/messages',
-        body: {'body': body},
-      ));
+      final result = asMap(
+        await api.post(
+          '/chat/conversations/${widget.conversation['id']}/messages',
+          body: {'body': body},
+        ),
+      );
       final sent = asMap(result['data']);
       final assistant = asMap(result['assistant']);
       if (mounted) {
@@ -896,6 +1127,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
       if (date == null) return '';
       return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
     }
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -916,76 +1148,80 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
             child: loading
                 ? const Center(child: CircularProgressIndicator())
                 : messages.isEmpty
-                    ? const Center(child: Text('Gửi tin nhắn đầu tiên'))
-                    : ListView.builder(
-                        controller: scroll,
-                        padding: const EdgeInsets.all(16),
-                        itemCount: messages.length,
-                        itemBuilder: (context, index) {
-                          final message = messages[index];
-                          final type = message['sender_type']?.toString();
-                          final own = message['user_id']?.toString() == myId;
-                          final system = type == 'system';
-                          final assistant = type == 'assistant';
-                          final alignment = system
-                              ? Alignment.center
-                              : own
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft;
-                          final background = system
-                              ? colors.surfaceContainerHighest
-                              : own
-                                  ? colors.primary
-                                  : assistant
-                                      ? colors.tertiaryContainer
-                                      : colors.secondaryContainer;
-                          final foreground = system
-                              ? colors.onSurfaceVariant
-                              : own
-                                  ? colors.onPrimary
-                                  : assistant
-                                      ? colors.onTertiaryContainer
-                                      : colors.onSecondaryContainer;
-                          return Align(
-                            alignment: alignment,
-                            child: Container(
-                              constraints: BoxConstraints(
-                                maxWidth: MediaQuery.sizeOf(context).width * .78,
+                ? const Center(child: Text('Gửi tin nhắn đầu tiên'))
+                : ListView.builder(
+                    controller: scroll,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      final type = message['sender_type']?.toString();
+                      final own = message['user_id']?.toString() == myId;
+                      final system = type == 'system';
+                      final assistant = type == 'assistant';
+                      final alignment = system
+                          ? Alignment.center
+                          : own
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft;
+                      final background = system
+                          ? colors.surfaceContainerHighest
+                          : own
+                          ? colors.primary
+                          : assistant
+                          ? colors.tertiaryContainer
+                          : colors.secondaryContainer;
+                      final foreground = system
+                          ? colors.onSurfaceVariant
+                          : own
+                          ? colors.onPrimary
+                          : assistant
+                          ? colors.onTertiaryContainer
+                          : colors.onSecondaryContainer;
+                      return Align(
+                        alignment: alignment,
+                        child: Container(
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.sizeOf(context).width * .78,
+                          ),
+                          margin: const EdgeInsets.symmetric(vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: background,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: system
+                                ? CrossAxisAlignment.center
+                                : CrossAxisAlignment.start,
+                            children: [
+                              if (assistant)
+                                Icon(
+                                  Icons.auto_awesome_rounded,
+                                  size: 14,
+                                  color: foreground,
+                                ),
+                              Text(
+                                message['body']?.toString() ?? '',
+                                style: TextStyle(color: foreground),
                               ),
-                              margin: const EdgeInsets.symmetric(vertical: 5),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
+                              const SizedBox(height: 4),
+                              Text(
+                                messageTime(message['created_at']),
+                                style: TextStyle(
+                                  color: foreground.withValues(alpha: .72),
+                                  fontSize: 10,
+                                ),
                               ),
-                              decoration: BoxDecoration(
-                                color: background,
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: system
-                                    ? CrossAxisAlignment.center
-                                    : CrossAxisAlignment.start,
-                                children: [
-                                  if (assistant)
-                                    Icon(Icons.auto_awesome_rounded, size: 14, color: foreground),
-                                  Text(
-                                    message['body']?.toString() ?? '',
-                                    style: TextStyle(color: foreground),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    messageTime(message['created_at']),
-                                    style: TextStyle(
-                                      color: foreground.withValues(alpha: .72),
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
           SafeArea(
             top: false,
@@ -1100,11 +1336,7 @@ class _AppShellState extends State<AppShell> {
         Icons.add_circle_outline,
         TicketCreatePage(api: widget.state.api, embedded: true),
       ),
-      _NavItem(
-        'Thông báo',
-        Icons.notifications_none,
-        const NotificationsPage(),
-      ),
+      _NavItem('Tin nhắn', Icons.chat_bubble_outline_rounded, const ChatPage()),
       _NavItem(
         'Cài đặt',
         Icons.settings_outlined,
@@ -1124,7 +1356,7 @@ class _AppShellState extends State<AppShell> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
+          IconButton.filledTonal(
             tooltip: 'Tin nhắn',
             onPressed: () => Navigator.push(
               context,
@@ -1132,15 +1364,16 @@ class _AppShellState extends State<AppShell> {
             ),
             icon: const Icon(Icons.chat_bubble_outline_rounded),
           ),
-          if (widget.state.role != 'student' && widget.state.role != 'teacher')
-            IconButton(
-              tooltip: 'Thông báo',
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const NotificationsPage()),
-              ),
-              icon: const Icon(Icons.notifications_none),
+          IconButton(
+            tooltip: 'Thông báo',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotificationsPage()),
             ),
+            icon: _NotificationBell(
+              count: widget.state.unreadNotificationCount,
+            ),
+          ),
         ],
       ),
       body: IndexedStack(
@@ -1158,6 +1391,45 @@ class _AppShellState extends State<AppShell> {
       ),
     );
   }
+}
+
+class _NotificationBell extends StatelessWidget {
+  const _NotificationBell({required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    clipBehavior: Clip.none,
+    children: [
+      const Icon(Icons.notifications_none),
+      if (count > 0)
+        Positioned(
+          right: -9,
+          top: -7,
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.error,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.surface,
+                width: 1.5,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              count > 99 ? '99+' : '$count',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+    ],
+  );
 }
 
 class _NavItem {
@@ -1962,6 +2234,7 @@ class _TicketListPageState extends State<TicketListPage> {
                 SizedBox(
                   width: 190,
                   child: DropdownButtonFormField<String>(
+                    isExpanded: true,
                     initialValue: categoryId,
                     decoration: const InputDecoration(labelText: 'Danh mục'),
                     items: [
@@ -1985,8 +2258,9 @@ class _TicketListPageState extends State<TicketListPage> {
                 if (widget.mode == TicketMode.admin) ...[
                   const SizedBox(width: 8),
                   SizedBox(
-                    width: 180,
+                    width: 210,
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: buildingCode,
                       decoration: const InputDecoration(labelText: 'Khu nhà'),
                       items: [
@@ -2011,6 +2285,7 @@ class _TicketListPageState extends State<TicketListPage> {
                   SizedBox(
                     width: 160,
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: priority,
                       decoration: const InputDecoration(labelText: 'Ưu tiên'),
                       items: const [
@@ -2039,6 +2314,7 @@ class _TicketListPageState extends State<TicketListPage> {
                   SizedBox(
                     width: 160,
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: period,
                       decoration: const InputDecoration(labelText: 'Thời gian'),
                       items: const [
@@ -2067,6 +2343,7 @@ class _TicketListPageState extends State<TicketListPage> {
                   SizedBox(
                     width: 180,
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: reporterRole,
                       decoration: const InputDecoration(labelText: 'Người báo'),
                       items: const [
@@ -2104,6 +2381,7 @@ class _TicketListPageState extends State<TicketListPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: status,
               decoration: const InputDecoration(labelText: 'Lọc trạng thái'),
               items: [
@@ -2392,7 +2670,8 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
       ]);
       buildings = asRows(asMap(results[0])['data']);
       categories = asRows(asMap(results[1])['data']);
-      if (buildings.isNotEmpty) buildingCode ??= buildings.first['code']?.toString();
+      if (buildings.isNotEmpty)
+        buildingCode ??= buildings.first['code']?.toString();
     } catch (error) {
       if (mounted) toast(context, readableError(error));
     } finally {
@@ -2407,12 +2686,15 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
     );
     if (code == null || code.trim().isEmpty) return;
     try {
-      final result = asMap(await widget.api.get('/rooms/${Uri.encodeComponent(code)}'));
+      final result = asMap(
+        await widget.api.get('/rooms/${Uri.encodeComponent(code)}'),
+      );
       final room = asMap(result['data']);
       final building = asMap(room['building']);
       if (!mounted) return;
       setState(() {
-        roomCode = room['qr_code']?.toString() ?? room['code']?.toString() ?? code;
+        roomCode =
+            room['qr_code']?.toString() ?? room['code']?.toString() ?? code;
         roomId = room['id']?.toString();
         buildingCode = building['code']?.toString() ?? buildingCode;
       });
@@ -2454,7 +2736,10 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
     try {
       final picker = ImagePicker();
       if (source == _PhotoSource.camera) {
-        final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+        final photo = await picker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 85,
+        );
         if (photo != null && mounted) setState(() => photos.add(photo));
       } else {
         final selected = await picker.pickMultiImage(
@@ -2466,7 +2751,11 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
         }
       }
     } catch (error) {
-      if (mounted) toast(context, 'Không mở được camera/thư viện: ${readableError(error)}');
+      if (mounted)
+        toast(
+          context,
+          'Không mở được camera/thư viện: ${readableError(error)}',
+        );
     }
   }
 
@@ -2477,7 +2766,8 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
       toast(context, 'Chọn phòng và danh mục sự cố trước nhé.');
       return false;
     }
-    if (currentStep == 1 && (title.text.trim().isEmpty || description.text.trim().isEmpty)) {
+    if (currentStep == 1 &&
+        (title.text.trim().isEmpty || description.text.trim().isEmpty)) {
       toast(context, 'Nhập tiêu đề và mô tả sự cố trước nhé.');
       return false;
     }
@@ -2491,32 +2781,44 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
   }
 
   Future<void> submit() async {
-    if (roomId == null || categoryId == null || title.text.trim().isEmpty || description.text.trim().isEmpty) {
+    if (roomId == null ||
+        categoryId == null ||
+        title.text.trim().isEmpty ||
+        description.text.trim().isEmpty) {
       toast(context, 'Kiểm tra lại địa điểm và nội dung phiếu.');
-      setState(() => currentStep = roomId == null || categoryId == null ? 0 : 1);
+      setState(
+        () => currentStep = roomId == null || categoryId == null ? 0 : 1,
+      );
       return;
     }
     FocusScope.of(context).unfocus();
     setState(() => saving = true);
     try {
-      final result = asMap(await widget.api.upload(
-        '/tickets',
-        fields: {
-          'room_code': roomCode ?? '',
-          'room_id': roomId!,
-          'building_code': buildingCode ?? '',
-          'category_id': categoryId!,
-          'title': title.text.trim(),
-          'description': description.text.trim(),
-          'phone': phone.text.trim(),
-          'priority': priority,
-        },
-        files: {'attachments[]': photos},
-      ));
+      final result = asMap(
+        await widget.api.upload(
+          '/tickets',
+          fields: {
+            'room_code': roomCode ?? '',
+            'room_id': roomId!,
+            'building_code': buildingCode ?? '',
+            'category_id': categoryId!,
+            'title': title.text.trim(),
+            'description': description.text.trim(),
+            'phone': phone.text.trim(),
+            'priority': priority,
+          },
+          files: {'attachments[]': photos},
+        ),
+      );
       if (!mounted) return;
       final data = asMap(result['data']);
-      toast(context, (result['message']?.toString() ?? 'Đã gửi báo cáo.') +
-          (data['ticket_number'] == null ? '' : ' Mã phiếu: ${data['ticket_number']}'));
+      toast(
+        context,
+        (result['message']?.toString() ?? 'Đã gửi báo cáo.') +
+            (data['ticket_number'] == null
+                ? ''
+                : ' Mã phiếu: ${data['ticket_number']}'),
+      );
       if (Navigator.of(context).canPop()) {
         Navigator.pop(context, true);
       } else {
@@ -2549,30 +2851,56 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
           final active = index == currentStep;
           return Expanded(
             child: InkWell(
-              onTap: index < currentStep ? () => setState(() => currentStep = index) : null,
+              onTap: index < currentStep
+                  ? () => setState(() => currentStep = index)
+                  : null,
               borderRadius: BorderRadius.circular(12),
               child: Column(
                 children: [
                   Row(
                     children: [
                       if (index > 0)
-                        Expanded(child: Container(height: 2, color: complete || active ? colors.primary : colors.outlineVariant)),
+                        Expanded(
+                          child: Container(
+                            height: 2,
+                            color: complete || active
+                                ? colors.primary
+                                : colors.outlineVariant,
+                          ),
+                        ),
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
                         width: active ? 30 : 25,
                         height: active ? 30 : 25,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: complete || active ? colors.primary : colors.surfaceContainerHighest,
+                          color: complete || active
+                              ? colors.primary
+                              : colors.surfaceContainerHighest,
                         ),
                         child: Icon(
-                          complete ? Icons.check_rounded : [Icons.place_outlined, Icons.edit_note_rounded, Icons.send_rounded][index],
+                          complete
+                              ? Icons.check_rounded
+                              : [
+                                  Icons.place_outlined,
+                                  Icons.edit_note_rounded,
+                                  Icons.send_rounded,
+                                ][index],
                           size: 15,
-                          color: complete || active ? colors.onPrimary : colors.onSurfaceVariant,
+                          color: complete || active
+                              ? colors.onPrimary
+                              : colors.onSurfaceVariant,
                         ),
                       ),
                       if (index < labels.length - 1)
-                        Expanded(child: Container(height: 2, color: complete ? colors.primary : colors.outlineVariant)),
+                        Expanded(
+                          child: Container(
+                            height: 2,
+                            color: complete
+                                ? colors.primary
+                                : colors.outlineVariant,
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 5),
@@ -2594,7 +2922,11 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
     );
   }
 
-  Widget sectionCard({required IconData icon, required String title, required Widget child}) {
+  Widget sectionCard({
+    required IconData icon,
+    required String title,
+    required Widget child,
+  }) {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -2602,7 +2934,20 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary), const SizedBox(width: 8), Text(title, style: const TextStyle(fontWeight: FontWeight.w700))]),
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             child,
           ],
@@ -2620,12 +2965,25 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
           child: Column(
             children: [
               DropdownButtonFormField<String>(
-                initialValue: buildings.any((item) => item['code']?.toString() == buildingCode) ? buildingCode : null,
+                initialValue:
+                    buildings.any(
+                      (item) => item['code']?.toString() == buildingCode,
+                    )
+                    ? buildingCode
+                    : null,
                 decoration: const InputDecoration(labelText: 'Tòa nhà'),
-                items: buildings.map((building) => DropdownMenuItem(
-                  value: building['code']?.toString(),
-                  child: Text(building['name']?.toString() ?? building['code']?.toString() ?? ''),
-                )).toList(),
+                items: buildings
+                    .map(
+                      (building) => DropdownMenuItem(
+                        value: building['code']?.toString(),
+                        child: Text(
+                          building['name']?.toString() ??
+                              building['code']?.toString() ??
+                              '',
+                        ),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) => setState(() {
                   buildingCode = value;
                   roomCode = null;
@@ -2634,17 +2992,32 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                initialValue: roomOptions.any((room) => room['id']?.toString() == roomId) ? roomId : null,
+                initialValue:
+                    roomOptions.any((room) => room['id']?.toString() == roomId)
+                    ? roomId
+                    : null,
                 decoration: const InputDecoration(labelText: 'Phòng'),
-                items: roomOptions.map((room) => DropdownMenuItem(
-                  value: room['id']?.toString(),
-                  child: Text(room['name']?.toString() ?? room['code']?.toString() ?? ''),
-                )).toList(),
+                items: roomOptions
+                    .map(
+                      (room) => DropdownMenuItem(
+                        value: room['id']?.toString(),
+                        child: Text(
+                          room['name']?.toString() ??
+                              room['code']?.toString() ??
+                              '',
+                        ),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) {
-                  final room = roomOptions.where((item) => item['id']?.toString() == value).firstOrNull;
+                  final room = roomOptions
+                      .where((item) => item['id']?.toString() == value)
+                      .firstOrNull;
                   setState(() {
                     roomId = value;
-                    roomCode = room?['qr_code']?.toString() ?? room?['code']?.toString();
+                    roomCode =
+                        room?['qr_code']?.toString() ??
+                        room?['code']?.toString();
                   });
                 },
               ),
@@ -2665,12 +3038,19 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
           icon: Icons.category_outlined,
           title: 'Danh mục',
           child: DropdownButtonFormField<String>(
-            initialValue: categories.any((item) => item['id']?.toString() == categoryId) ? categoryId : null,
+            initialValue:
+                categories.any((item) => item['id']?.toString() == categoryId)
+                ? categoryId
+                : null,
             decoration: const InputDecoration(labelText: 'Loại sự cố'),
-            items: categories.map((category) => DropdownMenuItem(
-              value: category['id']?.toString(),
-              child: Text(category['name']?.toString() ?? ''),
-            )).toList(),
+            items: categories
+                .map(
+                  (category) => DropdownMenuItem(
+                    value: category['id']?.toString(),
+                    child: Text(category['name']?.toString() ?? ''),
+                  ),
+                )
+                .toList(),
             onChanged: (value) => setState(() => categoryId = value),
           ),
         ),
@@ -2686,9 +3066,19 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
           title: 'Mô tả sự cố',
           child: Column(
             children: [
-              TextField(controller: title, maxLength: 180, decoration: const InputDecoration(labelText: 'Tiêu đề')),
+              TextField(
+                controller: title,
+                maxLength: 180,
+                decoration: const InputDecoration(labelText: 'Tiêu đề'),
+              ),
               const SizedBox(height: 8),
-              TextField(controller: description, minLines: 4, maxLines: 7, maxLength: 5000, decoration: const InputDecoration(labelText: 'Mô tả chi tiết')),
+              TextField(
+                controller: description,
+                minLines: 4,
+                maxLines: 7,
+                maxLength: 5000,
+                decoration: const InputDecoration(labelText: 'Mô tả chi tiết'),
+              ),
             ],
           ),
         ),
@@ -2698,7 +3088,14 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
           title: 'Thông tin thêm',
           child: Column(
             children: [
-              TextField(controller: phone, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Số điện thoại (tùy chọn)', prefixIcon: Icon(Icons.phone_outlined))),
+              TextField(
+                controller: phone,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Số điện thoại (tùy chọn)',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                ),
+              ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: priority,
@@ -2709,7 +3106,8 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
                   DropdownMenuItem(value: 'high', child: Text('Cao')),
                   DropdownMenuItem(value: 'urgent', child: Text('Khẩn cấp')),
                 ],
-                onChanged: (value) => setState(() => priority = value ?? 'normal'),
+                onChanged: (value) =>
+                    setState(() => priority = value ?? 'normal'),
               ),
             ],
           ),
@@ -2720,9 +3118,15 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
 
   Widget reviewStep() {
     final colors = Theme.of(context).colorScheme;
-    final building = buildings.where((item) => item['code']?.toString() == buildingCode).firstOrNull;
-    final room = rooms.where((item) => item['id']?.toString() == roomId).firstOrNull;
-    final category = categories.where((item) => item['id']?.toString() == categoryId).firstOrNull;
+    final building = buildings
+        .where((item) => item['code']?.toString() == buildingCode)
+        .firstOrNull;
+    final room = rooms
+        .where((item) => item['id']?.toString() == roomId)
+        .firstOrNull;
+    final category = categories
+        .where((item) => item['id']?.toString() == categoryId)
+        .firstOrNull;
     return Column(
       children: [
         sectionCard(
@@ -2730,13 +3134,31 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
           title: 'Kiểm tra phiếu',
           child: Column(
             children: [
-              _ReviewRow(label: 'Địa điểm', value: '${building?['name'] ?? ''} · ${room?['name'] ?? roomCode ?? ''}'),
-              _ReviewRow(label: 'Danh mục', value: category?['name']?.toString() ?? ''),
+              _ReviewRow(
+                label: 'Địa điểm',
+                value:
+                    '${building?['name'] ?? ''} · ${room?['name'] ?? roomCode ?? ''}',
+              ),
+              _ReviewRow(
+                label: 'Danh mục',
+                value: category?['name']?.toString() ?? '',
+              ),
               _ReviewRow(label: 'Tiêu đề', value: title.text.trim()),
-              _ReviewRow(label: 'Ưu tiên', value: priority == 'normal' ? 'Bình thường' : priority),
-              if (phone.text.trim().isNotEmpty) _ReviewRow(label: 'Điện thoại', value: phone.text.trim()),
+              _ReviewRow(
+                label: 'Ưu tiên',
+                value: priority == 'normal' ? 'Bình thường' : priority,
+              ),
+              if (phone.text.trim().isNotEmpty)
+                _ReviewRow(label: 'Điện thoại', value: phone.text.trim()),
               const Divider(height: 18),
-              Align(alignment: Alignment.centerLeft, child: Text(description.text.trim(), maxLines: 5, overflow: TextOverflow.ellipsis)),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  description.text.trim(),
+                  maxLines: 5,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         ),
@@ -2749,8 +3171,23 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('${photos.length}/5 ảnh', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12))),
-                  OutlinedButton.icon(onPressed: addPhoto, icon: const Icon(Icons.add_photo_alternate_outlined, size: 18), label: const Text('Thêm ảnh')),
+                  Expanded(
+                    child: Text(
+                      '${photos.length}/5 ảnh',
+                      style: TextStyle(
+                        color: colors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: addPhoto,
+                    icon: const Icon(
+                      Icons.add_photo_alternate_outlined,
+                      size: 18,
+                    ),
+                    label: const Text('Thêm ảnh'),
+                  ),
                 ],
               ),
               if (photos.isNotEmpty) ...[
@@ -2758,7 +3195,11 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 8, mainAxisSpacing: 8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
                   itemCount: photos.length,
                   itemBuilder: (context, index) {
                     final photo = photos[index];
@@ -2767,14 +3208,32 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Image.file(File(photo.path), fit: BoxFit.cover, errorBuilder: (_, _, _) => ColoredBox(color: colors.surfaceContainerHighest, child: const Icon(Icons.image_outlined))),
+                          Image.file(
+                            File(photo.path),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => ColoredBox(
+                              color: colors.surfaceContainerHighest,
+                              child: const Icon(Icons.image_outlined),
+                            ),
+                          ),
                           Positioned(
                             top: 4,
                             right: 4,
                             child: Material(
                               color: Colors.black54,
                               shape: const CircleBorder(),
-                              child: InkWell(onTap: () => removePhoto(photo), customBorder: const CircleBorder(), child: const Padding(padding: EdgeInsets.all(5), child: Icon(Icons.close_rounded, color: Colors.white, size: 16))),
+                              child: InkWell(
+                                onTap: () => removePhoto(photo),
+                                customBorder: const CircleBorder(),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(5),
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -2827,8 +3286,13 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
                         if (currentStep > 0) ...[
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: saving ? null : () => setState(() => currentStep--),
-                              icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                              onPressed: saving
+                                  ? null
+                                  : () => setState(() => currentStep--),
+                              icon: const Icon(
+                                Icons.arrow_back_rounded,
+                                size: 18,
+                              ),
                               label: const Text('Quay lại'),
                             ),
                           ),
@@ -2837,11 +3301,30 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
                         Expanded(
                           flex: currentStep == 0 ? 1 : 2,
                           child: FilledButton.icon(
-                            onPressed: saving ? null : (currentStep == 2 ? submit : continueStep),
+                            onPressed: saving
+                                ? null
+                                : (currentStep == 2 ? submit : continueStep),
                             icon: saving
-                                ? const SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2))
-                                : Icon(currentStep == 2 ? Icons.send_rounded : Icons.arrow_forward_rounded, size: 18),
-                            label: Text(saving ? 'Đang gửi...' : currentStep == 2 ? 'Gửi phiếu' : 'Tiếp tục'),
+                                ? const SizedBox(
+                                    width: 17,
+                                    height: 17,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Icon(
+                                    currentStep == 2
+                                        ? Icons.send_rounded
+                                        : Icons.arrow_forward_rounded,
+                                    size: 18,
+                                  ),
+                            label: Text(
+                              saving
+                                  ? 'Đang gửi...'
+                                  : currentStep == 2
+                                  ? 'Gửi phiếu'
+                                  : 'Tiếp tục',
+                            ),
                           ),
                         ),
                       ],
@@ -2865,12 +3348,27 @@ class _ReviewRow extends StatelessWidget {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(width: 86, child: Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12))),
-        Expanded(child: Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+        SizedBox(
+          width: 86,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ),
       ],
     ),
   );
 }
+
 class QrScanPage extends StatefulWidget {
   const QrScanPage({super.key});
   @override
@@ -3912,10 +4410,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
       error = null;
     });
     try {
-      notifications = asRows(
-        await AppScope.stateOf(context).api
-            .get('/notifications', query: {'per_page': 50}),
+      final state = AppScope.stateOf(context);
+      final response = asMap(
+        await state.api.get('/notifications', query: {'per_page': 50}),
       );
+      notifications = asRows(response['data']);
+      final unread =
+          int.tryParse(response['unread_count']?.toString() ?? '') ?? 0;
+      if (state.unreadNotificationCount != unread) {
+        state.unreadNotificationCount = unread;
+        state.notifyListeners();
+      }
     } catch (e) {
       error = readableError(e);
     } finally {
@@ -3988,25 +4493,49 @@ class _NotificationsPageState extends State<NotificationsPage> {
               padding: EdgeInsets.all(30),
               child: Center(child: Text('Chưa có thông báo.')),
             ),
-          ...notifications.map(
-            (n) => Card(
+          ...notifications.map((n) {
+            final unread = n['read_at'] == null;
+            final colors = Theme.of(context).colorScheme;
+            return Card(
+              color: unread
+                  ? colors.primaryContainer.withValues(alpha: .42)
+                  : colors.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: unread
+                      ? colors.primary.withValues(alpha: .55)
+                      : colors.outlineVariant,
+                  width: unread ? 1.2 : .7,
+                ),
+              ),
               child: ListTile(
                 leading: Icon(
-                  n['read_at'] == null
-                      ? Icons.mark_email_unread_outlined
+                  unread
+                      ? Icons.mark_email_unread_rounded
                       : Icons.mark_email_read_outlined,
+                  color: unread ? colors.primary : colors.onSurfaceVariant,
                 ),
-                title: Text(n['title']?.toString() ?? 'Cập nhật Helpdesk'),
+                title: Text(
+                  n['title']?.toString() ?? 'Cập nhật Helpdesk',
+                  style: TextStyle(
+                    fontWeight: unread ? FontWeight.w800 : FontWeight.w500,
+                  ),
+                ),
                 subtitle: Text(
                   (n['body']?.toString() ?? '') +
                       '\n' +
                       (n['created_at']?.toString() ?? ''),
+                  style: TextStyle(
+                    fontWeight: unread ? FontWeight.w600 : FontWeight.w400,
+                    color: unread ? colors.onSurface : colors.onSurfaceVariant,
+                  ),
                 ),
                 isThreeLine: true,
                 onTap: () => openNotification(n),
               ),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     ),
@@ -4238,7 +4767,7 @@ class AdminManagePage extends StatelessWidget {
   const AdminManagePage({super.key});
   @override
   Widget build(BuildContext context) => DefaultTabController(
-    length: 5,
+    length: 6,
     child: Column(
       children: [
         const TabBar(
@@ -4249,6 +4778,7 @@ class AdminManagePage extends StatelessWidget {
             Tab(text: 'Đội ngũ'),
             Tab(text: 'Địa điểm'),
             Tab(text: 'Báo cáo'),
+            Tab(text: 'Nhật ký'),
           ],
         ),
         Expanded(
@@ -4259,6 +4789,7 @@ class AdminManagePage extends StatelessWidget {
               _AdminList(kind: 'team'),
               _AdminList(kind: 'buildings'),
               const AdminReportsPage(),
+              const AdminActivityLogPage(),
             ],
           ),
         ),
@@ -4271,6 +4802,80 @@ class AdminReportsPage extends StatefulWidget {
   const AdminReportsPage({super.key});
   @override
   State<AdminReportsPage> createState() => _AdminReportsPageState();
+}
+
+class AdminActivityLogPage extends StatefulWidget {
+  const AdminActivityLogPage({super.key});
+  @override
+  State<AdminActivityLogPage> createState() => _AdminActivityLogPageState();
+}
+
+class _AdminActivityLogPageState extends State<AdminActivityLogPage> {
+  bool loading = true;
+  String? error;
+  List<Map<String, dynamic>> rows = [];
+
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final result = asMap(
+        await AppScope.stateOf(context).api.get('/admin/activity-logs'),
+      );
+      rows = asRows(result['data']);
+    } catch (e) {
+      error = readableError(e);
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => load());
+  }
+
+  @override
+  Widget build(BuildContext context) => RefreshIndicator(
+    onRefresh: load,
+    child: ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        Text(
+          'Lịch sử phân công và thay đổi trên toàn hệ thống',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        if (loading) const LinearProgressIndicator(),
+        if (error != null) _ErrorCard(message: error!, retry: load),
+        if (!loading && error == null && rows.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Text('Chưa có thao tác được ghi lại.'),
+          ),
+        ...rows.map((row) {
+          final actor = asMap(row['user']);
+          final properties = asMap(row['properties']);
+          return Card(
+            child: ListTile(
+              leading: const Icon(Icons.history_rounded),
+              title: Text(
+                row['description']?.toString() ??
+                    row['action']?.toString() ??
+                    'Thao tác',
+              ),
+              subtitle: Text(
+                '${actor['name'] ?? 'Tài khoản đã xóa'} · ${row['action'] ?? ''}\n${row['created_at'] ?? ''}${properties.isEmpty ? '' : '\n${properties.entries.map((e) => '${e.key}: ${e.value}').join(' · ')}'}',
+              ),
+              isThreeLine: true,
+            ),
+          );
+        }),
+      ],
+    ),
+  );
 }
 
 class _AdminReportsPageState extends State<AdminReportsPage> {
