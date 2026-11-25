@@ -20,6 +20,51 @@ String roleLabel(dynamic role) => switch (role?.toString()) {
   _ => '',
 };
 
+class UserAvatar extends StatelessWidget {
+  const UserAvatar({
+    super.key,
+    required this.user,
+    required this.api,
+    this.radius = 20,
+    this.preview,
+  });
+
+  final Map<String, dynamic> user;
+  final ApiClient api;
+  final double radius;
+  final XFile? preview;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = user['name']?.toString().trim() ?? '';
+    final initial = name.isEmpty ? '?' : name.characters.first.toUpperCase();
+    final raw = (user['avatar_url'] ?? user['avatar_path'])?.toString() ?? '';
+    final fallback = Center(child: Text(initial));
+    final Widget image;
+    if (preview != null) {
+      image = Image.file(
+        File(preview!.path),
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback,
+      );
+    } else if (raw.isNotEmpty) {
+      image = Image.network(
+        api.resolveAssetUrl(raw),
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback,
+      );
+    } else {
+      image = fallback;
+    }
+    return CircleAvatar(
+      radius: radius,
+      child: ClipOval(
+        child: SizedBox(width: radius * 2, height: radius * 2, child: image),
+      ),
+    );
+  }
+}
+
 Map<String, dynamic> asMap(dynamic value) =>
     value is Map ? Map<String, dynamic>.from(value) : <String, dynamic>{};
 
@@ -410,17 +455,21 @@ class _AuthPageState extends State<AuthPage> {
                                 ),
                               ),
                             ),
-                            CheckboxListTile(
-                              contentPadding: EdgeInsets.zero,
-                              visualDensity: VisualDensity.compact,
-                              controlAffinity: ListTileControlAffinity.leading,
-                              value: rememberMe,
-                              onChanged: busy
-                                  ? null
-                                  : (value) => setState(
-                                      () => rememberMe = value ?? false,
-                                    ),
-                              title: const Text('Ghi nhớ đăng nhập'),
+                            Material(
+                              type: MaterialType.transparency,
+                              child: CheckboxListTile(
+                                contentPadding: EdgeInsets.zero,
+                                visualDensity: VisualDensity.compact,
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
+                                value: rememberMe,
+                                onChanged: busy
+                                    ? null
+                                    : (value) => setState(
+                                        () => rememberMe = value ?? false,
+                                      ),
+                                title: const Text('Ghi nhớ đăng nhập'),
+                              ),
                             ),
                             Align(
                               alignment: Alignment.centerRight,
@@ -477,11 +526,14 @@ class _AuthPageState extends State<AuthPage> {
                             color: colors.onSurfaceVariant,
                           ),
                           SizedBox(width: 7),
-                          Text(
-                            'H\u{1ed7} tr\u{1ee3} k\u{1ef9} thu\u{1ead}t trong khu\u{00f4}n vi\u{00ea}n tr\u{01b0}\u{1edd}ng',
-                            style: TextStyle(
-                              color: colors.onSurfaceVariant,
-                              fontSize: 11,
+                          Flexible(
+                            child: Text(
+                              'H\u{1ed7} tr\u{1ee3} k\u{1ef9} thu\u{1ead}t trong khu\u{00f4}n vi\u{00ea}n tr\u{01b0}\u{1edd}ng',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: colors.onSurfaceVariant,
+                                fontSize: 11,
+                              ),
                             ),
                           ),
                         ],
@@ -786,13 +838,10 @@ class _ChatPageState extends State<ChatPage> {
                           child: ListTile(
                             dense: true,
                             visualDensity: VisualDensity.compact,
-                            leading: CircleAvatar(
+                            leading: UserAvatar(
+                              user: contact,
+                              api: api,
                               radius: 19,
-                              child: Text(
-                                name.isEmpty
-                                    ? '?'
-                                    : name.characters.first.toUpperCase(),
-                              ),
                             ),
                             title: Text(
                               name,
@@ -878,18 +927,27 @@ class _ChatPageState extends State<ChatPage> {
                             child: ListTile(
                               dense: true,
                               visualDensity: VisualDensity.compact,
-                              leading: CircleAvatar(
-                                radius: 20,
-                                backgroundColor: colors.secondaryContainer,
-                                child: Icon(
-                                  conversation['type'] == 'assistant'
-                                      ? Icons.auto_awesome_rounded
-                                      : conversation['type'] == 'ticket'
-                                      ? Icons.confirmation_number_outlined
-                                      : Icons.person_outline_rounded,
-                                  size: 20,
-                                ),
-                              ),
+                              leading: conversation['type'] == 'direct'
+                                  ? UserAvatar(
+                                      user:
+                                          asRows(conversation['participants'])
+                                              .firstOrNull ??
+                                          {'name': title},
+                                      api: api,
+                                    )
+                                  : CircleAvatar(
+                                      radius: 20,
+                                      backgroundColor:
+                                          colors.secondaryContainer,
+                                      child: Icon(
+                                        conversation['type'] == 'assistant'
+                                            ? Icons.auto_awesome_rounded
+                                            : conversation['type'] == 'ticket'
+                                            ? Icons.confirmation_number_outlined
+                                            : Icons.person_outline_rounded,
+                                        size: 20,
+                                      ),
+                                    ),
                               title: Text(
                                 title,
                                 maxLines: 1,
@@ -1130,15 +1188,31 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-            if (ticket.isNotEmpty)
-              Text(
-                ticket['ticket_number']?.toString() ?? 'Phiếu hỗ trợ',
-                style: Theme.of(context).textTheme.labelSmall,
+            if (widget.conversation['type'] == 'direct') ...[
+              UserAvatar(
+                user:
+                    asRows(widget.conversation['participants']).firstOrNull ??
+                    {'name': title},
+                api: api,
+                radius: 18,
               ),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  if (ticket.isNotEmpty)
+                    Text(
+                      ticket['ticket_number']?.toString() ?? 'Phiếu hỗ trợ',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -4575,7 +4649,10 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       }
       await widget.state.refreshProfile();
-      if (mounted) toast(context, 'Đã cập nhật hồ sơ.');
+      if (mounted) {
+        setState(() => avatar = null);
+        toast(context, 'Đã cập nhật hồ sơ.');
+      }
     } catch (e) {
       if (mounted) toast(context, readableError(e));
     } finally {
@@ -4654,13 +4731,11 @@ class _ProfilePageState extends State<ProfilePage> {
             padding: const EdgeInsets.all(18),
             child: Column(
               children: [
-                CircleAvatar(
+                UserAvatar(
+                  user: user,
+                  api: widget.state.api,
                   radius: 36,
-                  child: Text(
-                    (user['name']?.toString() ?? 'H')
-                        .substring(0, 1)
-                        .toUpperCase(),
-                  ),
+                  preview: avatar,
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -4675,13 +4750,16 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 10),
                 OutlinedButton.icon(
-                  onPressed: () async {
-                    avatar = await ImagePicker().pickImage(
-                      source: ImageSource.gallery,
-                      imageQuality: 85,
-                    );
-                    setState(() {});
-                  },
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          final selected = await ImagePicker().pickImage(
+                            source: ImageSource.gallery,
+                            imageQuality: 85,
+                          );
+                          if (mounted && selected != null)
+                            setState(() => avatar = selected);
+                        },
                   icon: const Icon(Icons.account_circle_outlined),
                   label: Text(avatar?.name ?? 'Chọn ảnh đại diện'),
                 ),
@@ -5158,7 +5236,10 @@ class _AdminListState extends State<_AdminList> {
                       value: 'staff',
                       child: Text('Kỹ thuật viên'),
                     ),
-                    DropdownMenuItem(value: 'admin', child: Text('Quản trị viên')),
+                    DropdownMenuItem(
+                      value: 'admin',
+                      child: Text('Quản trị viên'),
+                    ),
                   ],
                   onChanged: (value) => update(() => role = value ?? 'staff'),
                 ),

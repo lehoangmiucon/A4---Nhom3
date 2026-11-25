@@ -12,7 +12,7 @@ void main() {
 
     await tester.pumpWidget(HelpdeskApp(state: state));
 
-    expect(find.text('Helpdesk'), findsOneWidget);
-    expect(find.text('Đăng nhập'), findsOneWidget);
+    expect(find.textContaining('CAMPUS SUPPORT'), findsOneWidget);
+    expect(find.text('Đăng nhập'), findsNWidgets(2));
   });
 }
