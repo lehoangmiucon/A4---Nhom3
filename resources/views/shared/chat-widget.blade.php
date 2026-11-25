@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="{{ url('/shared/css/chat-widget.css?v=20261124-widget10') }}">
+<link rel="stylesheet" href="{{ url('/shared/css/chat-widget.css?v=20261125-avatar2') }}">
 <div class="chat-widget" id="helpdesk-chat-widget">
     <button class="chat-widget-launcher" type="button" data-open-chat-widget aria-label="Mở khung tin nhắn">
         <svg class="chat-widget-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H9l-5 3v-14Z"/><path d="M8 10h8M8 13h5"/></svg><span>Tin nhắn</span>
@@ -60,4 +60,4 @@
         canSearchContacts: @json(auth()->user()->role === 'admin' || auth()->user()->role === 'staff')
     };
 </script>
-<script src="{{ url('/shared/js/chat.js?v=20261124-widget9') }}" defer></script>
+<script src="{{ url('/shared/js/chat.js?v=20261125-avatar1') }}" defer></script>

@@ -57,6 +57,39 @@
     };
 
     const conversationName = (conversation) => conversation.title || 'Cuộc trò chuyện';
+    const roleLabel = (role) => ({student: 'Sinh viên', teacher: 'Giảng viên', staff: 'Kỹ thuật viên', admin: 'Quản trị viên'})[role] || '';
+
+    const renderAvatar = (element, person, fallback) => {
+        const source = person?.avatar_url || '';
+        // Keep the existing image while polling the same profile.
+        if (source && element.querySelector('img')?.getAttribute('src') === source) return;
+        element.textContent = fallback;
+        if (!source) return;
+        const image = document.createElement('img');
+        image.alt = '';
+        image.width = 40;
+        image.height = 40;
+        image.addEventListener('error', () => {
+            if (element.contains(image)) element.textContent = fallback;
+        }, { once: true });
+        image.src = source;
+        element.replaceChildren(image);
+    };
+
+    const renderConversationAvatar = (element, conversation) => {
+        const assistant = conversation.type === 'assistant';
+        element.classList.toggle('assistant', assistant);
+        renderAvatar(element, assistant ? null : conversation.participants?.[0],
+            assistant ? '✦' : conversationName(conversation).slice(0, 1).toUpperCase());
+    };
+
+    const renderConversationHeader = () => {
+        title.textContent = conversationName(current);
+        renderConversationAvatar(avatar, current);
+        subtitle.textContent = current.type === 'assistant'
+            ? 'Hỏi về quy trình và cách sử dụng Helpdesk'
+            : (current.participants || []).map((person) => roleLabel(person.role)).filter(Boolean).join(' · ');
+    };
 
     const renderConversations = () => {
         const query = !config.canSearchContacts ? (search?.value || '').trim().toLocaleLowerCase('vi') : '';
@@ -85,7 +118,7 @@
             button.className = `chat-conversation${current?.id === conversation.id ? ' active' : ''}${unreadCount > 0 ? ' unread' : ''}`;
             const face = document.createElement('span');
             face.className = `chat-avatar${conversation.type === 'assistant' ? ' assistant' : ''}`;
-            face.textContent = conversation.type === 'assistant' ? '✦' : conversationName(conversation).slice(0, 1).toUpperCase();
+            renderConversationAvatar(face, conversation);
             const copy = document.createElement('span');
             copy.className = 'chat-conversation-copy';
             const name = document.createElement('strong');
@@ -137,12 +170,7 @@
         empty.hidden = true;
         active.hidden = false;
         frame.classList.add('thread-open');
-        title.textContent = conversationName(conversation);
-        avatar.textContent = conversation.type === 'assistant' ? '✦' : conversationName(conversation).slice(0, 1).toUpperCase();
-        avatar.classList.toggle('assistant', conversation.type === 'assistant');
-        subtitle.textContent = conversation.type === 'assistant'
-            ? 'Hỏi về quy trình và cách sử dụng Helpdesk'
-            : (conversation.participants || []).map((person) => person.role).filter(Boolean).join(' · ');
+        renderConversationHeader();
         if (conversation.ticket) {
             ticketContext.textContent = `${conversation.ticket.ticket_number} · ${conversation.ticket.title}`;
             ticketContext.hidden = false;
@@ -167,6 +195,7 @@
         renderConversations();
         if (current) {
             current = conversations.find((item) => item.id === current.id) || current;
+            renderConversationHeader();
             renderConversations();
         }
     };
@@ -214,7 +243,7 @@
             button.className = 'chat-contact';
             const face = document.createElement('span');
             face.className = 'chat-avatar';
-            face.textContent = (person.name || '?').slice(0, 1).toUpperCase();
+            renderAvatar(face, person, (person.name || '?').slice(0, 1).toUpperCase());
             const copy = document.createElement('span');
             copy.className = 'chat-contact-copy';
             const name = document.createElement('strong');
@@ -224,7 +253,7 @@
             copy.append(name, detail);
             const role = document.createElement('span');
             role.className = 'chat-role';
-            role.textContent = person.role || '';
+            role.textContent = roleLabel(person.role);
             button.append(face, copy, role);
             button.addEventListener('click', async () => {
                 try {
