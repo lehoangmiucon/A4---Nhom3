@@ -4288,7 +4288,7 @@ class _SchedulePageState extends State<SchedulePage> {
     if (range == 'day') return dayString(anchor);
     if (range == 'week')
       return '${dayString(rangeStart)} - ${dayString(rangeEnd)}';
-    return 'Th?ng ${anchor.month}/${anchor.year}';
+    return 'Tháng ${anchor.month}/${anchor.year}';
   }
 
   String dayString(DateTime date) =>
@@ -4380,11 +4380,11 @@ class _SchedulePageState extends State<SchedulePage> {
       children: [
         DropdownButtonFormField<String>(
           initialValue: range,
-          decoration: const InputDecoration(labelText: 'Kho?ng th?i gian'),
+          decoration: const InputDecoration(labelText: 'Khoảng thời gian'),
           items: const [
-            DropdownMenuItem(value: 'day', child: Text('Ng?y')),
-            DropdownMenuItem(value: 'week', child: Text('Tu?n')),
-            DropdownMenuItem(value: 'month', child: Text('Th?ng')),
+            DropdownMenuItem(value: 'day', child: Text('Ngày')),
+            DropdownMenuItem(value: 'week', child: Text('Tuần')),
+            DropdownMenuItem(value: 'month', child: Text('Tháng')),
           ],
           onChanged: (value) {
             if (value != null) {
