@@ -51,7 +51,8 @@
             </div>
         </section>
     </main>
-    <script src="assets/js/auth.js?v=20261114-otp-three-minutes1"></script>
+    <script src="{{ url('/shared/js/validation-vi.js?v=20261127-validation1') }}" defer></script>
+    <script src="assets/js/auth.js?v=20261127-json-guard1"></script>
 </body>
 
 </html>

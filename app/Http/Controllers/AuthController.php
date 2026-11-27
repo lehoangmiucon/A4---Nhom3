@@ -195,7 +195,7 @@ class AuthController extends Controller
         $user = $request->user();
         if ($user->is_deleted) {
             Auth::logout();
-            throw ValidationException::withMessages(['email' => 'Tai khoan da bi khoa. Vui long lien he quan ly.']);
+            throw ValidationException::withMessages(['email' => 'Tài khoản đã bị khóa. Vui lòng liên hệ quản lý.']);
         }
         if (!$user->email_verified_at) {
             Auth::logout();
@@ -225,7 +225,7 @@ class AuthController extends Controller
             throw ValidationException::withMessages(['email' => 'Email hoặc mật khẩu không chính xác.']);
         }
         if ($user->is_deleted) {
-            throw ValidationException::withMessages(['email' => 'Tai khoan da bi khoa. Vui long lien he quan ly.']);
+            throw ValidationException::withMessages(['email' => 'Tài khoản đã bị khóa. Vui lòng liên hệ quản lý.']);
         }
         if (!$user->email_verified_at) {
             throw ValidationException::withMessages(['email' => 'Vui lòng xác thực email bằng OTP trước khi đăng nhập.']);

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Tin nhắn · Helpdesk</title>
-    <link rel="stylesheet" href="{{ url('/shared/css/chat.css?v=20261121-chat1') }}">
+    <link rel="stylesheet" href="{{ url('/shared/css/chat.css?v=20261127-chat5') }}">
 </head>
 <body>
     <header class="chat-topbar">
@@ -29,6 +29,13 @@
                     <span><strong>Hỏi Trợ lý Helpdesk</strong><small>Hỏi về cách sử dụng hệ thống</small></span>
                     <span aria-hidden="true">›</span>
                 </button>
+                @if(!in_array(auth()->user()->role, ['admin', 'staff'], true))
+                    <button class="chat-ai-button chat-support-button" id="chat-support" type="button">
+                        <span class="chat-ai-icon" aria-hidden="true">?</span>
+                        <span><strong>Nhắn với bộ phận hỗ trợ</strong><small>Quản lý và nhân viên Helpdesk</small></span>
+                        <span aria-hidden="true">›</span>
+                    </button>
+                @endif
                 <label class="chat-search-label" for="chat-search">Tìm người theo email hoặc số điện thoại</label>
                 <div class="chat-search-wrap">
                     <span aria-hidden="true">⌕</span>
@@ -54,8 +61,8 @@
                     <div class="chat-ticket-context" id="chat-ticket-context" hidden></div>
                     <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
                     <form class="chat-composer" id="chat-composer">
-                        <textarea id="chat-message-input" rows="1" maxlength="5000" placeholder="Nhập tin nhắn..." required></textarea>
-                        <button type="submit" id="chat-send" aria-label="Gửi tin nhắn">Gửi</button>
+                        <textarea id="chat-message-input" rows="1" maxlength="5000" placeholder="Nhập tin nhắn..." aria-label="Tin nhắn"></textarea>
+                        <button type="submit" id="chat-send" aria-label="Gửi tin nhắn"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span>Gửi</span></button>
                     </form>
                     <p class="chat-notice" id="chat-notice" role="status" hidden></p>
                 </div>
@@ -66,9 +73,10 @@
         window.HELPDESK_CHAT_CONFIG = {
             apiBase: @json(url('/api/chat')),
             currentUserId: @json(auth()->id()),
-            currentUserName: @json(auth()->user()->name)
+            currentUserName: @json(auth()->user()->name),
+            currentUserRole: @json(auth()->user()->role)
         };
     </script>
-    <script src="{{ url('/shared/js/chat.js?v=20261121-chat1') }}" defer></script>
+    <script src="{{ url('/shared/js/chat.js?v=20261127-chat5') }}" defer></script>
 </body>
 </html>

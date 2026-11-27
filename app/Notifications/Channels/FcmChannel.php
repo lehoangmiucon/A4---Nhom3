@@ -14,7 +14,9 @@ class FcmChannel
         $data = $notification->toArray($notifiable);
         $this->push->sendToUser(
             $notifiable->id,
-            'Cập nhật phiếu Helpdesk',
+            ($data['status'] ?? null) === 'new'
+                ? 'Có phiếu sự cố mới'
+                : 'Cập nhật phiếu sự cố',
             (string) ($data['message'] ?? 'Bạn có cập nhật mới về phiếu hỗ trợ.'),
             ['type' => 'ticket', 'ticket_id' => (string) ($data['ticket_id'] ?? '')],
         );

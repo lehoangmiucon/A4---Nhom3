@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="{{ url('/shared/css/chat-widget.css?v=20261125-avatar2') }}">
+<link rel="stylesheet" href="{{ url('/shared/css/chat-widget.css?v=20261127-widget14') }}">
 <div class="chat-widget" id="helpdesk-chat-widget">
     <button class="chat-widget-launcher" type="button" data-open-chat-widget aria-label="Mở khung tin nhắn">
         <svg class="chat-widget-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H9l-5 3v-14Z"/><path d="M8 10h8M8 13h5"/></svg><span>Tin nhắn</span>
@@ -14,6 +14,13 @@
                     <div><p class="chat-eyebrow">HELPDESK</p><h2>Tin nhắn</h2></div>
                     <span class="chat-count" id="conversation-count">0</span>
                 </div>
+                @if(!in_array(auth()->user()->role, ['admin', 'staff'], true))
+                    <button class="chat-ai-button chat-support-button" id="chat-support" type="button">
+                        <span class="chat-ai-icon" aria-hidden="true">?</span>
+                        <span><strong>Nhắn với bộ phận hỗ trợ</strong><small>Quản lý và nhân viên Helpdesk</small></span>
+                        <span aria-hidden="true">›</span>
+                    </button>
+                @endif
                 <button class="chat-ai-button" id="chat-ai" type="button">
                     <span class="chat-ai-icon">✦</span>
                     <span><strong>Hỏi Trợ lý Helpdesk</strong><small>Hướng dẫn sử dụng hệ thống</small></span>
@@ -35,7 +42,7 @@
                 <div class="chat-empty" id="chat-empty">
                     <div class="chat-empty-copy"><div class="chat-empty-icon">✉</div><h2>Trợ lý Helpdesk</h2><p>Nhập câu hỏi để được hướng dẫn sử dụng hệ thống.</p><button class="chat-empty-browse" type="button" id="chat-empty-browse">Xem các cuộc trò chuyện</button></div>
                     <p class="chat-empty-notice" id="chat-empty-notice" role="status" hidden></p>
-                    <form class="chat-composer chat-empty-composer" id="chat-empty-composer"><textarea id="chat-empty-message-input" rows="1" maxlength="5000" placeholder="Nhập tin nhắn..." required></textarea><button type="submit" id="chat-empty-send" aria-label="Gửi tin nhắn"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button></form>
+                    <form class="chat-composer chat-empty-composer" id="chat-empty-composer"><textarea id="chat-empty-message-input" rows="1" maxlength="5000" placeholder="Nhập tin nhắn..." aria-label="Tin nhắn cho Trợ lý Helpdesk"></textarea><button type="submit" id="chat-empty-send" aria-label="Gửi tin nhắn"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span>Gửi</span></button></form>
                 </div>
                 <div class="chat-active" id="chat-active" hidden>
                     <header class="chat-thread-header">
@@ -45,7 +52,7 @@
                     </header>
                     <div class="chat-ticket-context" id="chat-ticket-context" hidden></div>
                     <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
-                    <form class="chat-composer" id="chat-composer"><textarea id="chat-message-input" rows="1" maxlength="5000" placeholder="Nhập tin nhắn..." aria-label="Tin nhắn" required></textarea><button type="submit" id="chat-send">Gửi</button></form>
+                    <form class="chat-composer" id="chat-composer"><textarea id="chat-message-input" rows="1" maxlength="5000" placeholder="Nhập tin nhắn..." aria-label="Tin nhắn"></textarea><button type="submit" id="chat-send" aria-label="Gửi tin nhắn"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i><span>Gửi</span></button></form>
                 </div>
             </section>
             <p class="chat-notice" id="chat-notice" aria-live="polite" aria-atomic="true" hidden></p>
@@ -57,7 +64,9 @@
         apiBase: @json(url('/api/chat')),
         currentUserId: @json(auth()->id()),
         currentUserName: @json(auth()->user()->name),
+        currentUserRole: @json(auth()->user()->role),
         canSearchContacts: @json(auth()->user()->role === 'admin' || auth()->user()->role === 'staff')
     };
 </script>
-<script src="{{ url('/shared/js/chat.js?v=20261125-avatar1') }}" defer></script>
+<script src="{{ url('/shared/js/validation-vi.js?v=20261127-validation1') }}" defer></script>
+<script src="{{ url('/shared/js/chat.js?v=20261127-widget14') }}" defer></script>

@@ -2,6 +2,8 @@
     const config = window.HELPDESK_CHAT_CONFIG || {};
     const apiBase = (config.apiBase || '/api/chat').replace(/\/+$/, '');
     const currentUserId = Number(config.currentUserId || 0);
+    const currentUserRole = config.currentUserRole || 'student';
+    const appRoot = apiBase.replace(/\/api\/chat\/?$/, '');
     const widget = document.getElementById('chat-widget-window');
     const frame = document.querySelector('.chat-frame');
     const list = document.getElementById('chat-conversation-list');
@@ -26,24 +28,54 @@
     let conversations = [];
     let current = null;
     let lastId = 0;
+    let lastMessageDay = null;
+    let lastMessageAt = null;
     let pollTimer = null;
     let conversationPollTimer = null;
     let searchTimer = null;
 
+    const localizeError = (message, status) => {
+        const normalized = String(message || '').trim().toLowerCase();
+        if (normalized.includes('csrf token mismatch') || status === 419) {
+            return 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang rồi thử lại.';
+        }
+        if (normalized.includes('unauthenticated') || status === 401) {
+            return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        }
+        if (normalized.includes('unauthorized') || status === 403) {
+            return 'Bạn không có quyền thực hiện thao tác này.';
+        }
+        if (status === 404) return 'Không tìm thấy dữ liệu yêu cầu.';
+        if (status === 429) return 'Bạn thao tác quá nhanh. Vui lòng chờ một lúc rồi thử lại.';
+        if (status >= 500) return 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.';
+        if (normalized.includes('invalid') || status === 422) {
+            return 'Dữ liệu gửi lên chưa hợp lệ. Vui lòng kiểm tra lại.';
+        }
+        return /[À-ỹ]/.test(message) && !/<(?:!doctype|html)/i.test(message)
+            ? message
+            : 'Không thể thực hiện thao tác. Vui lòng kiểm tra lại và thử lại.';
+    };
+
     const request = async (path, options = {}) => {
-        const response = await fetch(`${apiBase}${path}`, {
-            credentials: 'same-origin',
-            ...options,
-            headers: {
-                Accept: 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-                ...(options.headers || {}),
-            },
-        });
+        let response;
+        try {
+            response = await fetch(`${apiBase}${path}`, {
+                credentials: 'same-origin',
+                ...options,
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    ...(options.headers || {}),
+                },
+            });
+        } catch (_) {
+            throw new Error('Không thể kết nối máy chủ. Vui lòng kiểm tra mạng và thử lại.');
+        }
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
-            const message = payload.message || Object.values(payload.errors || {}).flat().join(' ') || 'Không thể thực hiện thao tác.';
+            const rawMessage = payload.message || Object.values(payload.errors || {}).flat().join(' ');
+            const message = localizeError(rawMessage, response.status);
             throw new Error(message);
         }
         return payload;
@@ -91,6 +123,33 @@
             : (current.participants || []).map((person) => roleLabel(person.role)).filter(Boolean).join(' · ');
     };
 
+    const messageDateInfo = (value) => {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return null;
+        const key = [date.getFullYear(), date.getMonth() + 1, date.getDate()].join('-');
+        const today = new Date();
+        const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const dayOffset = Math.round((todayOnly - dateOnly) / 86400000);
+        const time = date.toLocaleTimeString('vi-VN', {
+            hour: '2-digit', minute: '2-digit', hour12: false,
+        });
+        const weekdays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+        const weekday = weekdays[(date.getDay() + 6) % 7];
+        const dateText = [
+            String(date.getDate()).padStart(2, '0'),
+            String(date.getMonth() + 1).padStart(2, '0'),
+            date.getFullYear(),
+        ].join('/');
+        const label = dayOffset === 0
+            ? time
+            : dayOffset === 1
+                ? time + ' Hôm qua'
+                : dayOffset < 7
+                    ? time + ' ' + weekday
+                    : time + ' ' + weekday + ' ' + dateText;
+        return { key, label, date };
+    };
     const renderConversations = () => {
         const query = !config.canSearchContacts ? (search?.value || '').trim().toLocaleLowerCase('vi') : '';
         const visibleConversations = query ? conversations.filter((conversation) => {
@@ -140,16 +199,47 @@
     };
 
     const renderMessage = (message) => {
+        const day = messageDateInfo(message.created_at);
         if (messages.querySelector(`[data-message-id="${message.id}"]`)) return;
+        const showDateDivider = day && (
+            day.key !== lastMessageDay
+            || (lastMessageAt && day.date.getTime() - lastMessageAt.getTime() >= 300000)
+        );
         const item = document.createElement('article');
         item.className = `chat-message${message.sender_type === 'assistant' ? ' assistant' : ''}${message.sender_type === 'system' ? ' system' : ''}${message.user_id === currentUserId ? ' mine' : ''}`;
         item.dataset.messageId = message.id;
         item.append(document.createTextNode(message.body || ''));
+        const metadata = message.metadata || {};
+        if (metadata.ticket_id) {
+            const ticketLink = document.createElement('a');
+            ticketLink.className = 'chat-ticket-link';
+            const ticketPage = currentUserRole === 'admin'
+                ? '/admin/pages/ticket-detail'
+                : currentUserRole === 'staff'
+                    ? '/staff/ticket-detail'
+                    : '/customer/ticket-detail';
+            ticketLink.href = `${appRoot}${ticketPage}?ticket=${encodeURIComponent(metadata.ticket_id)}`;
+            ticketLink.textContent = `Mở phiếu ${metadata.ticket_number || metadata.ticket_id}`;
+            item.append(ticketLink);
+        }
         if (message.sender_type !== 'system' && message.created_at) {
             const time = document.createElement('time');
             const date = new Date(message.created_at);
             time.textContent = Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
             item.append(time);
+        }
+        if (day) {
+            item.dataset.messageDay = day.key;
+            if (showDateDivider) {
+                const divider = document.createElement('div');
+                divider.className = 'chat-date-separator';
+                const label = document.createElement('span');
+                label.textContent = day.label;
+                divider.append(label);
+                messages.append(divider);
+            }
+            lastMessageDay = day.key;
+            lastMessageAt = day.date;
         }
         messages.append(item);
         lastId = Math.max(lastId, Number(message.id || 0));
@@ -166,6 +256,8 @@
     const openConversation = async (conversation) => {
         current = conversation;
         lastId = 0;
+        lastMessageDay = null;
+        lastMessageAt = null;
         messages.replaceChildren();
         empty.hidden = true;
         active.hidden = false;
@@ -298,6 +390,13 @@
             await openConversation(payload.data);
         } catch (error) { showNotice(error.message); }
     });
+    document.getElementById('chat-support')?.addEventListener('click', async () => {
+        try {
+            const payload = await request('/support', { method: 'POST' });
+            await refreshConversations();
+            await openConversation(payload.data);
+        } catch (error) { showNotice(error.message); }
+    });
     document.getElementById('chat-refresh').addEventListener('click', () => refreshConversations().catch((error) => showNotice(error.message)));
     document.getElementById('chat-mobile-back').addEventListener('click', () => frame.classList.remove('thread-open'));
     document.getElementById('chat-empty-browse').addEventListener('click', () => frame.classList.remove('thread-open'));
@@ -327,7 +426,7 @@
     emptyComposer.addEventListener('submit', async (event) => {
         event.preventDefault();
         const body = emptyInput.value.trim();
-        if (!body) return;
+        if (!body) { showNotice('Vui lòng nhập nội dung tin nhắn.'); return; }
         emptySend.disabled = true;
         showNotice('');
         try {
@@ -346,7 +445,8 @@
     composer.addEventListener('submit', async (event) => {
         event.preventDefault();
         const body = input.value.trim();
-        if (!body || !current) return;
+        if (!body) { showNotice('Vui lòng nhập nội dung tin nhắn.'); return; }
+        if (!current) return;
         send.disabled = true;
         showNotice('');
         try {
@@ -368,7 +468,19 @@
     sendOnEnter(emptyInput, emptyComposer);
     sendOnEnter(input, composer);
 
-    if (new URLSearchParams(window.location.search).get('open_chat') === '1') {
+    const queryParams = new URLSearchParams(window.location.search);
+    const requestedConversationId = queryParams.get('conversation_id');
+    if (requestedConversationId) {
+        queryParams.delete('conversation_id');
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.delete('conversation_id');
+        window.history.replaceState({}, '', nextUrl);
+        refreshConversations().then(() => {
+            const conversation = conversations.find((item) => String(item.id) === requestedConversationId);
+            if (conversation) return openConversation(conversation);
+            showNotice('Không tìm thấy cuộc trò chuyện được thông báo.');
+        }).catch((error) => showNotice(error.message));
+    } else if (queryParams.get('open_chat') === '1') {
         openWidget();
         const url = new URL(window.location.href);
         url.searchParams.delete('open_chat');

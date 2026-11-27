@@ -33,6 +33,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::post('/push/devices', [PushDeviceController::class, 'store'])->middleware('throttle:20,1');
     Route::delete('/push/devices', [PushDeviceController::class, 'destroy'])->middleware('throttle:20,1');
     Route::get('/chat/conversations', [ChatController::class, 'index']);
+    Route::post('/chat/support', [ChatController::class, 'startSupport'])->middleware('throttle:30,1');
     Route::get('/chat/contacts', [ChatController::class, 'contacts'])->middleware('throttle:60,1');
     Route::post('/chat/conversations', [ChatController::class, 'startDirect'])->middleware('throttle:30,1');
     Route::post('/chat/assistant', [ChatController::class, 'startAssistant']);

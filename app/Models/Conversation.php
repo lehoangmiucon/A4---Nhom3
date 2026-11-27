@@ -33,4 +33,9 @@ class Conversation extends Model
     {
         return $this->belongsTo(Ticket::class);
     }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_id');
+    }
 }

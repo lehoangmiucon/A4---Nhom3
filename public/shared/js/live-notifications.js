@@ -38,25 +38,57 @@
 
     const notify = (item) => {
         playNotificationSound();
+        const payload = item.payload || {};
+        const isChat = payload.type === 'chat';
+        const isTicket = !isChat && (payload.type === 'ticket' || item.ticket_id || payload.ticket_id);
+        const accent = isChat ? '#78d5ff' : isTicket ? '#ffd08a' : '#b8cee2';
+        const background = isChat
+            ? 'linear-gradient(135deg,#12486e,#102f4b)'
+            : isTicket
+                ? 'linear-gradient(135deg,#73501f,#3c2d1b)'
+                : 'linear-gradient(135deg,#294765,#1a3047)';
         const box = document.createElement('aside');
-        box.setAttribute('role', 'status');
+        box.className = `helpdesk-notification-toast${isChat ? ' is-chat' : isTicket ? ' is-ticket' : ''}`;
+        box.setAttribute('role', 'alert');
         Object.assign(box.style, {
             position: 'fixed', top: '76px', right: '18px', zIndex: '9999',
-            width: 'min(340px, calc(100vw - 36px))', padding: '15px 18px',
-            borderRadius: '14px', border: '1px solid #cfe4f5', background: '#fff',
-            color: '#183754', boxShadow: '0 14px 36px #123b7030',
+            width: 'min(370px, calc(100vw - 36px))', padding: '14px 16px',
+            borderRadius: '16px', border: `1px solid ${accent}70`, background,
+            color: '#fff', boxShadow: `0 16px 38px ${accent}24`,
             fontFamily: 'Be Vietnam Pro, Arial, sans-serif', fontSize: '13px',
             lineHeight: '1.5', cursor: 'pointer',
         });
+        const icon = document.createElement('span');
+        icon.textContent = isChat ? '✉' : isTicket ? '▣' : '•';
+        Object.assign(icon.style, {
+            width: '42px', height: '42px', flex: 'none', display: 'grid',
+            placeItems: 'center', marginRight: '12px', borderRadius: '13px',
+            color: accent, background: `${accent}20`, fontSize: '20px', fontWeight: '800',
+        });
+        const copy = document.createElement('span');
+        Object.assign(copy.style, { minWidth: '0', flex: '1', display: 'block' });
+        const badge = document.createElement('small');
+        badge.textContent = isChat ? 'TIN NHẮN MỚI' : isTicket ? 'PHIẾU SỰ CỐ' : 'THÔNG BÁO HELPDESK';
+        Object.assign(badge.style, { display: 'block', marginBottom: '2px', color: accent, fontSize: '9px', fontWeight: '800', letterSpacing: '.8px' });
         const heading = document.createElement('strong');
         heading.style.display = 'block';
-        heading.textContent = item.title || 'Thông báo Helpdesk';
+        heading.textContent = item.title || (isChat ? 'Bạn có tin nhắn mới' : isTicket ? 'Có cập nhật phiếu sự cố' : 'Thông báo Helpdesk');
         const content = document.createElement('span');
         content.textContent = item.body || '';
-        box.append(heading, content);
+        Object.assign(content.style, { display: 'block', marginTop: '2px', color: '#d8e5f0', fontSize: '11px' });
+        copy.append(badge, heading, content);
+        const arrow = document.createElement('span');
+        arrow.textContent = '›';
+        Object.assign(arrow.style, { marginLeft: '8px', color: accent, fontSize: '25px', lineHeight: '1' });
+        Object.assign(box.style, { display: 'flex', alignItems: 'center' });
+        box.append(icon, copy, arrow);
         box.addEventListener('click', () => {
             const root = endpoint.replace(/\/api\/notifications.*$/, '');
-            window.location.href = item.payload?.type === 'chat'
+            if (payload.type === 'chat' && payload.conversation_id) {
+                window.location.href = `${root}/messages?conversation_id=${encodeURIComponent(payload.conversation_id)}`;
+                return;
+            }
+            window.location.href = payload.type === 'chat'
                 ? `${root}/messages`
                 : script.dataset.notificationsPage;
         });

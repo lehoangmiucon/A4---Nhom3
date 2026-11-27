@@ -46,6 +46,27 @@
             .join(" ") ||
         "Không thể hoàn thành thao tác.";
 
+    const parseResponse = async (response) => {
+        const body = await response.text();
+        try {
+            return JSON.parse(body);
+        } catch (_) {
+            return {
+                __invalidResponse: true,
+                message: "Máy chủ trả về phản hồi không hợp lệ. Vui lòng tải lại trang và thử lại.",
+            };
+        }
+    };
+
+    const readableError = (error, fallback) => {
+        const message = String(error?.message || "");
+        if (/failed to fetch|networkerror|load failed/i.test(message))
+            return "Không thể kết nối máy chủ. Vui lòng kiểm tra mạng và thử lại.";
+        return /[À-ỹ]/.test(message) && !/<(?:!doctype|html|br)/i.test(message)
+            ? message
+            : fallback;
+    };
+
     const showFeedback = (form, message, state = "success") => {
         const feedback =
             form?.querySelector("[data-api-feedback]") ||
@@ -459,12 +480,9 @@
                 endpointUrl(ticketEndpoint(form.dataset.apiEndpoint)),
                 options,
             );
-            const isJson = (
-                response.headers.get("content-type") || ""
-            ).includes("application/json");
-            const payload = isJson
-                ? await response.json()
-                : { message: await response.text() };
+            const payload = await parseResponse(response);
+            if (payload.__invalidResponse)
+                throw new Error(payload.message);
             if (!response.ok) {
                 if (showServerErrors(form, payload.errors)) return;
                 throw new Error(messageFrom(payload));
@@ -534,7 +552,7 @@
         } catch (error) {
             showFeedback(
                 form,
-                error.message || "Không thể kết nối máy chủ.",
+                readableError(error, "Không thể hoàn thành thao tác. Vui lòng thử lại."),
                 "error",
             );
         } finally {
@@ -581,7 +599,9 @@
                     body: JSON.stringify({ email }),
                 },
             );
-            const payload = await response.json();
+            const payload = await parseResponse(response);
+            if (payload.__invalidResponse)
+                throw new Error(payload.message);
             if (!response.ok) {
                 if (showServerErrors(form, payload.errors)) return;
                 throw new Error(messageFrom(payload));
@@ -596,7 +616,7 @@
         } catch (error) {
             showFeedback(
                 form,
-                error.message || "Không thể gửi lại mã.",
+                readableError(error, "Không thể gửi mã lúc này. Vui lòng thử lại."),
                 "error",
             );
         } finally {

@@ -18,6 +18,6 @@ class TicketActivity extends Notification
     }
     public function toArray(object $notifiable): array
     {
-        return $this->payload;
+        return ['type' => 'ticket', ...$this->payload];
     }
 }

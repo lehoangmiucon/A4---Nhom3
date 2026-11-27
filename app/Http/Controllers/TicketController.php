@@ -106,6 +106,7 @@ class TicketController extends Controller
             ]);
         }
         $ticket = $reportResult['ticket'];
+        app(ChatConversationService::class)->notifyTicketCreated($ticket);
         ActivityLog::record($request, 'ticket.created', $ticket, 'Created a ticket.', [
             'ticket_number' => $ticket->ticket_number,
             'status' => $ticket->status,
@@ -450,6 +451,7 @@ class TicketController extends Controller
                 $ticket,
                 $request->user(),
                 User::findOrFail($data['staff_id']),
+                $oldStatus !== 'assigned' || (int) $previousStaffId !== (int) $data['staff_id'],
             );
         });
         $payload = ['ticket_id' => $ticket->id, 'ticket_number' => $ticket->ticket_number, 'title' => $ticket->title, 'status' => 'assigned', 'message' => 'Bạn được phân công xử lý phiếu.'];

@@ -46,5 +46,5 @@
     </div>
 </header>
 <script src="{{ url('/shared/js/logout.js?v=20261106-csrf1') }}" defer></script>
-<script src="{{ url('/shared/js/live-notifications.js?v=20261124-sound1') }}" data-api="{{ url('/api/notifications') }}" data-notifications-page="{{ url('/admin/pages/notifications') }}" defer></script>
+<script src="{{ url('/shared/js/live-notifications.js?v=20261127-notify-types1') }}" data-api="{{ url('/api/notifications') }}" data-notifications-page="{{ url('/admin/pages/notifications') }}" defer></script>
 <script src="{{ url('/shared/js/page-feedback.js?v=20261110-report-toast-center1') }}" defer></script>

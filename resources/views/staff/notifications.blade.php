@@ -64,7 +64,7 @@
                     @php($notice = $notification->data)
                     @php($canOpenTicket = $group['ticket_id'] && $accessibleTicketIds->contains($group['ticket_id']))
                     <a class="notification-group sn-notification {{ $group['unread_count'] ? 'is-unread' : '' }}"
-                       href="{{ $canOpenTicket ? url('/staff/ticket-detail').'?ticket='.$group['ticket_id'] : '#' }}"
+                       href="{{ ($notice['type'] ?? '') === 'chat' && !empty($notice['conversation_id']) ? url('/messages').'?conversation_id='.$notice['conversation_id'] : ($canOpenTicket ? url('/staff/ticket-detail').'?ticket='.$group['ticket_id'] : '#') }}"
                        data-notification-read-url="{{ $group['read_url'] }}"
                        data-notification-unread="{{ $group['unread_count'] }}">
                         <span class="sn-notification-icon" aria-hidden="true">

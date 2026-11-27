@@ -6,6 +6,7 @@ use App\Contracts\ChatAssistant;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
 use App\Models\User;
+use App\Services\ChatConversationService;
 use App\Services\FcmPush;
 use App\Notifications\ChatActivity;
 use Illuminate\Support\Facades\Notification;
@@ -23,6 +24,7 @@ class ChatController extends Controller
             ->whereHas('participants', fn ($query) => $query->whereKey($user->id))
             ->with([
                 'participants:id,name,email,phone,role,avatar_path',
+                'creator:id,name,role',
                 'ticket:id,ticket_number,title',
                 'lastMessage.sender:id,name,role',
             ])
@@ -112,6 +114,22 @@ class ChatController extends Controller
         ], 201);
     }
 
+    public function startSupport(Request $request, ChatConversationService $conversations): JsonResponse
+    {
+        abort_unless(
+            ! in_array($request->user()->role, ['admin', 'staff'], true),
+            403,
+            'Cuộc trò chuyện hỗ trợ dành cho người báo sự cố.',
+        );
+
+        $conversation = $conversations->supportForStudent($request->user());
+
+        return response()->json([
+            'message' => 'Đã mở cuộc trò chuyện với bộ phận hỗ trợ.',
+            'data' => $this->loadConversation($conversation, $request->user()),
+        ], 200);
+    }
+
     public function startAssistant(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -185,7 +203,7 @@ class ChatController extends Controller
                 ]));
                 app(FcmPush::class)->sendToUser(
                     (int) $recipient->id,
-                    'Tin nhắn Helpdesk',
+                    'Tin nhắn từ '.$request->user()->name,
                     $request->user()->name.': '.$body,
                     ['type' => 'chat', 'conversation_id' => (string) $conversation->id],
                 );
@@ -221,6 +239,7 @@ class ChatController extends Controller
         return $this->conversationData(
             $conversation->load([
                 'participants:id,name,email,phone,role,avatar_path',
+            'creator:id,name,role',
                 'ticket:id,ticket_number,title',
                 'lastMessage.sender:id,name,role',
             ]),
@@ -240,9 +259,13 @@ class ChatController extends Controller
         return [
             'id' => $conversation->id,
             'type' => $conversation->type,
-            'title' => $conversation->type === 'assistant'
-                ? 'Trợ lý Helpdesk'
-                : ($conversation->ticket?->ticket_number ?? $participants->first()['name'] ?? 'Cuộc trò chuyện'),
+            'title' => match ($conversation->type) {
+                'assistant' => 'Trợ lý Helpdesk',
+                'support' => in_array($user->role, ['admin', 'staff'], true)
+                    ? ($conversation->creator?->name ?? 'Hỗ trợ sinh viên')
+                    : 'Hỗ trợ Helpdesk',
+                default => $conversation->ticket?->ticket_number ?? $participants->first()['name'] ?? 'Cuộc trò chuyện',
+            },
             'participants' => $participants,
             'ticket' => $conversation->ticket?->only('id', 'ticket_number', 'title'),
             'last_message' => $last ? $this->messageData($last) : null,
@@ -283,6 +306,7 @@ class ChatController extends Controller
             'sender_type' => $message->sender_type,
             'sender' => $message->sender?->only('id', 'name', 'role'),
             'body' => $message->body,
+            'metadata' => $message->metadata,
             'created_at' => $message->created_at,
         ];
     }

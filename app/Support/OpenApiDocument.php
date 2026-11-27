@@ -183,12 +183,16 @@ class OpenApiDocument
             'LocationController@createRoom' => 'Tạo phòng và mã QR',
             'LocationController@updateRoom' => 'Sửa phòng',
             'LocationController@deleteRoom' => 'Xóa phòng',
+            'PushDeviceController@store' => 'Đăng ký thiết bị nhận thông báo đẩy',
+            'PushDeviceController@destroy' => 'Xóa thiết bị nhận thông báo đẩy',
             'NotificationController@index' => 'Thông báo của tôi và số chưa đọc',
             'NotificationController@read' => 'Đánh dấu một thông báo đã đọc',
             'NotificationController@readTicket' => 'Đánh dấu thông báo của một phiếu đã đọc',
             'NotificationController@readAll' => 'Đánh dấu tất cả đã đọc',
         ];
-        return ($labels[$action] ?? $action).(in_array($method, ['PUT', 'PATCH']) ? ' ('.$method.')' : '');
+        $actionName = str_contains($action, '@') ? substr($action, strrpos($action, '@') + 1) : $action;
+        $fallback = 'Thao t?c: '.preg_replace('/(?<!^)[A-Z]/', ' $0', $actionName);
+        return ($labels[$action] ?? $fallback).(in_array($method, ['PUT', 'PATCH']) ? ' ('.$method.')' : '');
     }
 
     private function notes(string $action): string
