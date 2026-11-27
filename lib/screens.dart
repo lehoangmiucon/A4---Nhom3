@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -81,8 +82,30 @@ int sumCounts(dynamic value) => asMap(value).values.fold<int>(
   (total, item) => total + (int.tryParse(item.toString()) ?? 0),
 );
 
-String readableError(Object error) =>
-    error is ApiException ? error.message : error.toString();
+String readableError(Object error) {
+  if (error is ApiException) return error.message;
+
+  final detail = error.toString().toLowerCase();
+  if (detail.contains('camera_access_denied') ||
+      detail.contains('camera permission')) {
+    return 'Ứng dụng chưa được cấp quyền sử dụng máy ảnh.';
+  }
+  if (detail.contains('photo_access_denied') ||
+      detail.contains('photos permission') ||
+      detail.contains('gallery permission')) {
+    return 'Ứng dụng chưa được cấp quyền truy cập thư viện ảnh.';
+  }
+  if (detail.contains('timeout')) {
+    return 'Thao tác quá thời gian chờ. Vui lòng thử lại.';
+  }
+  if (detail.contains('socketexception') ||
+      detail.contains('connection refused') ||
+      detail.contains('network is unreachable')) {
+    return 'Không kết nối được máy chủ. Vui lòng kiểm tra mạng và thử lại.';
+  }
+
+  return 'Đã xảy ra lỗi. Vui lòng thử lại.';
+}
 
 String displayDateTime(dynamic value) {
   final raw = value?.toString() ?? '';
@@ -117,7 +140,7 @@ class _AuthPageState extends State<AuthPage> {
   final password = TextEditingController();
   bool busy = false;
   bool showPassword = false;
-  bool rememberMe = false;
+  bool rememberMe = true;
 
   Future<void> login() async {
     setState(() => busy = true);
@@ -357,10 +380,14 @@ class _AuthPageState extends State<AuthPage> {
           child: LayoutBuilder(
             builder: (context, constraints) => SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 430),
-                  child: Column(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: math.max(0.0, constraints.maxHeight - 52),
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 430),
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Container(
@@ -539,6 +566,7 @@ class _AuthPageState extends State<AuthPage> {
                         ],
                       ),
                     ],
+                    ),
                   ),
                 ),
               ),
@@ -558,7 +586,10 @@ class AppShell extends StatefulWidget {
 }
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+  const ChatPage({super.key, this.active = true, this.initialConversationId});
+
+  final bool active;
+  final String? initialConversationId;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -576,17 +607,40 @@ class _ChatPageState extends State<ChatPage> {
   Timer? searchTimer;
   Timer? conversationPollTimer;
   bool refreshingConversations = false;
+  String? pendingConversationId;
 
   ApiClient get api => AppScope.stateOf(context).api;
 
   @override
   void initState() {
     super.initState();
+    pendingConversationId = widget.initialConversationId;
     loadConversations();
-    conversationPollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!loading) loadConversations();
-    });
+    _startConversationPolling();
     search.addListener(onSearchChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.active != widget.active) {
+      if (widget.active) {
+        _startConversationPolling();
+      } else {
+        conversationPollTimer?.cancel();
+        conversationPollTimer = null;
+      }
+    }
+  }
+
+  void _startConversationPolling() {
+    if (!widget.active || conversationPollTimer != null) return;
+    conversationPollTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      final routeIsCurrent = ModalRoute.of(context)?.isCurrent ?? true;
+      final appIsResumed =
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+      if (!loading && routeIsCurrent && appIsResumed) loadConversations();
+    });
   }
 
   @override
@@ -610,6 +664,27 @@ class _ChatPageState extends State<ChatPage> {
         loading = false;
         error = null;
       });
+      AppScope.stateOf(context).setUnreadChatCount(
+        conversations.fold<int>(
+          0,
+          (total, conversation) =>
+              total +
+              (int.tryParse(conversation['unread_count']?.toString() ?? '') ??
+                  0),
+        ),
+      );
+      final targetId = pendingConversationId;
+      if (targetId != null) {
+        for (final conversation in conversations) {
+          if (conversation['id']?.toString() == targetId) {
+            pendingConversationId = null;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) openConversation(conversation);
+            });
+            break;
+          }
+        }
+      }
     } catch (exception) {
       if (!mounted) return;
       setState(() {
@@ -657,6 +732,22 @@ class _ChatPageState extends State<ChatPage> {
       final conversation = asMap(result['data']);
       if (conversation.isNotEmpty && mounted)
         await openConversation(conversation);
+    } catch (exception) {
+      if (mounted) toast(context, readableError(exception));
+    }
+  }
+
+  Future<void> startSupport() async {
+    try {
+      final result = asMap(await api.post('/chat/support'));
+      final conversation = asMap(result['data']);
+      if (conversation.isNotEmpty && mounted) {
+        setState(() {
+          conversations.removeWhere((item) => item['id'] == conversation['id']);
+          conversations.insert(0, conversation);
+        });
+        await openConversation(conversation);
+      }
     } catch (exception) {
       if (mounted) toast(context, readableError(exception));
     }
@@ -779,6 +870,31 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                   ),
                 ),
+                if (!canSearch) ...[
+                  const SizedBox(height: 8),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: startSupport,
+                    child: Ink(
+                      height: 50,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: colors.secondaryContainer,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.support_agent_rounded, color: colors.primary),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text('Nhắn với bộ phận hỗ trợ'),
+                          ),
+                          Icon(Icons.chevron_right_rounded, color: colors.primary),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 if (true) ...[
                   const SizedBox(height: 10),
                   TextField(
@@ -976,27 +1092,33 @@ class _ChatPageState extends State<ChatPage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   if (unreadCount > 0)
-                                    Container(
-                                      constraints: const BoxConstraints(
-                                        minWidth: 22,
-                                        minHeight: 22,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                      ),
-                                      alignment: Alignment.center,
-                                      decoration: BoxDecoration(
-                                        color: colors.error,
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        unreadCount > 99
-                                            ? '99+'
-                                            : '$unreadCount',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
+                                    SizedBox.square(
+                                      dimension: 24,
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          color: colors.error,
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: colors.error.withValues(
+                                                alpha: .22,
+                                              ),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 3),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            unreadCount > 9
+                                                ? '9+'
+                                                : '$unreadCount',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1086,6 +1208,13 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
       ? 0
       : (int.tryParse(messages.last['id']?.toString() ?? '') ?? 0);
 
+  bool get _canPollMessages {
+    final routeIsCurrent = ModalRoute.of(context)?.isCurrent ?? true;
+    final appIsResumed =
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    return routeIsCurrent && appIsResumed;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1094,10 +1223,9 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
       input.text = widget.initialMessage!;
       send();
     });
-    pollTimer = Timer.periodic(
-      const Duration(seconds: 2),
-      (_) => fetchMessages(),
-    );
+    pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_canPollMessages) fetchMessages();
+    });
   }
 
   @override
@@ -1178,7 +1306,9 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   @override
   Widget build(BuildContext context) {
     final myId = AppScope.stateOf(context).user?['id']?.toString();
+    final myRole = AppScope.stateOf(context).user?['role']?.toString();
     final colors = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final ticket = asMap(widget.conversation['ticket']);
     String messageTime(dynamic value) {
       final date = DateTime.tryParse(value?.toString() ?? '')?.toLocal();
@@ -1186,6 +1316,28 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
       return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
     }
 
+    String messageDateLabel(DateTime date) {
+      final day = DateUtils.dateOnly(date);
+      final today = DateUtils.dateOnly(DateTime.now());
+      final dayOffset = today.difference(day).inDays;
+      final time = date.hour.toString().padLeft(2, '0') +
+          ':' +
+          date.minute.toString().padLeft(2, '0');
+      const weekdays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+      final weekday = weekdays[date.weekday - 1];
+      if (dayOffset == 0) return time;
+      if (dayOffset == 1) return time + ' Hôm qua';
+      if (dayOffset < 7) return time + ' ' + weekday;
+      return time +
+          ' ' +
+          weekday +
+          ' ' +
+          date.day.toString().padLeft(2, '0') +
+          '/' +
+          date.month.toString().padLeft(2, '0') +
+          '/' +
+          date.year.toString();
+    }
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -1229,22 +1381,40 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final message = messages[index];
+                      final createdAt = DateTime.tryParse(
+                        message['created_at']?.toString() ?? '',
+                      )?.toLocal();
+                      final previousCreatedAt = index > 0
+                          ? DateTime.tryParse(
+                              messages[index - 1]['created_at']?.toString() ??
+                                  '',
+                            )?.toLocal()
+                          : null;
+                      final showDateDivider = createdAt != null &&
+                          (index == 0 ||
+                              previousCreatedAt == null ||
+                              !DateUtils.isSameDay(createdAt, previousCreatedAt) ||
+                              createdAt.difference(previousCreatedAt).inMinutes >=
+                                  5);
                       final type = message['sender_type']?.toString();
                       final own = message['user_id']?.toString() == myId;
                       final system = type == 'system';
                       final assistant = type == 'assistant';
+                      final metadata = asMap(message['metadata']);
                       final alignment = system
                           ? Alignment.center
                           : own
                           ? Alignment.centerRight
                           : Alignment.centerLeft;
                       final background = system
-                          ? colors.surfaceContainerHighest
+                          ? colors.primaryContainer.withValues(alpha: .62)
                           : own
                           ? colors.primary
                           : assistant
                           ? colors.tertiaryContainer
-                          : colors.secondaryContainer;
+                          : isDark
+                          ? colors.surfaceContainerHighest
+                          : Colors.white;
                       final foreground = system
                           ? colors.onSurfaceVariant
                           : own
@@ -1252,20 +1422,72 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                           : assistant
                           ? colors.onTertiaryContainer
                           : colors.onSecondaryContainer;
-                      return Align(
-                        alignment: alignment,
-                        child: Container(
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (showDateDivider && createdAt != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                messageDateLabel(createdAt!),
+                                style: TextStyle(
+                                  color: colors.onSurfaceVariant,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          Align(
+                            alignment: alignment,
+                            child: Container(
                           constraints: BoxConstraints(
-                            maxWidth: MediaQuery.sizeOf(context).width * .78,
+                            maxWidth: MediaQuery.sizeOf(context).width * .82,
                           ),
-                          margin: const EdgeInsets.symmetric(vertical: 5),
+                          margin: const EdgeInsets.symmetric(vertical: 6),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
+                            horizontal: 15,
+                            vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: background,
-                            borderRadius: BorderRadius.circular(18),
+                            color: own ? null : background,
+                            gradient: own
+                                ? LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      colors.primary,
+                                      Color.lerp(
+                                            colors.primary,
+                                            const Color(0xFF087DBB),
+                                            .28,
+                                          ) ??
+                                          colors.primary,
+                                    ],
+                                  )
+                                : null,
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(19),
+                              topRight: const Radius.circular(19),
+                              bottomLeft: Radius.circular(own ? 19 : 6),
+                              bottomRight: Radius.circular(own ? 6 : 19),
+                            ),
+                            border: Border.all(
+                              color: system
+                                  ? colors.primary.withValues(alpha: .12)
+                                  : own
+                                  ? Colors.white.withValues(alpha: .12)
+                                  : colors.outlineVariant.withValues(
+                                      alpha: isDark ? .42 : .55,
+                                    ),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: (own ? colors.primary : Colors.black)
+                                    .withValues(alpha: isDark ? .12 : .055),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
                           child: Column(
                             crossAxisAlignment: system
@@ -1280,19 +1502,60 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                                 ),
                               Text(
                                 message['body']?.toString() ?? '',
-                                style: TextStyle(color: foreground),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                messageTime(message['created_at']),
                                 style: TextStyle(
-                                  color: foreground.withValues(alpha: .72),
-                                  fontSize: 10,
+                                  color: foreground,
+                                  fontSize: 13.5,
+                                  height: 1.38,
+                                  fontWeight: system
+                                      ? FontWeight.w500
+                                      : FontWeight.w400,
+                                ),
+                              ),
+                              if (metadata['ticket_id'] != null)
+                                TextButton.icon(
+                                  onPressed: () => Navigator.push<void>(
+                                    context,
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => TicketDetailPage(
+                                        ticket: {
+                                          'id': metadata['ticket_id'],
+                                          'ticket_number': metadata['ticket_number'],
+                                          'title': metadata['ticket_title'],
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.open_in_new_rounded, size: 15),
+                                  label: Text(
+                                    'Mở phiếu ${metadata['ticket_number'] ?? metadata['ticket_id']}',
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: foreground,
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  ),
+                                ),
+                              const SizedBox(height: 4),
+                              Align(
+                                alignment: system
+                                    ? Alignment.center
+                                    : own
+                                    ? Alignment.centerRight
+                                    : Alignment.centerLeft,
+                                child: Text(
+                                  messageTime(message['created_at']),
+                                  style: TextStyle(
+                                    color: foreground.withValues(alpha: .72),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
+                            ),
+                          ),
+                        ],
                       );
                     },
                   ),
@@ -1349,6 +1612,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
 class _AppShellState extends State<AppShell> {
   int index = 0;
+  List<Widget?> pageCache = [];
   List<_NavItem> get items {
     if (widget.state.role == 'admin')
       return [
@@ -1410,7 +1674,11 @@ class _AppShellState extends State<AppShell> {
         Icons.add_circle_outline,
         TicketCreatePage(api: widget.state.api, embedded: true),
       ),
-      _NavItem('Tin nhắn', Icons.chat_bubble_outline_rounded, const ChatPage()),
+      _NavItem(
+        'Tin nhắn',
+        Icons.chat_bubble_outline_rounded,
+        ChatPage(active: index == 3),
+      ),
       _NavItem(
         'Cài đặt',
         Icons.settings_outlined,
@@ -1422,7 +1690,18 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final pages = items;
-    final selected = pages[index.clamp(0, pages.length - 1)];
+    final selectedIndex = index.clamp(0, pages.length - 1);
+    if (pageCache.length != pages.length) {
+      pageCache = List<Widget?>.filled(pages.length, null);
+    }
+    for (var i = 0; i < pages.length; i++) {
+      if (i == selectedIndex || pageCache[i] != null) {
+        // Keep visited pages alive, but don't construct or load hidden pages
+        // until the user opens them for the first time.
+        pageCache[i] = pages[i].page;
+      }
+    }
+    final selected = pages[selectedIndex];
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -1436,7 +1715,10 @@ class _AppShellState extends State<AppShell> {
               context,
               MaterialPageRoute(builder: (_) => const ChatPage()),
             ),
-            icon: const Icon(Icons.chat_bubble_outline_rounded),
+            icon: _NavigationBadgeIcon(
+              icon: Icons.chat_bubble_outline_rounded,
+              count: widget.state.unreadChatCount,
+            ),
           ),
           IconButton(
             tooltip: 'Thông báo',
@@ -1451,15 +1733,27 @@ class _AppShellState extends State<AppShell> {
         ],
       ),
       body: IndexedStack(
-        index: index.clamp(0, pages.length - 1),
-        children: pages.map((e) => e.page).toList(),
+        index: selectedIndex,
+        children: pageCache
+            .map((page) => page ?? const SizedBox.shrink())
+            .toList(),
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: index.clamp(0, pages.length - 1),
+        selectedIndex: selectedIndex,
         onDestinationSelected: (value) => setState(() => index = value),
         destinations: pages
             .map(
-              (e) => NavigationDestination(icon: Icon(e.icon), label: e.label),
+              (e) {
+                final count = e.icon == Icons.chat_bubble_outline_rounded
+                    ? widget.state.unreadChatCount
+                    : 0;
+                final icon = _NavigationBadgeIcon(icon: e.icon, count: count);
+                return NavigationDestination(
+                  icon: icon,
+                  selectedIcon: icon,
+                  label: e.label,
+                );
+              },
             )
             .toList(),
       ),
@@ -1480,24 +1774,67 @@ class _NotificationBell extends StatelessWidget {
         Positioned(
           right: -9,
           top: -7,
+          child: SizedBox.square(
+            dimension: 22,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 1.5,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  count > 9 ? '9+' : '$count',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+    ],
+  );
+}
+
+class _NavigationBadgeIcon extends StatelessWidget {
+  const _NavigationBadgeIcon({required this.icon, required this.count});
+
+  final IconData icon;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    clipBehavior: Clip.none,
+    children: [
+      Icon(icon),
+      if (count > 0)
+        Positioned(
+          right: -9,
+          top: -7,
           child: Container(
-            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            width: 18,
+            height: 18,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.error,
-              borderRadius: BorderRadius.circular(10),
+              shape: BoxShape.circle,
               border: Border.all(
                 color: Theme.of(context).colorScheme.surface,
                 width: 1.5,
               ),
             ),
-            alignment: Alignment.center,
             child: Text(
-              count > 99 ? '99+' : '$count',
+              count > 9 ? '9+' : '$count',
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
+                fontSize: 8,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
@@ -3445,29 +3782,310 @@ class _ReviewRow extends StatelessWidget {
 
 class QrScanPage extends StatefulWidget {
   const QrScanPage({super.key});
+
   @override
   State<QrScanPage> createState() => _QrScanPageState();
 }
 
-class _QrScanPageState extends State<QrScanPage> {
+class _QrScanPageState extends State<QrScanPage>
+    with SingleTickerProviderStateMixin {
+  final MobileScannerController scanner = MobileScannerController();
+  late final AnimationController scanAnimation;
   bool handled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    scanAnimation = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    scanAnimation.dispose();
+    scanner.dispose();
+    super.dispose();
+  }
+
+  void onDetect(BarcodeCapture capture) {
+    if (handled || capture.barcodes.isEmpty) return;
+    final value = capture.barcodes.first.rawValue;
+    if (value == null || value.isEmpty) return;
+    handled = true;
+    final uri = Uri.tryParse(value);
+    final code = uri != null && uri.pathSegments.isNotEmpty
+        ? uri.pathSegments.last
+        : value;
+    Navigator.pop(context, code);
+  }
+
+  Future<void> toggleTorch() async {
+    try {
+      await scanner.toggleTorch();
+    } catch (_) {
+      if (mounted) toast(context, 'Không thể bật đèn pin của máy ảnh.');
+    }
+  }
+
+  Future<void> switchCamera() async {
+    try {
+      await scanner.switchCamera();
+    } catch (_) {
+      if (mounted) toast(context, 'Không thể đổi camera.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Quét QR phòng')),
-    body: MobileScanner(
-      onDetect: (capture) {
-        if (handled || capture.barcodes.isEmpty) return;
-        final value = capture.barcodes.first.rawValue;
-        if (value == null || value.isEmpty) return;
-        handled = true;
-        final uri = Uri.tryParse(value);
-        final code = uri != null && uri.pathSegments.isNotEmpty
-            ? uri.pathSegments.last
-            : value;
-        Navigator.pop(context, code);
+    backgroundColor: const Color(0xFF071522),
+    body: LayoutBuilder(
+      builder: (context, constraints) {
+        final scanWindow = math.min(constraints.maxWidth * .76, 310.0);
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            MobileScanner(controller: scanner, onDetect: onDetect),
+            AnimatedBuilder(
+              animation: scanAnimation,
+              builder: (context, _) => CustomPaint(
+                painter: _QrScannerOverlayPainter(
+                  windowSize: scanWindow,
+                  progress: scanAnimation.value,
+                ),
+              ),
+            ),
+            SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 8, 18, 0),
+                    child: Row(
+                      children: [
+                        IconButton.filledTonal(
+                          onPressed: () => Navigator.pop(context),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white.withValues(alpha: .14),
+                            foregroundColor: Colors.white,
+                          ),
+                          icon: const Icon(Icons.arrow_back_rounded),
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Quét mã phòng',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(height: 3),
+                              Text(
+                                'Đưa mã QR vào trong khung',
+                                style: TextStyle(
+                                  color: Color(0xFFD4E5F3),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  SizedBox(width: scanWindow, height: scanWindow),
+                  const Spacer(),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xE6102233),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: .14),
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      children: [
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.center_focus_strong_rounded,
+                              color: Color(0xFF73C7FF),
+                              size: 19,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Giữ mã QR trong khung để quét tự động',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: toggleTorch,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: BorderSide(
+                                  color: Colors.white.withValues(alpha: .28),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                              ),
+                              icon: const Icon(
+                                Icons.flashlight_on_rounded,
+                                size: 18,
+                              ),
+                              label: const Text('Đèn pin'),
+                            ),
+                            const SizedBox(width: 10),
+                            OutlinedButton.icon(
+                              onPressed: switchCamera,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: BorderSide(
+                                  color: Colors.white.withValues(alpha: .28),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                              ),
+                              icon: const Icon(
+                                Icons.cameraswitch_rounded,
+                                size: 18,
+                              ),
+                              label: const Text('Đổi camera'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
       },
     ),
   );
+}
+
+class _QrScannerOverlayPainter extends CustomPainter {
+  const _QrScannerOverlayPainter({
+    required this.windowSize,
+    required this.progress,
+  });
+
+  final double windowSize;
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scanRect = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: windowSize,
+      height: windowSize,
+    );
+    final roundedRect = RRect.fromRectAndRadius(
+      scanRect,
+      const Radius.circular(24),
+    );
+    final shade = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(Offset.zero & size)
+      ..addRRect(roundedRect);
+    canvas.drawPath(shade, Paint()..color = const Color(0x9907121E));
+
+    canvas.drawRRect(
+      roundedRect,
+      Paint()
+        ..color = Colors.white.withValues(alpha: .35)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2,
+    );
+
+    const corner = 27.0;
+    final corners = <Path>[
+      Path()
+        ..moveTo(scanRect.left, scanRect.top + corner)
+        ..lineTo(scanRect.left, scanRect.top + 24)
+        ..quadraticBezierTo(
+          scanRect.left,
+          scanRect.top,
+          scanRect.left + 24,
+          scanRect.top,
+        )
+        ..lineTo(scanRect.left + corner, scanRect.top),
+      Path()
+        ..moveTo(scanRect.right - corner, scanRect.top)
+        ..lineTo(scanRect.right - 24, scanRect.top)
+        ..quadraticBezierTo(
+          scanRect.right,
+          scanRect.top,
+          scanRect.right,
+          scanRect.top + 24,
+        )
+        ..lineTo(scanRect.right, scanRect.top + corner),
+      Path()
+        ..moveTo(scanRect.left, scanRect.bottom - corner)
+        ..lineTo(scanRect.left, scanRect.bottom - 24)
+        ..quadraticBezierTo(
+          scanRect.left,
+          scanRect.bottom,
+          scanRect.left + 24,
+          scanRect.bottom,
+        )
+        ..lineTo(scanRect.left + corner, scanRect.bottom),
+      Path()
+        ..moveTo(scanRect.right - corner, scanRect.bottom)
+        ..lineTo(scanRect.right - 24, scanRect.bottom)
+        ..quadraticBezierTo(
+          scanRect.right,
+          scanRect.bottom,
+          scanRect.right,
+          scanRect.bottom - 24,
+        )
+        ..lineTo(scanRect.right, scanRect.bottom - corner),
+    ];
+    final cornerPaint = Paint()
+      ..color = const Color(0xFF73C7FF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+    for (final path in corners) {
+      canvas.drawPath(path, cornerPaint);
+    }
+
+    canvas.save();
+    canvas.clipRRect(roundedRect);
+    final lineY = scanRect.top + 22 + (scanRect.height - 44) * progress;
+    canvas.drawLine(
+      Offset(scanRect.left + 18, lineY),
+      Offset(scanRect.right - 18, lineY),
+      Paint()
+        ..color = const Color(0xFF73C7FF)
+        ..strokeWidth = 2.2
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _QrScannerOverlayPainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.windowSize != windowSize;
 }
 
 class TicketDetailPage extends StatefulWidget {
@@ -4519,6 +5137,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
             .patch('/notifications/' + notification['id'].toString() + '/read');
       }
       if (!mounted) return;
+      final payload = asMap(notification['payload']);
+      if (payload['type'] == 'chat' && payload['conversation_id'] != null) {
+        await Navigator.push<void>(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => ChatPage(
+              initialConversationId: payload['conversation_id'].toString(),
+            ),
+          ),
+        );
+        if (mounted) await load();
+        return;
+      }
       final ticketId = notification['ticket_id'];
       if (ticketId != null) {
         await Navigator.push(
@@ -4570,31 +5201,75 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ...notifications.map((n) {
             final unread = n['read_at'] == null;
             final colors = Theme.of(context).colorScheme;
+            final payload = asMap(n['payload']);
+            final isChat = payload['type'] == 'chat';
+            final isTicket = payload['type'] == 'ticket' || n['ticket_id'] != null;
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final accent = isChat
+                ? const Color(0xFF238AC0)
+                : isTicket
+                ? const Color(0xFFB9751B)
+                : colors.primary;
+            final background = isChat
+                ? (isDark ? const Color(0xFF173951) : const Color(0xFFEAF6FF))
+                : isTicket
+                ? (isDark ? const Color(0xFF43331F) : const Color(0xFFFFF3DF))
+                : colors.surface;
             return Card(
-              color: unread
-                  ? colors.primaryContainer.withValues(alpha: .42)
-                  : colors.surface,
+              color: background,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(
-                  color: unread
-                      ? colors.primary.withValues(alpha: .55)
-                      : colors.outlineVariant,
+                  color: unread ? accent.withValues(alpha: .6) : colors.outlineVariant,
                   width: unread ? 1.2 : .7,
                 ),
               ),
+              margin: const EdgeInsets.symmetric(vertical: 6),
               child: ListTile(
-                leading: Icon(
-                  unread
-                      ? Icons.mark_email_unread_rounded
-                      : Icons.mark_email_read_outlined,
-                  color: unread ? colors.primary : colors.onSurfaceVariant,
-                ),
-                title: Text(
-                  n['title']?.toString() ?? 'Cập nhật Helpdesk',
-                  style: TextStyle(
-                    fontWeight: unread ? FontWeight.w800 : FontWeight.w500,
+                leading: CircleAvatar(
+                  backgroundColor: accent.withValues(alpha: .14),
+                  child: Icon(
+                    isChat
+                        ? Icons.chat_bubble_rounded
+                        : isTicket
+                        ? Icons.assignment_late_rounded
+                        : unread
+                        ? Icons.mark_email_unread_rounded
+                        : Icons.notifications_rounded,
+                    color: accent,
+                    size: 20,
                   ),
+                ),
+                title: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        n['title']?.toString() ?? 'Cập nhật Helpdesk',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: .13),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        isChat ? 'TIN NHẮN' : isTicket ? 'PHIẾU SỰ CỐ' : 'CẬP NHẬT',
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: .3,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 subtitle: Text(
                   (n['body']?.toString() ?? '') +
@@ -4605,6 +5280,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     color: unread ? colors.onSurface : colors.onSurfaceVariant,
                   ),
                 ),
+                trailing: Icon(Icons.chevron_right_rounded, color: accent),
                 isThreeLine: true,
                 onTap: () => openNotification(n),
               ),

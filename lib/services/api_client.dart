@@ -222,7 +222,7 @@ class ApiClient {
       payload = <String, dynamic>{'message': raw};
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      final message = payload is Map
+      final rawMessage = payload is Map
           ? (payload['message']?.toString() ??
                 (payload['errors'] is Map
                     ? (payload['errors'] as Map).values
@@ -230,6 +230,7 @@ class ApiClient {
                           .join(' ')
                     : 'Yêu cầu thất bại (${response.statusCode}).'))
           : 'Yêu cầu thất bại (${response.statusCode}).';
+      final message = _localizeServerError(rawMessage, response.statusCode);
       throw ApiException(
         message,
         statusCode: response.statusCode,
@@ -239,5 +240,57 @@ class ApiClient {
       );
     }
     return payload;
+  }
+
+  String _localizeServerError(String message, int statusCode) {
+    final normalized = message.trim().toLowerCase();
+    if (normalized.contains('csrf token mismatch')) {
+      return 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang rồi thử lại.';
+    }
+    if (normalized == 'unauthenticated.' ||
+        normalized == 'unauthenticated') {
+      return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+    }
+    if (normalized == 'this action is unauthorized.') {
+      return 'Bạn không có quyền thực hiện thao tác này.';
+    }
+    if (normalized == 'the given data was invalid.') {
+      return 'Dữ liệu gửi lên chưa hợp lệ. Vui lòng kiểm tra lại.';
+    }
+    if (normalized == 'server error' ||
+        normalized == 'internal server error') {
+      return 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.';
+    }
+
+    if (statusCode == 401) {
+      return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+    }
+    if (statusCode == 403) {
+      return 'Bạn không có quyền thực hiện thao tác này.';
+    }
+    if (statusCode == 404) {
+      return 'Không tìm thấy dữ liệu yêu cầu.';
+    }
+    if (statusCode == 419) {
+      return 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang rồi thử lại.';
+    }
+    if (statusCode == 429) {
+      return 'Bạn thao tác quá nhanh. Vui lòng chờ một lúc rồi thử lại.';
+    }
+    if (statusCode >= 500) {
+      return 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.';
+    }
+
+    // Never show an untranslated server response (or raw HTML error page) in
+    // the app. Laravel's Vietnamese messages contain Vietnamese diacritics.
+    if (message.contains('<html') ||
+        message.contains('<!doctype') ||
+        !RegExp(r'[À-ỹ]').hasMatch(message)) {
+      if (statusCode == 422) {
+        return 'Dữ liệu gửi lên chưa hợp lệ. Vui lòng kiểm tra lại.';
+      }
+      return 'Yêu cầu không thành công. Vui lòng kiểm tra lại và thử lại.';
+    }
+    return message;
   }
 }

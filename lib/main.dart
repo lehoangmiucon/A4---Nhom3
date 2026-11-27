@@ -17,10 +17,16 @@ const notificationSoundChannel = MethodChannel(
 void openPush(RemoteMessage message) {
   final navigator = appNavigatorKey.currentState;
   if (navigator == null) return;
+  final type = message.data['type']?.toString();
+  final ticketId = message.data['ticket_id']?.toString();
   navigator.push(
     MaterialPageRoute<void>(
-      builder: (_) => message.data['type'] == 'chat'
-          ? const ChatPage()
+      builder: (_) => type == 'chat'
+          ? ChatPage(
+              initialConversationId: message.data['conversation_id']?.toString(),
+            )
+          : type == 'ticket' && ticketId != null && ticketId.isNotEmpty
+          ? TicketDetailPage(ticket: {'id': ticketId})
           : const NotificationsPage(),
     ),
   );
@@ -37,12 +43,122 @@ Future<void> main() async {
       notificationSoundChannel.invokeMethod<void>('play').catchError((_) {}),
     );
     state.refreshUnreadNotifications();
+    state.refreshUnreadChats();
+    final isChat = message.data['type'] == 'chat';
+    final isTicket = message.data['type'] == 'ticket';
+    final accent = isChat
+        ? const Color(0xFF62C6F3)
+        : isTicket
+        ? const Color(0xFFFFC36C)
+        : const Color(0xFF9CB6CF);
     appMessengerKey.currentState?.showSnackBar(
       SnackBar(
-        content: Text(message.notification?.title ?? 'Thông báo Helpdesk'),
-        action: SnackBarAction(
-          label: 'Xem',
-          onPressed: () => openPush(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        padding: EdgeInsets.zero,
+        margin: const EdgeInsets.fromLTRB(14, 0, 14, 18),
+        duration: const Duration(seconds: 6),
+        content: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () => openPush(message),
+            child: Ink(
+              padding: const EdgeInsets.fromLTRB(14, 13, 16, 13),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isChat
+                      ? const [Color(0xFF124E78), Color(0xFF123454)]
+                      : isTicket
+                      ? const [Color(0xFF77501D), Color(0xFF392B1B)]
+                      : const [Color(0xFF334D68), Color(0xFF1D3147)],
+                ),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: accent.withValues(alpha: .62)),
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withValues(alpha: .18),
+                    blurRadius: 22,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: .18),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      isChat
+                          ? Icons.chat_bubble_rounded
+                          : isTicket
+                          ? Icons.assignment_late_rounded
+                          : Icons.notifications_rounded,
+                      color: accent,
+                      size: 21,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          isChat
+                              ? 'TIN NHẮN MỚI'
+                              : isTicket
+                              ? 'PHIẾU SỰ CỐ'
+                              : 'THÔNG BÁO HELPDESK',
+                          style: TextStyle(
+                            color: accent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: .8,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          message.notification?.title ??
+                              (isChat
+                                  ? 'Bạn có tin nhắn mới'
+                                  : isTicket
+                                  ? 'Có cập nhật phiếu sự cố'
+                                  : 'Thông báo mới'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                        if ((message.notification?.body ?? '').isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            message.notification!.body!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFFD7E4EF),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(Icons.chevron_right_rounded, color: accent),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

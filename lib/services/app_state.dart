@@ -14,6 +14,7 @@ class AppState extends ChangeNotifier {
   Map<String, dynamic>? user;
   bool initializing = true;
   int unreadNotificationCount = 0;
+  int unreadChatCount = 0;
   Timer? _notificationRefreshTimer;
   ThemeMode themeMode = ThemeMode.dark;
 
@@ -31,6 +32,7 @@ class AppState extends ChangeNotifier {
         await refreshProfile();
         await push.sync();
         await refreshUnreadNotifications();
+        await refreshUnreadChats();
         _startNotificationRefresh();
       } on ApiException catch (error) {
         if (error.statusCode == 401) await api.clearToken();
@@ -64,6 +66,7 @@ class AppState extends ChangeNotifier {
     await refreshProfile();
     await push.sync();
     await refreshUnreadNotifications();
+    await refreshUnreadChats();
     _startNotificationRefresh();
     return result;
   }
@@ -88,11 +91,39 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<void> refreshUnreadChats() async {
+    if (api.token == null) return;
+    try {
+      final response = _map(await api.get('/chat/conversations'));
+      final rows = response['data'];
+      final count = rows is List
+          ? rows.fold<int>(0, (total, row) {
+              final conversation = _map(row);
+              return total +
+                  (int.tryParse(conversation['unread_count']?.toString() ?? '') ??
+                      0);
+            })
+          : 0;
+      setUnreadChatCount(count);
+    } catch (_) {
+      // Keep the app usable while the API is temporarily unavailable.
+    }
+  }
+
+  void setUnreadChatCount(int count) {
+    if (count == unreadChatCount) return;
+    unreadChatCount = count;
+    notifyListeners();
+  }
+
   void _startNotificationRefresh() {
     _notificationRefreshTimer?.cancel();
     _notificationRefreshTimer = Timer.periodic(
       const Duration(seconds: 30),
-      (_) => refreshUnreadNotifications(),
+      (_) {
+        refreshUnreadNotifications();
+        refreshUnreadChats();
+      },
     );
   }
 
@@ -144,6 +175,7 @@ class AppState extends ChangeNotifier {
       await api.clearToken();
       user = null;
       unreadNotificationCount = 0;
+      unreadChatCount = 0;
       _notificationRefreshTimer?.cancel();
       notifyListeners();
     }
